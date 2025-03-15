@@ -4,7 +4,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, dele
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
 // Función para verificar si el usuario actual es host
-async function isUserHost() {
+export async function isUserHost() {
   try {
     const user = auth.currentUser;
     
