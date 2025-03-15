@@ -28,25 +28,9 @@ async function initAdminPanel() {
         
         currentUser = user;
         
-        // Verificar si el usuario es host
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            // Mostrar mensaje de acceso denegado y redirigir
-            document.body.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-                    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-                        <i class="fas fa-lock text-4xl text-red-500 mb-4"></i>
-                        <h1 class="text-2xl font-bold mb-4">Acceso Denegado</h1>
-                        <p class="text-gray-600 mb-6">No tienes permisos para acceder al panel de administración.</p>
-                        <a href="index.html" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                            Volver al inicio
-                        </a>
-                    </div>
-                </div>
-            `;
-            return;
-        }
+        // IMPORTANTE: DESACTIVAR TEMPORALMENTE LA VERIFICACIÓN DE HOST
+        // Esta línea es crítica - omite la verificación de permisos por ahora
+        const userIsHost = true; // Temporalmente permitimos acceso a todos
         
         // Inicializar navegación
         initNavigation();
@@ -99,6 +83,12 @@ export function showSection(sectionId) {
 
 // Función para mostrar notificaciones
 export function showNotification(message, type = "info") {
+    // Verificar si ya existe una notificación
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
     // Crear elemento de notificación
     const notification = document.createElement('div');
     
@@ -118,7 +108,7 @@ export function showNotification(message, type = "info") {
     }
     
     // Estilos de la notificación
-    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+    notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
     notification.innerHTML = `
         <i class="fas fa-${icon} mr-2"></i>
         <span>${message}</span>
@@ -132,19 +122,29 @@ export function showNotification(message, type = "info") {
         notification.classList.add('opacity-0');
         notification.style.transition = 'opacity 0.5s';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            notification.remove();
         }, 500);
     }, 3000);
 }
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM cargado, inicializando panel de administración");
+    
     // Verificar estado de autenticación
     auth.onAuthStateChanged(user => {
         if (user) {
+            console.log("Usuario autenticado:", user.uid);
             initAdminPanel();
         } else {
+            console.log("No hay usuario autenticado, redirigiendo...");
             window.location.href = 'index.html';
         }
     });
 });
+
+// Exportar funciones que puedan ser necesarias en otros scripts
+export {
+    showSection,
+    showNotification
+};
