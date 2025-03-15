@@ -1,6 +1,5 @@
 // admin-panel.js - Script principal para el panel de administración
 import { auth, isUserHost } from './firebase.js';
-import { initBadgesManagement } from './admin-panel-badges.js';
 
 // Elementos DOM
 const sections = {
@@ -52,11 +51,6 @@ async function initAdminPanel() {
         // Inicializar navegación
         initNavigation();
         
-        // Inicializar gestión de badges si estamos en esa sección
-        if (sections.badges) {
-            await initBadgesManagement();
-        }
-        
         // Inicializar dashboard (mostrar por defecto)
         showSection('dashboard');
         
@@ -79,7 +73,7 @@ function initNavigation() {
 }
 
 // Función para mostrar una sección y ocultar las demás
-function showSection(sectionId) {
+export function showSection(sectionId) {
     // Ocultar todas las secciones
     Object.values(sections).forEach(section => {
         if (section) section.classList.add('hidden');
@@ -104,7 +98,7 @@ function showSection(sectionId) {
 }
 
 // Función para mostrar notificaciones
-function showNotification(message, type = "info") {
+export function showNotification(message, type = "info") {
     // Crear elemento de notificación
     const notification = document.createElement('div');
     
@@ -154,9 +148,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// Exportar funciones que puedan ser necesarias en otros scripts
-export {
-    showSection,
-    showNotification
-};
