@@ -302,7 +302,7 @@
                     <!-- Form para crear badge -->
                     <div class="bg-gray-50 p-4 rounded-lg mb-6">
                         <h3 class="font-semibold text-lg mb-2">Crear Nuevo Badge</h3>
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
                             <div class="md:col-span-2">
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
                                     Nombre del Badge
@@ -335,16 +335,22 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
-                                    Imagen del Badge
+                                    Imagen del Badge (PNG recomendado)
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="imagenBadge" type="file">
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                    id="imagenBadge" 
+                                    type="file" 
+                                    accept="image/png, image/jpeg">
+                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
                             </div>
                             <div class="flex items-center">
-                                <div class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200">
-                                    <i class="fas fa-trophy text-4xl text-orange-500"></i>
+                                <!-- Contenedor de vista previa -->
+                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden">
+                                    <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-sm text-gray-600">Vista previa</p>
+                                    <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
                                 </div>
                             </div>
                             <div class="md:col-span-2 flex justify-end">
@@ -357,8 +363,8 @@
                     <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 bg-yellow-500 rounded-full flex items-center justify-center mb-2">
-                                <i class="fas fa-trophy text-white text-2xl"></i>
+                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                <img src="https://via.placeholder.com/100" alt="Campeón" class="w-full h-full object-contain">
                             </div>
                             <h4 class="font-semibold">Campeón</h4>
                             <p class="text-sm text-gray-600">Primer lugar en torneo</p>
@@ -368,8 +374,8 @@
                             </div>
                         </div>
                         <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 bg-gray-400 rounded-full flex items-center justify-center mb-2">
-                                <i class="fas fa-medal text-white text-2xl"></i>
+                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                <img src="https://via.placeholder.com/100" alt="Subcampeón" class="w-full h-full object-contain">
                             </div>
                             <h4 class="font-semibold">Subcampeón</h4>
                             <p class="text-sm text-gray-600">Segundo lugar en torneo</p>
@@ -379,8 +385,8 @@
                             </div>
                         </div>
                         <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 bg-orange-400 rounded-full flex items-center justify-center mb-2">
-                                <i class="fas fa-award text-white text-2xl"></i>
+                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                <img src="https://via.placeholder.com/100" alt="Bronce" class="w-full h-full object-contain">
                             </div>
                             <h4 class="font-semibold">Bronce</h4>
                             <p class="text-sm text-gray-600">Tercer lugar en torneo</p>
@@ -390,8 +396,8 @@
                             </div>
                         </div>
                         <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 bg-purple-500 rounded-full flex items-center justify-center mb-2">
-                                <i class="fas fa-star text-white text-2xl"></i>
+                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                <img src="https://via.placeholder.com/100" alt="Evento Especial" class="w-full h-full object-contain">
                             </div>
                             <h4 class="font-semibold">Evento Especial</h4>
                             <p class="text-sm text-gray-600">Participó en evento especial</p>
@@ -535,26 +541,26 @@
                             
                             <div class="grid grid-cols-2 gap-3 mb-6">
                                 <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 bg-yellow-500 rounded-full flex items-center justify-center mb-2">
-                                        <i class="fas fa-trophy text-white text-2xl"></i>
+                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                        <img src="https://via.placeholder.com/100" alt="Campeón" class="w-full h-full object-contain">
                                     </div>
                                     <p class="font-semibold">Campeón</p>
                                 </div>
                                 <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 bg-gray-400 rounded-full flex items-center justify-center mb-2">
-                                        <i class="fas fa-medal text-white text-2xl"></i>
+                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                        <img src="https://via.placeholder.com/100" alt="Subcampeón" class="w-full h-full object-contain">
                                     </div>
                                     <p class="font-semibold">Subcampeón</p>
                                 </div>
                                 <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 bg-orange-400 rounded-full flex items-center justify-center mb-2">
-                                        <i class="fas fa-award text-white text-2xl"></i>
+                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                        <img src="https://via.placeholder.com/100" alt="Bronce" class="w-full h-full object-contain">
                                     </div>
                                     <p class="font-semibold">Bronce</p>
                                 </div>
                                 <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 bg-purple-500 rounded-full flex items-center justify-center mb-2">
-                                        <i class="fas fa-star text-white text-2xl"></i>
+                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                        <img src="https://via.placeholder.com/100" alt="Evento Especial" class="w-full h-full object-contain">
                                     </div>
                                     <p class="font-semibold">Evento Especial</p>
                                 </div>
@@ -614,7 +620,9 @@
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="flex items-center">
-                                                <span class="badge bg-yellow-500 mr-2" title="Campeón"><i class="fas fa-trophy"></i></span>
+                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
+                                                </div>
                                                 <button class="text-blue-500 hover:text-blue-700">
                                                     <i class="fas fa-plus-circle"></i>
                                                 </button>
@@ -642,7 +650,9 @@
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="flex items-center">
-                                                <span class="badge bg-gray-400 mr-2" title="Subcampeón"><i class="fas fa-medal"></i></span>
+                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
+                                                </div>
                                                 <button class="text-blue-500 hover:text-blue-700">
                                                     <i class="fas fa-plus-circle"></i>
                                                 </button>
@@ -670,7 +680,9 @@
                                         </td>
                                         <td class="py-3 px-4">
                                             <div class="flex items-center">
-                                                <span class="badge bg-orange-400 mr-2" title="Bronce"><i class="fas fa-award"></i></span>
+                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
+                                                </div>
                                                 <button class="text-blue-500 hover:text-blue-700">
                                                     <i class="fas fa-plus-circle"></i>
                                                 </button>
@@ -921,6 +933,45 @@
         document.addEventListener('DOMContentLoaded', function() {
             showSection('dashboard');
         });
+    </script>
+
+    <!-- Script para la vista previa de imágenes de badges -->
+    <script>
+    // Función para mostrar vista previa de la imagen seleccionada
+    function handleBadgeImagePreview(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          // Obtener el elemento de vista previa
+          const previewContainer = document.getElementById('badgePreviewContainer');
+          
+          // Limpiar el contenedor
+          previewContainer.innerHTML = '';
+          
+          // Crear un elemento de imagen
+          const imgElement = document.createElement('img');
+          imgElement.src = e.target.result;
+          imgElement.className = 'w-full h-full object-contain';
+          imgElement.alt = 'Vista previa del badge';
+          
+          // Añadir la imagen al contenedor
+          previewContainer.appendChild(imgElement);
+        }
+        
+        // Leer el archivo como URL de datos
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // Agregar un event listener al input de imagen
+    document.addEventListener('DOMContentLoaded', function() {
+      const imagenBadgeInput = document.getElementById('imagenBadge');
+      if (imagenBadgeInput) {
+        imagenBadgeInput.addEventListener('change', handleBadgeImagePreview);
+      }
+    });
     </script>
 </body>
 </html>
