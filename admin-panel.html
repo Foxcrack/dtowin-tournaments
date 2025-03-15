@@ -973,14 +973,14 @@
       }
     });
     </script>
-    <!-- Scripts para el panel de administración -->
+<!-- Scripts para el panel de administración (ACTUALIZADOS) -->
+<script type="module" src="auth-admin.js"></script>
 <script type="module" src="firebase.js"></script>
 <script type="module" src="badges.js"></script>
-<script type="module" src="admin-panel.js"></script>
 <script type="module" src="admin-panel-badges.js"></script>
 <script type="module" src="admin-panel-badge-create.js"></script>
 
-<!-- Estilos adicionales para el spinner -->
+<!-- Estilos adicionales para el spinner y elementos UI -->
 <style>
 .spinner {
     animation: spin 1s linear infinite;
@@ -1005,6 +1005,11 @@
 /* Estilos para notificaciones */
 .notification {
     transition: opacity 0.5s ease-in-out;
+}
+
+/* Corregir problemas de carga de imágenes */
+img[src^="https://via.placeholder.com"] {
+    display: none;
 }
 </style>
 </body>
