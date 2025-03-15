@@ -508,62 +508,36 @@
             });
         });
         
+        
+        
         // Función para actualizar la UI cuando el usuario inicia sesión
         async function updateUIForLoggedInUser(user) {
             try {
                 // Obtener datos adicionales del perfil si existen
                 const userProfile = await getUserProfile(user.uid);
-                
+        
                 // Cambiar el botón de login por información del usuario
+                // CAMBIO AQUÍ: Ahora el texto será negro (text-gray-800) en lugar de blanco
                 loginBtn.innerHTML = `
-                    <div class="flex items-center">
+                    <div class="flex items-center bg-white rounded-lg px-3 py-1">
                         <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-                        <span>${userProfile?.nombre || user.displayName || 'Usuario'}</span>
+                        <span class="text-gray-800 font-medium">${userProfile?.nombre || user.displayName || 'Usuario'}</span>
                     </div>
                 `;
-                
+        
                 // Cambiar el comportamiento del botón de login para ir al perfil
                 loginBtn.removeEventListener('click', showLoginModal);
                 loginBtn.addEventListener('click', () => {
                     window.location.href = 'perfil.html';
                 });
-                
-                // Desactivar el botón de registro
-                registerBtn.style.display = 'none';
-                
-            } catch (error) {
-                console.error("Error al actualizar UI:", error);
-            }
-        }
         
-        // Función para mostrar el modal de login
-        function showLoginModal() {
-            loginModal.classList.remove('hidden');
-            loginModal.classList.add('flex');
-        }
+        // Desactivar el botón de registro
+        registerBtn.style.display = 'none';
         
-        // Manejar inscripción a torneos
-        tournamentButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Verificar si el usuario está autenticado
-                if (auth.currentUser) {
-                    const tournamentName = button.closest('.tournament-card').querySelector('h3').textContent;
-                    alert(`Te has inscrito al torneo: ${tournamentName}`);
-                } else {
-                    alert('Debes iniciar sesión para inscribirte a un torneo');
-                    showLoginModal();
-                }
-            });
-        });
-        
-        // Formularios de login y registro
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                alert('Esta funcionalidad utilizaría firebase.js para autenticar al usuario.');
-                // En una implementación real, llamarías a la función de login
-            });
-        }
+    } catch (error) {
+        console.error("Error al actualizar UI:", error);
+    }
+}
         
         if (registroForm) {
             registroForm.addEventListener('submit', (e) => {
