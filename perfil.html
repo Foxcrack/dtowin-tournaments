@@ -36,6 +36,18 @@
             height: 200px;
             background-size: cover;
             background-position: center;
+            position: relative;
+        }
+        .badge-glow {
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 5px -5px #ffdd00;
+            }
+            to {
+                box-shadow: 0 0 20px 5px #ffdd00;
+            }
         }
     </style>
 </head>
@@ -57,21 +69,42 @@
                     <span id="navbarUserName">Usuario</span>
                 </div>
             </div>
-            <button class="md:hidden text-xl">
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
                 <i class="fas fa-bars"></i>
             </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-bold">Mi Perfil</a>
+            </div>
         </div>
     </nav>
 
     <!-- Perfil Header -->
-    <div class="profile-banner gradient-background" id="profileBanner"></div>
+    <div class="profile-banner gradient-background" id="profileBanner">
+        <!-- Banner edit button -->
+        <button id="editBannerBtn" class="absolute bottom-4 right-4 bg-white bg-opacity-80 text-gray-700 rounded-full p-2 shadow-md hover:bg-opacity-100 transition">
+            <i class="fas fa-camera"></i>
+        </button>
+    </div>
 
     <div class="container mx-auto px-4 -mt-16">
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
             <div class="flex flex-col md:flex-row">
                 <!-- Foto de perfil y datos básicos -->
                 <div class="flex flex-col items-center md:items-start md:flex-row mb-6 md:mb-0">
-                    <img src="https://via.placeholder.com/150" alt="Profile" id="profileImage" class="w-32 h-32 rounded-full border-4 border-white">
+                    <div class="relative">
+                        <img src="https://via.placeholder.com/150" alt="Profile" id="profileImage" class="w-32 h-32 rounded-full border-4 border-white">
+                        <!-- Profile image edit button -->
+                        <button id="editProfileImageBtn" class="absolute bottom-0 right-0 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-gray-100 transition">
+                            <i class="fas fa-camera text-gray-700"></i>
+                        </button>
+                    </div>
                     <div class="md:ml-6 mt-4 md:mt-0 text-center md:text-left">
                         <h2 class="text-2xl font-bold" id="profileName">Nombre de Usuario</h2>
                         <p class="text-gray-600" id="profileEmail">usuario@gmail.com</p>
@@ -96,9 +129,20 @@
         <!-- Badges del usuario -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
             <h3 class="text-xl font-bold mb-4">Mis Badges</h3>
-            <div id="userBadges" class="flex flex-wrap gap-4">
-                <p class="text-gray-500 italic">No tienes badges todavía. ¡Participa en torneos para conseguirlos!</p>
-                <!-- Los badges se mostrarán aquí dinámicamente -->
+            <div id="userBadges" class="flex flex-wrap gap-6">
+                <div class="flex flex-col items-center">
+                    <div class="badge bg-yellow-500 text-2xl badge-glow">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <span class="mt-2 text-sm font-semibold">Campeón Nacional</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="badge bg-purple-500 text-2xl">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span class="mt-2 text-sm font-semibold">Evento Especial</span>
+                </div>
+                <!-- Los badges se cargarán dinámicamente aquí -->
             </div>
         </div>
 
@@ -117,10 +161,29 @@
                         </tr>
                     </thead>
                     <tbody id="tournamentHistory" class="text-gray-600">
-                        <tr>
-                            <td class="py-4 px-4 text-center" colspan="5">No has participado en torneos todavía.</td>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4">Evento Especial</td>
+                            <td class="py-3 px-4">10 de Febrero, 2025</td>
+                            <td class="py-3 px-4"><span class="text-yellow-500 font-bold">1° Lugar</span></td>
+                            <td class="py-3 px-4">5</td>
+                            <td class="py-3 px-4">
+                                <div class="flex">
+                                    <span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-full mr-1">
+                                        Evento Especial
+                                    </span>
+                                </div>
+                            </td>
                         </tr>
-                        <!-- El historial de torneos se mostrará aquí dinámicamente -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4">Copa de Invierno</td>
+                            <td class="py-3 px-4">5 de Enero, 2025</td>
+                            <td class="py-3 px-4"><span class="text-gray-500 font-bold">2° Lugar</span></td>
+                            <td class="py-3 px-4">4</td>
+                            <td class="py-3 px-4">
+                                <span class="text-gray-400">-</span>
+                            </td>
+                        </tr>
+                        <!-- El historial de torneos se cargará dinámicamente aquí -->
                     </tbody>
                 </table>
             </div>
@@ -147,14 +210,90 @@
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editBanner">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editBannerURL">
                         Banner de perfil (URL)
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editBanner" type="text" placeholder="URL de imagen para tu banner">
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editBannerURL" type="text" placeholder="URL de imagen para tu banner">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editPhotoURL">
+                        Foto de perfil (URL)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editPhotoURL" type="text" placeholder="URL de imagen para tu foto de perfil">
                 </div>
                 
                 <div class="mt-6 flex justify-end">
                     <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para cambiar banner -->
+    <div id="changeBannerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeChangeBannerModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Cambiar Banner</h3>
+                <p class="text-gray-600">Elige una imagen para tu banner</p>
+            </div>
+            
+            <form id="changeBannerForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerURL">
+                        URL de la imagen
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerURL" type="text" placeholder="https://ejemplo.com/imagen.jpg">
+                </div>
+                
+                <p class="text-sm text-gray-600 mb-4">O selecciona una de nuestras imágenes predefinidas:</p>
+                
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <div class="w-full h-16 bg-gradient-to-r from-blue-600 to-red-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="gradient"></div>
+                    <div class="w-full h-16 bg-red-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="red"></div>
+                    <div class="w-full h-16 bg-blue-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="blue"></div>
+                    <div class="w-full h-16 bg-purple-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="purple"></div>
+                    <div class="w-full h-16 bg-green-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="green"></div>
+                    <div class="w-full h-16 bg-yellow-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="yellow"></div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Aplicar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para cambiar foto de perfil -->
+    <div id="changePhotoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeChangePhotoModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Cambiar Foto de Perfil</h3>
+                <p class="text-gray-600">Elige una nueva foto para tu perfil</p>
+            </div>
+            
+            <form id="changePhotoForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="photoURL">
+                        URL de la imagen
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="photoURL" type="text" placeholder="https://ejemplo.com/foto.jpg">
+                </div>
+                
+                <div class="flex justify-center mb-6">
+                    <div class="relative rounded-full overflow-hidden w-32 h-32 bg-gray-200 flex items-center justify-center" id="photoPreview">
+                        <i class="fas fa-user text-gray-400 text-5xl"></i>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Aplicar</button>
                 </div>
             </form>
         </div>
@@ -170,9 +309,9 @@
     <!-- Scripts -->
     <script type="module">
         // Importar funciones y objetos de Firebase
-        import { auth, db } from './firebase.js';
-        import { signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-        import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+        import { auth, db, logoutUser, getUserProfile } from './firebase.js';
+        import { getUserBadges } from './badges.js';
+        import { collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
         // Referencias a elementos DOM
         const profileName = document.getElementById('profileName');
@@ -188,16 +327,45 @@
         const tournamentHistory = document.getElementById('tournamentHistory');
         const logoutBtn = document.getElementById('logoutBtn');
         const editProfileBtn = document.getElementById('editProfileBtn');
+        const editBannerBtn = document.getElementById('editBannerBtn');
+        const editProfileImageBtn = document.getElementById('editProfileImageBtn');
         const editProfileModal = document.getElementById('editProfileModal');
+        const changeBannerModal = document.getElementById('changeBannerModal');
+        const changePhotoModal = document.getElementById('changePhotoModal');
         const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+        const closeChangeBannerModal = document.getElementById('closeChangeBannerModal');
+        const closeChangePhotoModal = document.getElementById('closeChangePhotoModal');
         const editProfileForm = document.getElementById('editProfileForm');
+        const changeBannerForm = document.getElementById('changeBannerForm');
+        const changePhotoForm = document.getElementById('changePhotoForm');
         const editUsername = document.getElementById('editUsername');
-        const editBanner = document.getElementById('editBanner');
+        const editBannerURL = document.getElementById('editBannerURL');
+        const editPhotoURL = document.getElementById('editPhotoURL');
+        const bannerURL = document.getElementById('bannerURL');
+        const photoURL = document.getElementById('photoURL');
+        const photoPreview = document.getElementById('photoPreview');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        // Variables globales
+        let currentUser = null;
+        let userProfile = null;
+        
+        // Toggle menú móvil
+        mobileMenuBtn.addEventListener('click', () => {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
 
         // Cerrar sesión
         logoutBtn.addEventListener('click', async () => {
             try {
-                await signOut(auth);
+                await logoutUser();
                 window.location.href = 'index.html'; // Redirigir al inicio después de cerrar sesión
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
@@ -205,35 +373,112 @@
             }
         });
 
-        // Mostrar/ocultar modal de edición de perfil
+        // Mostrar/ocultar modales
         editProfileBtn.addEventListener('click', () => {
+            // Prellenar campos con datos actuales
+            if (userProfile) {
+                editUsername.value = userProfile.nombre || currentUser.displayName || '';
+                editBannerURL.value = userProfile.bannerURL || '';
+                editPhotoURL.value = userProfile.photoURL || currentUser.photoURL || '';
+            }
+            
             editProfileModal.classList.remove('hidden');
             editProfileModal.classList.add('flex');
-            
-            // Prellenar campos con datos actuales
-            const user = auth.currentUser;
-            if (user) {
-                getUserProfile(user.uid).then(userProfile => {
-                    editUsername.value = userProfile?.nombre || user.displayName || '';
-                    editBanner.value = userProfile?.bannerURL || '';
-                });
+        });
+        
+        editBannerBtn.addEventListener('click', () => {
+            if (userProfile) {
+                bannerURL.value = userProfile.bannerURL || '';
             }
+            
+            changeBannerModal.classList.remove('hidden');
+            changeBannerModal.classList.add('flex');
+        });
+        
+        editProfileImageBtn.addEventListener('click', () => {
+            if (userProfile) {
+                photoURL.value = userProfile.photoURL || currentUser.photoURL || '';
+                updatePhotoPreview(photoURL.value);
+            }
+            
+            changePhotoModal.classList.remove('hidden');
+            changePhotoModal.classList.add('flex');
         });
 
         closeEditProfileModal.addEventListener('click', () => {
             editProfileModal.classList.add('hidden');
             editProfileModal.classList.remove('flex');
         });
+        
+        closeChangeBannerModal.addEventListener('click', () => {
+            changeBannerModal.classList.add('hidden');
+            changeBannerModal.classList.remove('flex');
+        });
+        
+        closeChangePhotoModal.addEventListener('click', () => {
+            changePhotoModal.classList.add('hidden');
+            changePhotoModal.classList.remove('flex');
+        });
+        
+        // Actualizar vista previa de foto de perfil
+        photoURL.addEventListener('input', function() {
+            updatePhotoPreview(this.value);
+        });
+        
+        function updatePhotoPreview(url) {
+            if (url) {
+                photoPreview.innerHTML = `<img src="${url}" alt="Preview" class="w-full h-full object-cover">`;
+            } else {
+                photoPreview.innerHTML = `<i class="fas fa-user text-gray-400 text-5xl"></i>`;
+            }
+        }
+        
+        // Seleccionar banner predefinido
+        const predefinedBanners = document.querySelectorAll('[data-banner]');
+        predefinedBanners.forEach(banner => {
+            banner.addEventListener('click', () => {
+                const bannerType = banner.getAttribute('data-banner');
+                let bannerValue = '';
+                
+                switch(bannerType) {
+                    case 'gradient':
+                        bannerValue = 'gradient';
+                        break;
+                    case 'red':
+                        bannerValue = 'red-600';
+                        break;
+                    case 'blue':
+                        bannerValue = 'blue-600';
+                        break;
+                    case 'purple':
+                        bannerValue = 'purple-600';
+                        break;
+                    case 'green':
+                        bannerValue = 'green-600';
+                        break;
+                    case 'yellow':
+                        bannerValue = 'yellow-600';
+                        break;
+                }
+                
+                // Resaltar el banner seleccionado
+                predefinedBanners.forEach(b => b.classList.remove('ring-4', 'ring-orange-500'));
+                banner.classList.add('ring-4', 'ring-orange-500');
+                
+                // Actualizar el campo de URL
+                bannerURL.value = bannerValue;
+            });
+        });
 
         // Guardar cambios del perfil
         editProfileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const user = auth.currentUser;
-            if (!user) return;
+            if (!currentUser) return;
             
             const newUsername = editUsername.value.trim();
-            const newBanner = editBanner.value.trim();
+            const newBannerURL = editBannerURL.value.trim();
+            const newPhotoURL = editPhotoURL.value.trim();
             
             if (newUsername === '') {
                 alert('El nombre de usuario no puede estar vacío');
@@ -241,30 +486,38 @@
             }
             
             // Verificar si el nombre de usuario ya existe
-            if (await checkUsernameExists(newUsername, user.uid)) {
-                alert('Este nombre de usuario ya existe. Por favor, elige otro.');
-                return;
-            }
-            
             try {
+                if (await checkUsernameExists(newUsername, currentUser.uid)) {
+                    alert('Este nombre de usuario ya existe. Por favor, elige otro.');
+                    return;
+                }
+                
                 // Buscar el documento del usuario
-                const q = query(collection(db, "usuarios"), where("uid", "==", user.uid));
+                const usersCollection = collection(db, "usuarios");
+                const q = query(usersCollection, where("uid", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 
                 if (!querySnapshot.empty) {
+                    // Preparar datos a actualizar
+                    const updateData = {
+                        nombre: newUsername
+                    };
+                    
+                    if (newBannerURL) {
+                        updateData.bannerURL = newBannerURL;
+                    }
+                    
+                    if (newPhotoURL) {
+                        updateData.photoURL = newPhotoURL;
+                    }
+                    
                     // Actualizar el documento existente
                     const userDoc = querySnapshot.docs[0];
-                    await updateDoc(doc(db, "usuarios", userDoc.id), {
-                        nombre: newUsername,
-                        bannerURL: newBanner
-                    });
+                    await updateDoc(doc(db, "usuarios", userDoc.id), updateData);
                     
-                    // Actualizar la UI
-                    profileName.textContent = newUsername;
-                    navbarUserName.textContent = newUsername;
-                    if (newBanner) {
-                        profileBanner.style.backgroundImage = `url(${newBanner})`;
-                    }
+                    // Actualizar la UI y datos globales
+                    userProfile = { ...userProfile, ...updateData };
+                    updateProfileUI();
                     
                     // Cerrar el modal
                     editProfileModal.classList.add('hidden');
@@ -279,125 +532,209 @@
                 alert("Error al actualizar el perfil. Inténtalo de nuevo.");
             }
         });
-
-        // Función para verificar si un nombre de usuario ya existe
-        async function checkUsernameExists(username, currentUserId) {
-            const q = query(collection(db, "usuarios"), where("nombre", "==", username));
-            const querySnapshot = await getDocs(q);
+        
+        // Guardar cambios de banner
+        changeBannerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            // Si no hay resultados, el nombre está disponible
-            if (querySnapshot.empty) return false;
+            if (!currentUser) return;
             
-            // Si hay resultados, verificar que no sea el usuario actual
-            return !querySnapshot.docs.some(doc => doc.data().uid === currentUserId);
-        }
-
-        // Función para obtener el perfil del usuario
-        async function getUserProfile(uid) {
+            const newBannerURL = bannerURL.value.trim();
+            
             try {
-                const q = query(collection(db, "usuarios"), where("uid", "==", uid));
+                // Buscar el documento del usuario
+                const usersCollection = collection(db, "usuarios");
+                const q = query(usersCollection, where("uid", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 
                 if (!querySnapshot.empty) {
-                    return querySnapshot.docs[0].data();
+                    // Actualizar el documento existente
+                    const userDoc = querySnapshot.docs[0];
+                    await updateDoc(doc(db, "usuarios", userDoc.id), {
+                        bannerURL: newBannerURL
+                    });
+                    
+                    // Actualizar la UI y datos globales
+                    userProfile.bannerURL = newBannerURL;
+                    updateProfileUI();
+                    
+                    // Cerrar el modal
+                    changeBannerModal.classList.add('hidden');
+                    changeBannerModal.classList.remove('flex');
+                    
+                    alert('Banner actualizado correctamente');
+                } else {
+                    alert('No se encontró tu perfil en la base de datos');
                 }
-                
-                return null;
             } catch (error) {
-                console.error("Error al obtener perfil de usuario:", error);
-                return null;
+                console.error("Error al actualizar el banner:", error);
+                alert("Error al actualizar el banner. Inténtalo de nuevo.");
             }
-        }
-
-        // Función para obtener los badges del usuario
-        async function getUserBadges(uid) {
+        });
+        
+        // Guardar cambios de foto de perfil
+        changePhotoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) return;
+            
+            const newPhotoURL = photoURL.value.trim();
+            
+            if (!newPhotoURL) {
+                alert('Por favor, proporciona una URL válida para tu foto de perfil');
+                return;
+            }
+            
             try {
-                const userBadgesCollection = collection(db, "user_badges");
-                const q = query(userBadgesCollection, where("userId", "==", uid));
+                // Buscar el documento del usuario
+                const usersCollection = collection(db, "usuarios");
+                const q = query(usersCollection, where("uid", "==", currentUser.uid));
                 const querySnapshot = await getDocs(q);
                 
-                // Obtener los IDs de los badges
-                const badgeIds = querySnapshot.docs.map(doc => doc.data().badgeId);
-                
-                // Si no hay badges, retornar array vacío
-                if (badgeIds.length === 0) return [];
-                
-                // Obtener los detalles de cada badge
-                const badgesData = [];
-                for (const badgeId of badgeIds) {
-                    const badgeRef = doc(db, "badges", badgeId);
-                    const badgeSnap = await getDoc(badgeRef);
-                    if (badgeSnap.exists()) {
-                        badgesData.push({
-                            id: badgeId,
-                            ...badgeSnap.data()
-                        });
-                    }
+                if (!querySnapshot.empty) {
+                    // Actualizar el documento existente
+                    const userDoc = querySnapshot.docs[0];
+                    await updateDoc(doc(db, "usuarios", userDoc.id), {
+                        photoURL: newPhotoURL
+                    });
+                    
+                    // Actualizar la UI y datos globales
+                    userProfile.photoURL = newPhotoURL;
+                    updateProfileUI();
+                    
+                    // Cerrar el modal
+                    changePhotoModal.classList.add('hidden');
+                    changePhotoModal.classList.remove('flex');
+                    
+                    alert('Foto de perfil actualizada correctamente');
+                } else {
+                    alert('No se encontró tu perfil en la base de datos');
                 }
-                
-                return badgesData;
             } catch (error) {
-                console.error("Error al obtener badges del usuario:", error);
-                return [];
+                console.error("Error al actualizar la foto de perfil:", error);
+                alert("Error al actualizar la foto de perfil. Inténtalo de nuevo.");
+            }
+        });
+
+        // Función para verificar si un nombre de usuario ya existe
+        async function checkUsernameExists(username, currentUserId) {
+            if (!username) return false;
+            
+            // Si el nombre no ha cambiado, no hay problema
+            if (userProfile && userProfile.nombre === username) {
+                return false;
+            }
+            
+            try {
+                const usersCollection = collection(db, "usuarios");
+                const q = query(usersCollection, where("nombre", "==", username));
+                const querySnapshot = await getDocs(q);
+                
+                // Si no hay resultados, el nombre está disponible
+                if (querySnapshot.empty) return false;
+                
+                // Si hay resultados, verificar que no sea el usuario actual
+                return !querySnapshot.docs.some(doc => doc.data().uid === currentUserId);
+            } catch (error) {
+                console.error("Error al verificar nombre de usuario:", error);
+                return true; // Por seguridad, asumimos que existe
+            }
+        }
+        
+        // Función para actualizar la UI con los datos del perfil
+        function updateProfileUI() {
+            if (!currentUser) return;
+            
+            // Nombre de usuario y email
+            profileName.textContent = userProfile?.nombre || currentUser.displayName || 'Usuario';
+            profileEmail.textContent = currentUser.email || '';
+            navbarUserName.textContent = userProfile?.nombre || currentUser.displayName || 'Usuario';
+            
+            // Foto de perfil
+            const photoSource = userProfile?.photoURL || currentUser.photoURL;
+            if (photoSource) {
+                profileImage.src = photoSource;
+                navbarUserImage.src = photoSource;
+            }
+            
+            // Banner de perfil
+            if (userProfile?.bannerURL) {
+                const bannerValue = userProfile.bannerURL;
+                
+                // Verificar si es un banner predefinido o una URL
+                if (bannerValue === 'gradient') {
+                    profileBanner.style.backgroundImage = 'linear-gradient(135deg, #0042ff, #ff3000)';
+                } else if (bannerValue.includes('-')) {
+                    // Es un color de Tailwind
+                    profileBanner.style.backgroundImage = 'none';
+                    profileBanner.className = `profile-banner bg-${bannerValue}`;
+                } else {
+                    // Es una URL
+                    profileBanner.style.backgroundImage = `url(${bannerValue})`;
+                    profileBanner.className = 'profile-banner';
+                }
+            } else {
+                // Banner por defecto
+                profileBanner.style.backgroundImage = 'linear-gradient(135deg, #0042ff, #ff3000)';
+                profileBanner.className = 'profile-banner gradient-background';
+            }
+            
+            // Puntos y ranking
+            if (userProfile) {
+                userPoints.textContent = userProfile.puntos || 0;
+                // Aquí puedes agregar la lógica para el ranking
             }
         }
 
         // Cargar datos del perfil cuando el usuario está autenticado
         auth.onAuthStateChanged(async user => {
             if (user) {
-                // Datos básicos del usuario
-                profileName.textContent = user.displayName || 'Usuario';
-                profileEmail.textContent = user.email || '';
-                navbarUserName.textContent = user.displayName || 'Usuario';
+                currentUser = user;
                 
-                if (user.photoURL) {
-                    profileImage.src = user.photoURL;
-                    navbarUserImage.src = user.photoURL;
-                }
-                
-                // Obtener datos adicionales del perfil
-                const userProfile = await getUserProfile(user.uid);
-                if (userProfile) {
-                    profileName.textContent = userProfile.nombre || user.displayName || 'Usuario';
-                    navbarUserName.textContent = userProfile.nombre || user.displayName || 'Usuario';
-                    userPoints.textContent = userProfile.puntos || 0;
+                try {
+                    // Obtener datos adicionales del perfil
+                    userProfile = await getUserProfile(user.uid);
                     
-                    if (userProfile.bannerURL) {
-                        profileBanner.style.backgroundImage = `url(${userProfile.bannerURL})`;
+                    // Actualizar UI con los datos del perfil
+                    updateProfileUI();
+                    
+                    // Obtener badges del usuario
+                    const badges = await getUserBadges(user.uid);
+                    
+                    // Mostrar badges
+                    if (badges && badges.length > 0) {
+                        userBadges.innerHTML = ''; // Limpiar contenedor
+                        
+                        badges.forEach(badge => {
+                            const badgeElement = document.createElement('div');
+                            badgeElement.className = 'flex flex-col items-center';
+                            
+                            if (badge.imageUrl) {
+                                badgeElement.innerHTML = `
+                                    <img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-16 h-16 rounded-full">
+                                    <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
+                                `;
+                            } else {
+                                const badgeColor = badge.color || '#ff6b1a';
+                                badgeElement.innerHTML = `
+                                    <div class="badge text-2xl" style="background-color: ${badgeColor}">
+                                        <i class="fas fa-${badge.icono || 'award'}"></i>
+                                    </div>
+                                    <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
+                                `;
+                            }
+                            
+                            userBadges.appendChild(badgeElement);
+                        });
                     }
-                }
-                
-                // Obtener badges del usuario
-                const badges = await getUserBadges(user.uid);
-                if (badges.length > 0) {
-                    userBadges.innerHTML = ''; // Limpiar mensaje por defecto
                     
-                    badges.forEach(badge => {
-                        const badgeElement = document.createElement('div');
-                        badgeElement.className = 'flex flex-col items-center';
-                        
-                        if (badge.imageUrl) {
-                            badgeElement.innerHTML = `
-                                <img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-16 h-16 rounded-full">
-                                <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
-                            `;
-                        } else {
-                            const badgeColor = badge.color || '#ff6b1a';
-                            badgeElement.innerHTML = `
-                                <div class="badge text-2xl" style="background-color: ${badgeColor}">
-                                    <i class="fas fa-${badge.icono || 'award'}"></i>
-                                </div>
-                                <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
-                            `;
-                        }
-                        
-                        userBadges.appendChild(badgeElement);
-                    });
+                    // Aquí puedes agregar código para cargar el historial de torneos
+                    // Todo este código es una simulación. En la implementación real,
+                    // deberías obtener estos datos de tu base de datos Firebase.
+                
+                } catch (error) {
+                    console.error("Error al cargar datos del perfil:", error);
                 }
-                
-                // Aquí puedes agregar código para cargar el historial de torneos
-                // y actualizar la posición en el ranking
-                
             } else {
                 // Si no hay usuario autenticado, redirigir al inicio
                 window.location.href = 'index.html';
