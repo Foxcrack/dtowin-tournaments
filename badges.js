@@ -3,7 +3,7 @@ import { db, auth, storage } from './firebase.js';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
-// Crear un nuevo badge (solo host)
+// Función para crear un badge con imagen PNG
 export async function createBadge(badgeData, imageFile) {
   try {
     const user = auth.currentUser;
@@ -17,20 +17,30 @@ export async function createBadge(badgeData, imageFile) {
       throw new Error("Solo el host puede crear badges");
     }
     
-    // Subir imagen del badge
+    // Subir imagen del badge (PNG)
     let imageUrl = null;
     if (imageFile) {
+      // Verificar que sea un archivo de imagen (PNG preferiblemente)
+      if (!imageFile.type.startsWith('image/')) {
+        throw new Error("El archivo debe ser una imagen");
+      }
+      
+      // Referencia única para el archivo en Storage
       const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
+      
+      // Subir el archivo
       await uploadBytes(storageRef, imageFile);
+      
+      // Obtener la URL de descarga
       imageUrl = await getDownloadURL(storageRef);
     }
     
-    // Añadir badge a Firestore
+    // Añadir badge con imagen PNG a Firestore
     const badgeRef = await addDoc(collection(db, "badges"), {
       nombre: badgeData.nombre,
       descripcion: badgeData.descripcion,
       imageUrl: imageUrl,
-      color: badgeData.color || "#ff6b1a", // Color naranja por defecto
+      color: badgeData.color || "#ff6b1a", // Color de fondo opcional para badges sin transparencia
       createdBy: user.uid,
       createdAt: new Date()
     });
@@ -153,55 +163,6 @@ export async function assignBadgeToTournament(badgeId, tournamentId, position) {
     return { success: true };
   } catch (error) {
     console.error("Error al asignar badge al torneo:", error);
-    throw error;
-  }
-}
-
-// Función para crear un badge con imagen PNG
-export async function createBadge(badgeData, imageFile) {
-  try {
-    const user = auth.currentUser;
-    
-    // Verificar si el usuario es host
-    const usersCollection = collection(db, "usuarios");
-    const q = query(usersCollection, where("uid", "==", user.uid), where("isHost", "==", true));
-    const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      throw new Error("Solo el host puede crear badges");
-    }
-    
-    // Subir imagen del badge (PNG)
-    let imageUrl = null;
-    if (imageFile) {
-      // Verificar que sea un archivo de imagen (PNG preferiblemente)
-      if (!imageFile.type.startsWith('image/')) {
-        throw new Error("El archivo debe ser una imagen");
-      }
-      
-      // Referencia única para el archivo en Storage
-      const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-      
-      // Subir el archivo
-      await uploadBytes(storageRef, imageFile);
-      
-      // Obtener la URL de descarga
-      imageUrl = await getDownloadURL(storageRef);
-    }
-    
-    // Añadir badge con imagen PNG a Firestore
-    const badgeRef = await addDoc(collection(db, "badges"), {
-      nombre: badgeData.nombre,
-      descripcion: badgeData.descripcion,
-      imageUrl: imageUrl,
-      color: badgeData.color || "#ff6b1a", // Color de fondo opcional para badges sin transparencia
-      createdBy: user.uid,
-      createdAt: new Date()
-    });
-    
-    return { id: badgeRef.id };
-  } catch (error) {
-    console.error("Error al crear badge:", error);
     throw error;
   }
 }
