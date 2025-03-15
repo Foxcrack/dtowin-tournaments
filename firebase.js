@@ -1,6 +1,6 @@
 // Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
@@ -47,6 +47,37 @@ export async function loginWithGoogle() {
     return user;
   } catch (error) {
     console.error("Error al iniciar sesión:", error);
+    throw error;
+  }
+}
+
+// Función para cerrar sesión
+export async function logoutUser() {
+  try {
+    await signOut(auth);
+    return { success: true };
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+    throw error;
+  }
+}
+
+// Función para obtener perfil de usuario
+export async function getUserProfile(uid) {
+  try {
+    const userQuery = query(collection(db, "usuarios"), where("uid", "==", uid));
+    const querySnapshot = await getDocs(userQuery);
+    
+    if (!querySnapshot.empty) {
+      return {
+        id: querySnapshot.docs[0].id,
+        ...querySnapshot.docs[0].data()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error al obtener perfil de usuario:", error);
     throw error;
   }
 }
