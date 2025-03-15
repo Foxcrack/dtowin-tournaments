@@ -330,7 +330,7 @@
         </div>
     </div>
 
-    <!-- Login Modal (REEMPLAZA COMPLETAMENTE TU MODAL DE LOGIN CON ESTO) -->
+    <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
             <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
@@ -444,7 +444,13 @@
     <!-- Scripts -->
     <script type="module">
         // Importar funciones de Firebase
-        import { loginWithGoogle, auth, getUserProfile } from './firebase.js';
+        import { 
+            loginWithGoogle, 
+            auth, 
+            getUserProfile, 
+            checkRedirectResult,
+            logoutUser
+        } from './firebase.js';
         
         // Referencias a elementos DOM
         const loginBtn = document.getElementById('loginBtn');
@@ -461,6 +467,8 @@
         const tournamentButtons = document.querySelectorAll('.tournament-btn');
         const googleLoginBtn = document.getElementById('googleLoginBtn');
         const googleRegisterBtn = document.querySelector('.google-register-btn');
+        const loginErrorMsg = document.getElementById('loginErrorMsg');
+        const registerErrorMsg = document.getElementById('registerErrorMsg');
         
         // Inicializar evento para menú móvil
         if (mobileMenuBtn) {
@@ -478,22 +486,36 @@
         // Función para mostrar el modal de login
         function showLoginModal() {
             if (loginModal) {
-                document.getElementById('loginErrorMsg').textContent = ''; // Limpiar errores previos
+                if (loginErrorMsg) loginErrorMsg.textContent = ''; // Limpiar errores previos
                 loginModal.classList.remove('hidden');
                 loginModal.classList.add('flex');
             }
         }
         
+        // Función para mostrar el modal de registro
+        function showRegisterModal() {
+            if (registroModal) {
+                if (registerErrorMsg) registerErrorMsg.textContent = ''; // Limpiar errores previos
+                registroModal.classList.remove('hidden');
+                registroModal.classList.add('flex');
+            }
+        }
+        
         // Eventos para mostrar/ocultar modales
         if (loginBtn) {
-            loginBtn.addEventListener('click', showLoginModal);
+            loginBtn.addEventListener('click', function() {
+                if (auth.currentUser) {
+                    // Si ya inició sesión, redirigir al perfil
+                    window.location.href = 'perfil.html';
+                } else {
+                    showLoginModal();
+                }
+            });
         }
         
         if (registerBtn) {
             registerBtn.addEventListener('click', () => {
-                document.getElementById('registerErrorMsg').textContent = ''; // Limpiar errores previos
-                registroModal.classList.remove('hidden');
-                registroModal.classList.add('flex');
+                showRegisterModal();
             });
         }
         
@@ -515,19 +537,57 @@
             showRegisterLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 loginModal.classList.add('hidden');
-                registroModal.classList.remove('hidden');
-                registroModal.classList.add('flex');
+                showRegisterModal();
             });
         }
         
-        // Función específica para manejar el inicio de sesión con Google (REEMPLAZA LA FUNCIÓN ANTERIOR)
+        // Función para mostrar notificaciones
+        function showNotification(message, type = "info") {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            
+            // Clases según el tipo de notificación
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
+            
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Estilos de la notificación
+            notification.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notification.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${message}</span>
+            `;
+            
+            // Añadir al DOM
+            document.body.appendChild(notification);
+            
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notification.classList.add('opacity-0');
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+        
+        // Función específica para manejar el inicio de sesión con Google
         if (googleLoginBtn) {
             googleLoginBtn.addEventListener('click', async () => {
                 try {
                     // Limpiar mensaje de error anterior
-                    const errorMsgElement = document.getElementById('loginErrorMsg');
-                    if (errorMsgElement) {
-                        errorMsgElement.textContent = '';
+                    if (loginErrorMsg) {
+                        loginErrorMsg.textContent = '';
                     }
                     
                     console.log("Iniciando proceso de login con Google...");
@@ -539,14 +599,22 @@
                     
                     // Intentar iniciar sesión
                     const user = await loginWithGoogle();
-                    console.log("Login exitoso, usuario:", user.uid);
-                    
-                    // Cerrar el modal de login
-                    loginModal.classList.add('hidden');
-                    loginModal.classList.remove('flex');
-                    
-                    // Actualizar la interfaz
-                    updateUIForLoggedInUser(user);
+                    if (user) {
+                        console.log("Login exitoso, usuario:", user.uid);
+                        
+                        // Cerrar el modal de login
+                        loginModal.classList.add('hidden');
+                        loginModal.classList.remove('flex');
+                        
+                        // Actualizar la interfaz
+                        updateUIForLoggedInUser(user);
+                        
+                        // Mostrar notificación
+                        showNotification("Inicio de sesión exitoso", "success");
+                    } else {
+                        // Si es null, probablemente usó redirect y la página se recargará
+                        console.log("Redirigiendo para autenticación...");
+                    }
                     
                 } catch (error) {
                     console.error("Error en inicio de sesión con Google:", error);
@@ -555,28 +623,11 @@
                     googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
                     googleLoginBtn.disabled = false;
                     
-                    // Mostrar mensaje de error apropiado
-                    let errorMessage = "Error al iniciar sesión. Inténtalo de nuevo.";
-                    
-                    if (error.code === 'auth/popup-blocked') {
-                        errorMessage = "El navegador ha bloqueado la ventana emergente. Por favor, permite ventanas emergentes para este sitio.";
-                    } else if (error.code === 'auth/popup-closed-by-user') {
-                        errorMessage = "Has cerrado la ventana de inicio de sesión. Inténtalo de nuevo.";
-                    } else if (error.code === 'auth/cancelled-popup-request') {
-                        errorMessage = "La solicitud fue cancelada. Inténtalo de nuevo.";
-                    } else if (error.code === 'auth/unauthorized-domain') {
-                        errorMessage = "Este dominio no está autorizado para iniciar sesión. Contacta al administrador.";
-                    } else if (error.code === 'auth/operation-not-allowed') {
-                        errorMessage = "El inicio de sesión con Google no está habilitado. Contacta al administrador.";
-                    } else if (error.code === 'auth/user-disabled') {
-                        errorMessage = "Esta cuenta ha sido deshabilitada. Contacta al soporte.";
-                    }
-                    
-                    const errorMsgElement = document.getElementById('loginErrorMsg');
-                    if (errorMsgElement) {
-                        errorMsgElement.textContent = errorMessage;
+                    // Mostrar mensaje de error
+                    if (loginErrorMsg) {
+                        loginErrorMsg.textContent = error.message || "Error al iniciar sesión. Inténtalo de nuevo.";
                     } else {
-                        alert(errorMessage);
+                        showNotification(error.message || "Error al iniciar sesión. Inténtalo de nuevo.", "error");
                     }
                 }
             });
@@ -587,9 +638,8 @@
             googleRegisterBtn.addEventListener('click', async () => {
                 try {
                     // Limpiar mensaje de error anterior
-                    const errorMsgElement = document.getElementById('registerErrorMsg');
-                    if (errorMsgElement) {
-                        errorMsgElement.textContent = '';
+                    if (registerErrorMsg) {
+                        registerErrorMsg.textContent = '';
                     }
                     
                     console.log("Iniciando proceso de registro con Google...");
@@ -601,14 +651,22 @@
                     
                     // Usar la misma función de login, ya que Firebase maneja automáticamente si es nuevo usuario
                     const user = await loginWithGoogle();
-                    console.log("Registro/login exitoso, usuario:", user.uid);
-                    
-                    // Cerrar el modal de registro
-                    registroModal.classList.add('hidden');
-                    registroModal.classList.remove('flex');
-                    
-                    // Actualizar la interfaz
-                    updateUIForLoggedInUser(user);
+                    if (user) {
+                        console.log("Registro/login exitoso, usuario:", user.uid);
+                        
+                        // Cerrar el modal de registro
+                        registroModal.classList.add('hidden');
+                        registroModal.classList.remove('flex');
+                        
+                        // Actualizar la interfaz
+                        updateUIForLoggedInUser(user);
+                        
+                        // Mostrar notificación
+                        showNotification("Registro exitoso", "success");
+                    } else {
+                        // Si es null, probablemente usó redirect y la página se recargará
+                        console.log("Redirigiendo para autenticación...");
+                    }
                     
                 } catch (error) {
                     console.error("Error en registro con Google:", error);
@@ -617,22 +675,11 @@
                     googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
                     googleRegisterBtn.disabled = false;
                     
-                    // Mostrar mensaje de error apropiado
-                    let errorMessage = "Error al registrarse. Inténtalo de nuevo.";
-                    
-                    if (error.code === 'auth/popup-blocked') {
-                        errorMessage = "El navegador ha bloqueado la ventana emergente. Por favor, permite ventanas emergentes para este sitio.";
-                    } else if (error.code === 'auth/popup-closed-by-user') {
-                        errorMessage = "Has cerrado la ventana de registro. Inténtalo de nuevo.";
-                    } else if (error.code === 'auth/unauthorized-domain') {
-                        errorMessage = "Este dominio no está autorizado para registro. Contacta al administrador.";
-                    }
-                    
-                    const errorMsgElement = document.getElementById('registerErrorMsg');
-                    if (errorMsgElement) {
-                        errorMsgElement.textContent = errorMessage;
+                    // Mostrar mensaje de error
+                    if (registerErrorMsg) {
+                        registerErrorMsg.textContent = error.message || "Error al registrarse. Inténtalo de nuevo.";
                     } else {
-                        alert(errorMessage);
+                        showNotification(error.message || "Error al registrarse. Inténtalo de nuevo.", "error");
                     }
                 }
             });
@@ -652,10 +699,9 @@
                 console.log("Perfil de usuario:", userProfile);
                 
                 // Cambiar el botón de login por información del usuario
-                // IMPORTANTE: Texto en negro (text-gray-800) con fondo blanco
                 loginBtn.innerHTML = `
                     <div class="flex items-center bg-white rounded-lg px-3 py-1">
-                        <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <img src="${userProfile?.photoURL || user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
                         <span class="text-gray-800 font-medium">${userProfile?.nombre || user.displayName || 'Usuario'}</span>
                     </div>
                 `;
@@ -666,13 +712,14 @@
                     window.location.href = 'perfil.html';
                 });
                 
-                // Desactivar el botón de registro
+                // Ocultar el botón de registro
                 if (registerBtn) {
                     registerBtn.style.display = 'none';
                 }
                 
             } catch (error) {
                 console.error("Error al actualizar UI:", error);
+                showNotification("Error al cargar perfil de usuario", "error");
             }
         }
         
@@ -682,9 +729,9 @@
                 // Verificar si el usuario está autenticado
                 if (auth.currentUser) {
                     const tournamentName = button.closest('.tournament-card').querySelector('h3').textContent;
-                    alert(`Te has inscrito al torneo: ${tournamentName}`);
+                    showNotification(`Te has inscrito al torneo: ${tournamentName}`, "success");
                 } else {
-                    alert('Debes iniciar sesión para inscribirte a un torneo');
+                    showNotification('Debes iniciar sesión para inscribirte a un torneo', "warning");
                     showLoginModal();
                 }
             });
@@ -694,22 +741,34 @@
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                alert('Esta funcionalidad utilizaría firebase.js para autenticar al usuario.');
-                // En una implementación real, llamarías a la función de login
+                showNotification("El inicio de sesión con correo y contraseña estará disponible próximamente", "info");
             });
         }
         
         if (registroForm) {
             registroForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                alert('Esta funcionalidad utilizaría firebase.js para registrar al usuario.');
-                // En una implementación real, llamarías a la función de registro
+                showNotification("El registro con correo y contraseña estará disponible próximamente", "info");
             });
         }
         
         // Verificar si el usuario ya está logueado al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             console.log("Verificando estado de autenticación...");
+            
+            // Verificar resultado de redirección
+            try {
+                const redirectUser = await checkRedirectResult();
+                if (redirectUser) {
+                    console.log("Usuario autenticado por redirección:", redirectUser.uid);
+                    updateUIForLoggedInUser(redirectUser);
+                    showNotification("Inicio de sesión exitoso", "success");
+                }
+            } catch (error) {
+                console.error("Error al verificar resultado de redirección:", error);
+            }
+            
+            // Verificar estado actual
             auth.onAuthStateChanged(async user => {
                 if (user) {
                     console.log("Usuario ya autenticado:", user.uid);
