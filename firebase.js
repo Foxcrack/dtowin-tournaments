@@ -7,7 +7,9 @@ import {
   signOut,
   onAuthStateChanged,
   getRedirectResult,
-  signInWithRedirect
+  signInWithRedirect,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { 
   getFirestore, 
@@ -45,6 +47,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
+
+// Configurar persistencia de sesión
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Persistencia de sesión configurada correctamente");
+  })
+  .catch((error) => {
+    console.error("Error al configurar persistencia de sesión:", error);
+  });
 
 // Configuración personalizada del provider
 provider.setCustomParameters({
@@ -209,6 +220,12 @@ export async function logoutUser() {
 export async function getUserProfile(uid) {
   try {
     console.log("Obteniendo perfil del usuario:", uid);
+    
+    if (!uid) {
+      console.error("UID no proporcionado");
+      return null;
+    }
+    
     const userQuery = query(collection(db, "usuarios"), where("uid", "==", uid));
     const querySnapshot = await getDocs(userQuery);
     
@@ -221,11 +238,40 @@ export async function getUserProfile(uid) {
       return userData;
     }
     
+    // Si el usuario no existe en la base de datos pero existe en auth, crearlo
+    const user = auth.currentUser;
+    if (user && user.uid === uid) {
+      console.log("Creando perfil de usuario nuevo para:", uid);
+      
+      // Crear nuevo usuario en Firestore
+      const newUserRef = await addDoc(collection(db, "usuarios"), {
+        uid: user.uid,
+        nombre: user.displayName || "Usuario",
+        email: user.email,
+        photoURL: user.photoURL,
+        puntos: 0,
+        fechaRegistro: serverTimestamp(),
+        ultimoLogin: serverTimestamp(),
+        isHost: false
+      });
+      
+      // Obtener el usuario recién creado
+      const newUserDoc = await getDoc(newUserRef);
+      const newUserData = {
+        id: newUserRef.id,
+        ...newUserDoc.data()
+      };
+      
+      console.log("Nuevo perfil creado:", newUserData);
+      return newUserData;
+    }
+    
     console.log("No se encontró perfil para el usuario", uid);
     return null;
   } catch (error) {
     console.error("Error al obtener perfil de usuario:", error);
-    throw error;
+    // En lugar de lanzar el error, retornar null para evitar errores en cascada
+    return null;
   }
 }
 
