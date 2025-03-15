@@ -1,4 +1,4 @@
-// Import Firebase SDK - VERSIÓN SIMPLIFICADA
+// Import Firebase SDK - VERSIÓN CON PERMISOS ADECUADOS
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import { 
   getAuth, 
@@ -17,6 +17,7 @@ import {
   query, 
   where, 
   doc, 
+  getDoc,
   updateDoc,
   serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
@@ -59,6 +60,12 @@ provider.setCustomParameters({
   prompt: 'select_account'
 });
 
+// Lista de administradores por defecto - AGREGA AQUÍ LOS UIDs DE ADMINISTRADORES
+const adminUIDs = [
+  "dvb1Fee1ZnVKJNWBOR22tSAsNeT2"  // UID del administrador principal
+  // Puedes agregar más UIDs aquí
+];
+
 // Función para inicio de sesión con Google
 export async function loginWithGoogle() {
   try {
@@ -78,6 +85,10 @@ export async function loginWithGoogle() {
     // Si no existe, créalo
     if (querySnapshot.empty) {
       console.log("Usuario nuevo, creando perfil en la base de datos...");
+      
+      // Verificar si el usuario debe ser administrador
+      const isAdmin = adminUIDs.includes(user.uid);
+      
       await addDoc(collection(db, "usuarios"), {
         uid: user.uid,
         nombre: user.displayName,
@@ -86,9 +97,9 @@ export async function loginWithGoogle() {
         puntos: 0,
         fechaRegistro: serverTimestamp(),
         ultimoLogin: serverTimestamp(),
-        isHost: true // Todos los usuarios son host por ahora
+        isHost: isAdmin // Solo es host si está en la lista de administradores
       });
-      console.log("Perfil de usuario creado exitosamente");
+      console.log("Perfil de usuario creado exitosamente", isAdmin ? "(con privilegios de administrador)" : "");
     } else {
       console.log("Usuario ya existe en la base de datos");
       // Actualizar fecha de último login
@@ -119,7 +130,7 @@ export async function logoutUser() {
   }
 }
 
-// Función para obtener perfil de usuario - Simplificada
+// Función para obtener perfil de usuario
 export async function getUserProfile(uid) {
   try {
     console.log("Obteniendo perfil del usuario:", uid);
@@ -148,10 +159,34 @@ export async function getUserProfile(uid) {
   }
 }
 
-// Función simplificada para verificar si un usuario es host
-export async function isUserHost() {
-  // Por ahora, todos son administradores
-  return true;
+// Función para verificar si un usuario es host
+export async function isUserHost(uid) {
+  try {
+    const userId = uid || (auth.currentUser ? auth.currentUser.uid : null);
+    
+    if (!userId) {
+      return false;
+    }
+    
+    // Verificar si el UID está en la lista de administradores predefinidos
+    if (adminUIDs.includes(userId)) {
+      return true;
+    }
+    
+    // Si no está en la lista, verificar en la base de datos
+    const userQuery = query(collection(db, "usuarios"), where("uid", "==", userId));
+    const querySnapshot = await getDocs(userQuery);
+    
+    if (querySnapshot.empty) {
+      return false;
+    }
+    
+    const userData = querySnapshot.docs[0].data();
+    return userData.isHost === true;
+  } catch (error) {
+    console.error("Error al verificar si el usuario es host:", error);
+    return false;
+  }
 }
 
 // Exporta las funciones y objetos que necesitas
