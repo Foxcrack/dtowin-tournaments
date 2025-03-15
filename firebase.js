@@ -4,14 +4,14 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstati
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
-// Tu configuración (copia lo que te dio Firebase)
+// Tu configuración de Firebase (reemplaza con tus propios valores)
 const firebaseConfig = {
-  apiKey: "tu-api-key",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "tu-id",
-  appId: "tu-app-id"
+  apiKey: "REEMPLAZA_CON_TU_API_KEY",
+  authDomain: "REEMPLAZA_CON_TU_AUTH_DOMAIN",
+  projectId: "REEMPLAZA_CON_TU_PROJECT_ID",
+  storageBucket: "REEMPLAZA_CON_TU_STORAGE_BUCKET",
+  messagingSenderId: "REEMPLAZA_CON_TU_MESSAGING_SENDER_ID",
+  appId: "REEMPLAZA_CON_TU_APP_ID"
 };
 
 // Inicializar Firebase
