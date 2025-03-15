@@ -973,5 +973,39 @@
       }
     });
     </script>
+    <!-- Scripts para el panel de administración -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="badges.js"></script>
+<script type="module" src="admin-panel.js"></script>
+<script type="module" src="admin-panel-badges.js"></script>
+<script type="module" src="admin-panel-badge-create.js"></script>
+
+<!-- Estilos adicionales para el spinner -->
+<style>
+.spinner {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Estilos para el módulo de badges */
+.badge {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    color: white;
+    font-size: 1.2rem;
+}
+
+/* Estilos para notificaciones */
+.notification {
+    transition: opacity 0.5s ease-in-out;
+}
+</style>
 </body>
 </html>
