@@ -1,1 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-2">
+                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
+                    <span class="hidden md:inline">Admin</span>
+                </div>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Main Content -->
+    <div class="container mx-auto mt-8 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Sidebar -->
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <ul>
+                        <li>
+                            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold" onclick="showSection('dashboard')">
+                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('torneos')">
+                                <i class="fas fa-trophy mr-2"></i> Torneos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('participantes')">
+                                <i class="fas fa-users mr-2"></i> Participantes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('badges')">
+                                <i class="fas fa-certificate mr-2"></i> Badges
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('resultados')">
+                                <i class="fas fa-chart-line mr-2"></i> Resultados
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100" onclick="showSection('configuracion')">
+                                <i class="fas fa-cog mr-2"></i> Configuración
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-4">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-blue-500 text-white rounded-lg p-4 flex items-center">
+                            <div class="text-4xl mr-4">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm opacity-80">Total Usuarios</p>
+                                <p class="text-2xl font-bold">254</p>
+                            </div>
+                        </div>
+                        <div class="bg-green-500 text-white rounded-lg p-4 flex items-center">
+                            <div class="text-4xl mr-4">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm opacity-80">Torneos Activos</p>
+                                <p class="text-2xl font-bold">3</p>
+                            </div>
+                        </div>
+                        <div class="dtowin-primary text-white rounded-lg p-4 flex items-center">
+                            <div class="text-4xl mr-4">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm opacity-80">Badges Otorgados</p>
+                                <p class="text-2xl font-bold">128</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold mb-4">Próximos Torneos</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                    <th class="py-3 px-4 text-left">Nombre</th>
+                                    <th class="py-3 px-4 text-left">Fecha</th>
+                                    <th class="py-3 px-4 text-left">Inscritos</th>
+                                    <th class="py-3 px-4 text-left">Estado</th>
+                                    <th class="py-3 px-4 text-left">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">Torneo de Verano 2025</td>
+                                    <td class="py-3 px-4">15 de Marzo, 2025</td>
+                                    <td class="py-3 px-4">24 / 32</td>
+                                    <td class="py-3 px-4"><span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Abierto</span></td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">Campeonato Regional</td>
+                                    <td class="py-3 px-4">5 de Abril, 2025</td>
+                                    <td class="py-3 px-4">12 / 40</td>
+                                    <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-600 py-1 px-2 rounded text-xs">Próximo</span></td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4">Evento Especial</td>
+                                    <td class="py-3 px-4">25 de Marzo, 2025</td>
+                                    <td class="py-3 px-4">18 / 20</td>
+                                    <td class="py-3 px-4"><span class="bg-purple-100 text-purple-600 py-1 px-2 rounded text-xs">Badge Especial</span></td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Torneos Section (oculto por defecto) -->
+                <div id="torneos" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="flex justify-between mb-6">
+                        <h2 class="text-2xl font-bold">Gestión de Torneos</h2>
+                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            <i class="fas fa-plus mr-2"></i>Crear Torneo
+                        </button>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                            <h3 class="font-semibold text-lg mb-2">Crear Nuevo Torneo</h3>
+                            <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">
+                                        Nombre del Torneo
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombre" type="text" placeholder="Nombre del torneo">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha">
+                                        Fecha
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="fecha" type="date">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="hora">
+                                        Hora
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="hora" type="time">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="capacidad">
+                                        Capacidad
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="capacidad" type="number" min="1" placeholder="32">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="estado">
+                                        Estado
+                                    </label>
+                                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="estado">
+                                        <option>Próximamente</option>
+                                        <option>Inscripciones Abiertas</option>
+                                        <option>En Progreso</option>
+                                        <option>Finalizado</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcion">
+                                        Descripción
+                                    </label>
+                                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcion" rows="3" placeholder="Descripción del torneo"></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                                        Puntos por Posición
+                                    </label>
+                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                                        <div>
+                                            <label class="text-xs">1° Lugar</label>
+                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="5">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">2° Lugar</label>
+                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="4">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">3° Lugar</label>
+                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="3">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">4° Lugar</label>
+                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="2">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs">5° Lugar</label>
+                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="1">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="imagen">
+                                        Imagen del Torneo
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="imagen" type="file">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                                        Badges para el Torneo
+                                    </label>
+                                    <div class="flex flex-wrap gap-2 mb-2">
+                                        <div class="bg-gray-100 p-2 rounded-lg flex items-center">
+                                            <img src="https://via.placeholder.com/30" alt="Badge" class="w-8 h-8 rounded-full mr-2">
+                                            <span class="mr-4">Campeón de Verano</span>
+                                            <select class="text-sm border rounded px-2 py-1">
+                                                <option>1° Lugar</option>
+                                                <option>Top 3</option>
+                                                <option>Todos</option>
+                                            </select>
+                                        </div>
+                                        <button class="dtowin-blue text-white px-3 py-1 rounded font-semibold text-sm hover:opacity-90 transition">
+                                            <i class="fas fa-plus mr-1"></i>Añadir Badge
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2 flex justify-end">
+                                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Crear Torneo</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Badges Section (oculto por defecto) -->
+                <div id="badges" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="flex justify-between mb-6">
+                        <h2 class="text-2xl font-bold">Gestión de Badges</h2>
+                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            <i class="fas fa-plus mr-2"></i>Crear Badge
+                        </button>
+                    </div>
+                    
+                    <!-- Form para crear badge -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <h3 class="font-semibold text-lg mb-2">Crear Nuevo Badge</h3>
+                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
+                                    Nombre del Badge
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
+                                    Descripción
+                                </label>
+                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
+                                    Color
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
+                                    Ícono
+                                </label>
+                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
+                                    <option value="trophy">Trofeo</option>
+                                    <option value="medal">Medalla</option>
+                                    <option value="star">Estrella</option>
+                                    <option value="award">Premio</option>
+                                    <option value="crown">Corona</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
+                                    Imagen del Badge
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="imagenBadge" type="file">
+                            </div>
+                            <div class="flex items-center">
+                                <div class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200">
+                                    <i class="fas fa-trophy text-4xl text-orange-500"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-600">Vista previa</p>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex justify-end">
+                                <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Crear Badge</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Lista de badges -->
+                    <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
+                            <div class="h-16 w-16 bg-yellow-500 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-trophy text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-semibold">Campeón</h4>
+                            <p class="text-sm text-gray-600">Primer lugar en torneo</p>
+                            <div class="mt-2 flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
+                            <div class="h-16 w-16 bg-gray-400 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-medal text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-semibold">Subcampeón</h4>
+                            <p class="text-sm text-gray-600">Segundo lugar en torneo</p>
+                            <div class="mt-2 flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
+                            <div class="h-16 w-16 bg-orange-400 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-award text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-semibold">Bronce</h4>
+                            <p class="text-sm text-gray-600">Tercer lugar en torneo</p>
+                            <div class="mt-2 flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
+                            <div class="h-16 w-16 bg-purple-500 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-star text-white text-2xl"></i>
+                            </div>
+                            <h4 class="font-semibold">Evento Especial</h4>
+                            <p class="text-sm text-gray-600">Participó en evento especial</p>
+                            <div class="mt-2 flex space-x-2">
+                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Participantes Section (oculto por defecto) -->
+                <div id="participantes" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-6">Gestión de Participantes</h2>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between mb-2">
+                            <div class="relative">
+                                <input type="text" placeholder="Buscar participante..." class="border rounded-lg pl-10 pr-4 py-2 w-64">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <div>
+                                <select class="border rounded-lg px-4 py-2">
+                                    <option>Todos los usuarios</option>
+                                    <option>Top 10 leaderboard</option>
+                                    <option>Nuevos usuarios</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                    <th class="py-3 px-4 text-left">Usuario</th>
+                                    <th class="py-3 px-4 text-left">Email</th>
+                                    <th class="py-3 px-4 text-left">Torneos</th>
+                                    <th class="py-3 px-4 text-left">Puntos</th>
+                                    <th class="py-3 px-4 text-left">Badges</th>
+                                    <th class="py-3 px-4 text-left">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                            <span>AlexMaster</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">alex@example.com</td>
+                                    <td class="py-3 px-4">15</td>
+                                    <td class="py-3 px-4">128</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex">
+                                            <span class="badge bg-yellow-500" title="Campeón Nacional"><i class="fas fa-trophy"></i></span>
+                                            <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                            <span>ProGamer123</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">progamer@example.com</td>
+                                    <td class="py-3 px-4">12</td>
+                                    <td class="py-3 px-4">105</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex">
+                                            <span class="badge bg-blue-500" title="Veterano"><i class="fas fa-medal"></i></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                            <span>GameKing</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">gameking@example.com</td>
+                                    <td class="py-3 px-4">10</td>
+                                    <td class="py-3 px-4">87</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex">
+                                            <span class="badge bg-red-500" title="Invicto"><i class="fas fa-fire"></i></span>
+                                            <span class="badge bg-green-500" title="Mejor Novato"><i class="fas fa-award"></i></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                            <span>TournamentPro</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">tournament@example.com</td>
+                                    <td class="py-3 px-4">8</td>
+                                    <td class="py-3 px-4">72</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex">
+                                            <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Modal para asignar badge (normalmente oculto) -->
+                    <div id="asignarBadgeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                            <button id="closeAsignarBadgeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="text-center mb-6">
+                                <h3 class="text-2xl font-bold text-gray-800">Asignar Badge</h3>
+                                <p class="text-gray-600">Selecciona un badge para asignar a <span class="font-semibold">AlexMaster</span></p>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 mb-6">
+                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
+                                    <div class="h-16 w-16 bg-yellow-500 rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-trophy text-white text-2xl"></i>
+                                    </div>
+                                    <p class="font-semibold">Campeón</p>
+                                </div>
+                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
+                                    <div class="h-16 w-16 bg-gray-400 rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-medal text-white text-2xl"></i>
+                                    </div>
+                                    <p class="font-semibold">Subcampeón</p>
+                                </div>
+                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
+                                    <div class="h-16 w-16 bg-orange-400 rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-award text-white text-2xl"></i>
+                                    </div>
+                                    <p class="font-semibold">Bronce</p>
+                                </div>
+                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
+                                    <div class="h-16 w-16 bg-purple-500 rounded-full flex items-center justify-center mb-2">
+                                        <i class="fas fa-star text-white text-2xl"></i>
+                                    </div>
+                                    <p class="font-semibold">Evento Especial</p>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Asignar Badge</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resultados Section (oculto por defecto) -->
+                <div id="resultados" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-6">Resultados de Torneos</h2>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="torneoSelect">
+                            Seleccionar Torneo
+                        </label>
+                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="torneoSelect">
+                            <option>Torneo de Verano 2025</option>
+                            <option>Campeonato Regional</option>
+                            <option>Evento Especial</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <h3 class="font-semibold text-lg mb-4">Registrar Resultados - Torneo de Verano 2025</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                        <th class="py-3 px-4 text-left">Posición</th>
+                                        <th class="py-3 px-4 text-left">Participante</th>
+                                        <th class="py-3 px-4 text-left">Puntos a Asignar</th>
+                                        <th class="py-3 px-4 text-left">Badges</th>
+                                        <th class="py-3 px-4 text-left">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-600">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4 font-bold">1°</td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                                <select class="border rounded py-1 px-2">
+                                                    <option>Seleccionar Participante</option>
+                                                    <option>AlexMaster</option>
+                                                    <option>ProGamer123</option>
+                                                    <option>GameKing</option>
+                                                </select>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <input type="number" value="5" class="border rounded w-16 py-1 px-2">
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <span class="badge bg-yellow-500 mr-2" title="Campeón"><i class="fas fa-trophy"></i></span>
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4 font-bold">2°</td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                                <select class="border rounded py-1 px-2">
+                                                    <option>Seleccionar Participante</option>
+                                                    <option>AlexMaster</option>
+                                                    <option>ProGamer123</option>
+                                                    <option>GameKing</option>
+                                                </select>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <input type="number" value="4" class="border rounded w-16 py-1 px-2">
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <span class="badge bg-gray-400 mr-2" title="Subcampeón"><i class="fas fa-medal"></i></span>
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4 font-bold">3°</td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
+                                                <select class="border rounded py-1 px-2">
+                                                    <option>Seleccionar Participante</option>
+                                                    <option>AlexMaster</option>
+                                                    <option>ProGamer123</option>
+                                                    <option>GameKing</option>
+                                                </select>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <input type="number" value="3" class="border rounded w-16 py-1 px-2">
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <span class="badge bg-orange-400 mr-2" title="Bronce"><i class="fas fa-award"></i></span>
+                                                <button class="text-blue-500 hover:text-blue-700">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Resultados</button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border rounded-lg p-4 shadow-sm">
+                        <h3 class="font-semibold text-lg mb-3">Historial de Resultados</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                        <th class="py-3 px-4 text-left">Torneo</th>
+                                        <th class="py-3 px-4 text-left">Fecha</th>
+                                        <th class="py-3 px-4 text-left">Participantes</th>
+                                        <th class="py-3 px-4 text-left">Ganador</th>
+                                        <th class="py-3 px-4 text-left">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-600">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4">Evento Especial</td>
+                                        <td class="py-3 px-4">10 de Febrero, 2025</td>
+                                        <td class="py-3 px-4">20</td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <img src="https://via.placeholder.com/40" alt="User" class="w-6 h-6 rounded-full mr-2">
+                                                <span>AlexMaster</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-3 px-4">Copa de Invierno</td>
+                                        <td class="py-3 px-4">5 de Enero, 2025</td>
+                                        <td class="py-3 px-4">32</td>
+                                        <td class="py-3 px-4">
+                                            <div class="flex items-center">
+                                                <img src="https://via.placeholder.com/40" alt="User" class="w-6 h-6 rounded-full mr-2">
+                                                <span>GameKing</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configuración Section (oculto por defecto) -->
+                <div id="configuracion" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-6">Configuración de la Plataforma</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-3">Configuración General</h3>
+                            <form>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreSitio">
+                                        Nombre del Sitio
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreSitio" type="text" value="Dtowin Torneos">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="logoSitio">
+                                        Logo del Sitio
+                                    </label>
+                                    <div class="flex items-center">
+                                        <img src="https://via.placeholder.com/100" alt="Current Logo" class="w-12 h-12 rounded-full mr-3">
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="logoSitio" type="file">
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="colorPrimario">
+                                        Color Primario
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorPrimario" type="color" value="#ff6b1a">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionSitio">
+                                        Descripción del Sitio
+                                    </label>
+                                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionSitio" rows="3">Plataforma oficial de torneos Dtowin. Participa, compite y gana puntos para escalar en el ranking.</textarea>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-3">Notificaciones y Emails</h3>
+                            <form>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                                        Notificaciones por Email
+                                    </label>
+                                    <div class="bg-white p-3 rounded border mb-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <span>Nuevos registros de usuarios</span>
+                                        </label>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border mb-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <span>Inscripciones a torneos</span>
+                                        </label>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border mb-2">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <span>Resultados de torneos</span>
+                                        </label>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="checkbox" class="w-4 h-4 mr-2">
+                                            <span>Reportes semanales</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="emailAdmin">
+                                        Email de Administrador
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="emailAdmin" type="email" value="admin@dtowin.com">
+                                </div>
+                                <div class="flex justify-end">
+                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-3">Seguridad</h3>
+                            <form>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordActual">
+                                        Contraseña Actual
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordActual" type="password" placeholder="••••••••">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordNueva">
+                                        Nueva Contraseña
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordNueva" type="password" placeholder="••••••••">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordConfirmar">
+                                        Confirmar Contraseña
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordConfirmar" type="password" placeholder="••••••••">
+                                </div>
+                                <div class="flex justify-end">
+                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Cambiar Contraseña</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg mb-3">Exportar/Importar Datos</h3>
+                            <div class="mb-4">
+                                <p class="text-gray-600 mb-3">Exporta todos los datos de la plataforma o importa datos existentes.</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button class="dtowin-blue text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                        <i class="fas fa-download mr-2"></i>Exportar Datos
+                                    </button>
+                                    <button class="dtowin-red text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                        <i class="fas fa-upload mr-2"></i>Importar Datos
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">
+                                    Respaldo Automático
+                                </label>
+                                <div class="bg-white p-3 rounded border mb-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                        <span>Habilitar respaldo automático semanal</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-4 px-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript para la navegación entre secciones -->
+    <script>
+        // Función para mostrar sección y ocultar las demás
+        function showSection(sectionId) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('#dashboard, #torneos, #participantes, #badges, #resultados, #configuracion').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Mostrar la sección seleccionada
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Actualizar estilos de navegación
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('text-orange-500', 'font-semibold');
+                link.classList.add('hover:bg-gray-100');
+            });
+            
+            // Resaltar enlace activo
+            document.querySelector(`a[href="#${sectionId}"]`).classList.add('text-orange-500', 'font-semibold');
+        }
+        
+        // Asignar eventos a los enlaces de navegación
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = this.getAttribute('href').substring(1);
+                showSection(sectionId);
+            });
+        });
+        
+        // Inicializar en dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('dashboard');
+        });
+    </script>
+</body>
+</html>
