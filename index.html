@@ -1,0 +1,82 @@
+<!-- Añade esto justo antes de cerrar el body -->
+<script type="module">
+  import { auth, loginWithGoogle } from './firebase.js';
+  
+  // Referencias a elementos DOM
+  const loginBtn = document.getElementById('loginBtn');
+  const registerBtn = document.getElementById('registerBtn');
+  const loginModal = document.getElementById('loginModal');
+  const registroModal = document.getElementById('registroModal');
+  const closeLoginModal = document.getElementById('closeLoginModal');
+  const closeRegisterModal = document.getElementById('closeRegisterModal');
+  const showRegisterLink = document.getElementById('showRegisterLink');
+  
+  // Eventos para mostrar/ocultar modales
+  loginBtn.addEventListener('click', () => {
+    loginModal.classList.remove('hidden');
+    loginModal.classList.add('flex');
+  });
+  
+  registerBtn.addEventListener('click', () => {
+    registroModal.classList.remove('hidden');
+    registroModal.classList.add('flex');
+  });
+  
+  closeLoginModal.addEventListener('click', () => {
+    loginModal.classList.add('hidden');
+    loginModal.classList.remove('flex');
+  });
+  
+  closeRegisterModal.addEventListener('click', () => {
+    registroModal.classList.add('hidden');
+    registroModal.classList.remove('flex');
+  });
+  
+  showRegisterLink.addEventListener('click', () => {
+    loginModal.classList.add('hidden');
+    registroModal.classList.remove('hidden');
+    registroModal.classList.add('flex');
+  });
+  
+  // Botones de Google login
+  const googleLoginButtons = document.querySelectorAll('.google-login-btn');
+  googleLoginButtons.forEach(button => {
+    button.addEventListener('click', async () => {
+      try {
+        const user = await loginWithGoogle();
+        console.log("Usuario logueado:", user);
+        // Cierra los modales
+        loginModal.classList.add('hidden');
+        registroModal.classList.add('hidden');
+        // Actualiza la UI para mostrar que el usuario está logueado
+        updateUIForLoggedInUser(user);
+      } catch (error) {
+        console.error("Error en login:", error);
+        alert("Error al iniciar sesión. Inténtalo de nuevo.");
+      }
+    });
+  });
+  
+  // Función para actualizar la UI cuando el usuario inicia sesión
+  function updateUIForLoggedInUser(user) {
+    // Cambiar el botón de login por información del usuario
+    loginBtn.innerHTML = `
+      <div class="flex items-center">
+        <img src="${user.photoURL || '/api/placeholder/30/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+        <span>${user.displayName}</span>
+      </div>
+    `;
+    
+    // Desactivar el botón de registro
+    registerBtn.style.display = 'none';
+    
+    // Aquí puedes añadir más cambios en la UI
+  }
+  
+  // Verifica si el usuario ya está logueado al cargar la página
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      updateUIForLoggedInUser(user);
+    }
+  });
+</script>
