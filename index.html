@@ -36,6 +36,13 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -278,6 +285,7 @@
                 <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
                 <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
                 <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+                <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
             <form id="registroForm">
@@ -309,8 +317,8 @@
                     <div class="text-center mt-4">
                         <p class="text-gray-600 text-sm">o</p>
                     </div>
-                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn">
-                        <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
+                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-register-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
                 </div>
@@ -322,7 +330,7 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
+    <!-- Login Modal (REEMPLAZA COMPLETAMENTE TU MODAL DE LOGIN CON ESTO) -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
             <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
@@ -332,6 +340,8 @@
                 <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
                 <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
                 <p class="text-gray-600">Bienvenido de vuelta</p>
+                <!-- Mensaje de error -->
+                <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
             <form id="loginForm">
@@ -359,8 +369,8 @@
                     <div class="text-center mt-4">
                         <p class="text-gray-600 text-sm">o</p>
                     </div>
-                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn">
-                        <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
+                    <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
                 </div>
@@ -449,6 +459,8 @@
         const loginForm = document.getElementById('loginForm');
         const registroForm = document.getElementById('registroForm');
         const tournamentButtons = document.querySelectorAll('.tournament-btn');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const googleRegisterBtn = document.querySelector('.google-register-btn');
         
         // Inicializar evento para menú móvil
         if (mobileMenuBtn) {
@@ -466,6 +478,7 @@
         // Función para mostrar el modal de login
         function showLoginModal() {
             if (loginModal) {
+                document.getElementById('loginErrorMsg').textContent = ''; // Limpiar errores previos
                 loginModal.classList.remove('hidden');
                 loginModal.classList.add('flex');
             }
@@ -478,6 +491,7 @@
         
         if (registerBtn) {
             registerBtn.addEventListener('click', () => {
+                document.getElementById('registerErrorMsg').textContent = ''; // Limpiar errores previos
                 registroModal.classList.remove('hidden');
                 registroModal.classList.add('flex');
             });
@@ -506,25 +520,123 @@
             });
         }
         
-        // Botones de Google login
-        const googleLoginButtons = document.querySelectorAll('.google-login-btn');
-        googleLoginButtons.forEach(button => {
-            button.addEventListener('click', async () => {
+        // Función específica para manejar el inicio de sesión con Google (REEMPLAZA LA FUNCIÓN ANTERIOR)
+        if (googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', async () => {
                 try {
-                    console.log("Intentando iniciar sesión con Google...");
+                    // Limpiar mensaje de error anterior
+                    const errorMsgElement = document.getElementById('loginErrorMsg');
+                    if (errorMsgElement) {
+                        errorMsgElement.textContent = '';
+                    }
+                    
+                    console.log("Iniciando proceso de login con Google...");
+                    
+                    // Mostrar indicador de carga
+                    const originalBtnText = googleLoginBtn.innerHTML;
+                    googleLoginBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleLoginBtn.disabled = true;
+                    
+                    // Intentar iniciar sesión
                     const user = await loginWithGoogle();
-                    console.log("Usuario logueado:", user);
-                    // Cierra los modales
-                    if (loginModal) loginModal.classList.add('hidden');
-                    if (registroModal) registroModal.classList.add('hidden');
-                    // Actualiza la UI para mostrar que el usuario está logueado
+                    console.log("Login exitoso, usuario:", user.uid);
+                    
+                    // Cerrar el modal de login
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                    
+                    // Actualizar la interfaz
                     updateUIForLoggedInUser(user);
+                    
                 } catch (error) {
-                    console.error("Error en login:", error);
-                    alert("Error al iniciar sesión. Inténtalo de nuevo.");
+                    console.error("Error en inicio de sesión con Google:", error);
+                    
+                    // Restaurar el botón
+                    googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleLoginBtn.disabled = false;
+                    
+                    // Mostrar mensaje de error apropiado
+                    let errorMessage = "Error al iniciar sesión. Inténtalo de nuevo.";
+                    
+                    if (error.code === 'auth/popup-blocked') {
+                        errorMessage = "El navegador ha bloqueado la ventana emergente. Por favor, permite ventanas emergentes para este sitio.";
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = "Has cerrado la ventana de inicio de sesión. Inténtalo de nuevo.";
+                    } else if (error.code === 'auth/cancelled-popup-request') {
+                        errorMessage = "La solicitud fue cancelada. Inténtalo de nuevo.";
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        errorMessage = "Este dominio no está autorizado para iniciar sesión. Contacta al administrador.";
+                    } else if (error.code === 'auth/operation-not-allowed') {
+                        errorMessage = "El inicio de sesión con Google no está habilitado. Contacta al administrador.";
+                    } else if (error.code === 'auth/user-disabled') {
+                        errorMessage = "Esta cuenta ha sido deshabilitada. Contacta al soporte.";
+                    }
+                    
+                    const errorMsgElement = document.getElementById('loginErrorMsg');
+                    if (errorMsgElement) {
+                        errorMsgElement.textContent = errorMessage;
+                    } else {
+                        alert(errorMessage);
+                    }
                 }
             });
-        });
+        }
+        
+        // Hacer lo mismo para el botón de registro con Google
+        if (googleRegisterBtn) {
+            googleRegisterBtn.addEventListener('click', async () => {
+                try {
+                    // Limpiar mensaje de error anterior
+                    const errorMsgElement = document.getElementById('registerErrorMsg');
+                    if (errorMsgElement) {
+                        errorMsgElement.textContent = '';
+                    }
+                    
+                    console.log("Iniciando proceso de registro con Google...");
+                    
+                    // Mostrar indicador de carga
+                    const originalBtnText = googleRegisterBtn.innerHTML;
+                    googleRegisterBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleRegisterBtn.disabled = true;
+                    
+                    // Usar la misma función de login, ya que Firebase maneja automáticamente si es nuevo usuario
+                    const user = await loginWithGoogle();
+                    console.log("Registro/login exitoso, usuario:", user.uid);
+                    
+                    // Cerrar el modal de registro
+                    registroModal.classList.add('hidden');
+                    registroModal.classList.remove('flex');
+                    
+                    // Actualizar la interfaz
+                    updateUIForLoggedInUser(user);
+                    
+                } catch (error) {
+                    console.error("Error en registro con Google:", error);
+                    
+                    // Restaurar el botón
+                    googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleRegisterBtn.disabled = false;
+                    
+                    // Mostrar mensaje de error apropiado
+                    let errorMessage = "Error al registrarse. Inténtalo de nuevo.";
+                    
+                    if (error.code === 'auth/popup-blocked') {
+                        errorMessage = "El navegador ha bloqueado la ventana emergente. Por favor, permite ventanas emergentes para este sitio.";
+                    } else if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = "Has cerrado la ventana de registro. Inténtalo de nuevo.";
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        errorMessage = "Este dominio no está autorizado para registro. Contacta al administrador.";
+                    }
+                    
+                    const errorMsgElement = document.getElementById('registerErrorMsg');
+                    if (errorMsgElement) {
+                        errorMsgElement.textContent = errorMessage;
+                    } else {
+                        alert(errorMessage);
+                    }
+                }
+            });
+        }
         
         // Función para actualizar la UI cuando el usuario inicia sesión
         async function updateUIForLoggedInUser(user) {
