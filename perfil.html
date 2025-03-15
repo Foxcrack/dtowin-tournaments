@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Dtowin Torneos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .profile-banner {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-bold">Mi Perfil</a>
+                <div id="userInfo" class="flex items-center">
+                    <img src="https://via.placeholder.com/32" alt="Profile" id="navbarUserImage" class="w-8 h-8 rounded-full mr-2">
+                    <span id="navbarUserName">Usuario</span>
+                </div>
+            </div>
+            <button class="md:hidden text-xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Perfil Header -->
+    <div class="profile-banner gradient-background" id="profileBanner"></div>
+
+    <div class="container mx-auto px-4 -mt-16">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex flex-col md:flex-row">
+                <!-- Foto de perfil y datos básicos -->
+                <div class="flex flex-col items-center md:items-start md:flex-row mb-6 md:mb-0">
+                    <img src="https://via.placeholder.com/150" alt="Profile" id="profileImage" class="w-32 h-32 rounded-full border-4 border-white">
+                    <div class="md:ml-6 mt-4 md:mt-0 text-center md:text-left">
+                        <h2 class="text-2xl font-bold" id="profileName">Nombre de Usuario</h2>
+                        <p class="text-gray-600" id="profileEmail">usuario@gmail.com</p>
+                        <p class="mt-2">Posición en el ranking: <span class="font-bold" id="userRank">0</span></p>
+                        <p>Total de puntos: <span class="font-bold" id="userPoints">0</span></p>
+                        <p>Torneos participados: <span class="font-bold" id="userTournaments">0</span></p>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="ml-auto flex flex-col space-y-2">
+                    <button id="editProfileBtn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-user-edit mr-2"></i>Editar Perfil
+                    </button>
+                    <button id="logoutBtn" class="dtowin-red text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Badges del usuario -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4">Mis Badges</h3>
+            <div id="userBadges" class="flex flex-wrap gap-4">
+                <p class="text-gray-500 italic">No tienes badges todavía. ¡Participa en torneos para conseguirlos!</p>
+                <!-- Los badges se mostrarán aquí dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Historial de torneos -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h3 class="text-xl font-bold mb-4">Historial de Torneos</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                            <th class="py-3 px-4 text-left">Torneo</th>
+                            <th class="py-3 px-4 text-left">Fecha</th>
+                            <th class="py-3 px-4 text-left">Posición</th>
+                            <th class="py-3 px-4 text-left">Puntos</th>
+                            <th class="py-3 px-4 text-left">Badges</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tournamentHistory" class="text-gray-600">
+                        <tr>
+                            <td class="py-4 px-4 text-center" colspan="5">No has participado en torneos todavía.</td>
+                        </tr>
+                        <!-- El historial de torneos se mostrará aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar perfil -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Editar Perfil</h3>
+                <p class="text-gray-600">Actualiza tu información personal</p>
+            </div>
+            
+            <form id="editProfileForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">
+                        Nombre de usuario
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editUsername" type="text" placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editBanner">
+                        Banner de perfil (URL)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editBanner" type="text" placeholder="URL de imagen para tu banner">
+                </div>
+                
+                <div class="mt-6 flex justify-end">
+                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-4 px-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Importar funciones y objetos de Firebase
+        import { auth, db } from './firebase.js';
+        import { signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+        import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+
+        // Referencias a elementos DOM
+        const profileName = document.getElementById('profileName');
+        const profileEmail = document.getElementById('profileEmail');
+        const profileImage = document.getElementById('profileImage');
+        const profileBanner = document.getElementById('profileBanner');
+        const navbarUserName = document.getElementById('navbarUserName');
+        const navbarUserImage = document.getElementById('navbarUserImage');
+        const userRank = document.getElementById('userRank');
+        const userPoints = document.getElementById('userPoints');
+        const userTournaments = document.getElementById('userTournaments');
+        const userBadges = document.getElementById('userBadges');
+        const tournamentHistory = document.getElementById('tournamentHistory');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        const editProfileModal = document.getElementById('editProfileModal');
+        const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+        const editProfileForm = document.getElementById('editProfileForm');
+        const editUsername = document.getElementById('editUsername');
+        const editBanner = document.getElementById('editBanner');
+
+        // Cerrar sesión
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html'; // Redirigir al inicio después de cerrar sesión
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                alert("Error al cerrar sesión. Inténtalo de nuevo.");
+            }
+        });
+
+        // Mostrar/ocultar modal de edición de perfil
+        editProfileBtn.addEventListener('click', () => {
+            editProfileModal.classList.remove('hidden');
+            editProfileModal.classList.add('flex');
+            
+            // Prellenar campos con datos actuales
+            const user = auth.currentUser;
+            if (user) {
+                getUserProfile(user.uid).then(userProfile => {
+                    editUsername.value = userProfile?.nombre || user.displayName || '';
+                    editBanner.value = userProfile?.bannerURL || '';
+                });
+            }
+        });
+
+        closeEditProfileModal.addEventListener('click', () => {
+            editProfileModal.classList.add('hidden');
+            editProfileModal.classList.remove('flex');
+        });
+
+        // Guardar cambios del perfil
+        editProfileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            const newUsername = editUsername.value.trim();
+            const newBanner = editBanner.value.trim();
+            
+            if (newUsername === '') {
+                alert('El nombre de usuario no puede estar vacío');
+                return;
+            }
+            
+            // Verificar si el nombre de usuario ya existe
+            if (await checkUsernameExists(newUsername, user.uid)) {
+                alert('Este nombre de usuario ya existe. Por favor, elige otro.');
+                return;
+            }
+            
+            try {
+                // Buscar el documento del usuario
+                const q = query(collection(db, "usuarios"), where("uid", "==", user.uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    // Actualizar el documento existente
+                    const userDoc = querySnapshot.docs[0];
+                    await updateDoc(doc(db, "usuarios", userDoc.id), {
+                        nombre: newUsername,
+                        bannerURL: newBanner
+                    });
+                    
+                    // Actualizar la UI
+                    profileName.textContent = newUsername;
+                    navbarUserName.textContent = newUsername;
+                    if (newBanner) {
+                        profileBanner.style.backgroundImage = `url(${newBanner})`;
+                    }
+                    
+                    // Cerrar el modal
+                    editProfileModal.classList.add('hidden');
+                    editProfileModal.classList.remove('flex');
+                    
+                    alert('Perfil actualizado correctamente');
+                } else {
+                    alert('No se encontró tu perfil en la base de datos');
+                }
+            } catch (error) {
+                console.error("Error al actualizar el perfil:", error);
+                alert("Error al actualizar el perfil. Inténtalo de nuevo.");
+            }
+        });
+
+        // Función para verificar si un nombre de usuario ya existe
+        async function checkUsernameExists(username, currentUserId) {
+            const q = query(collection(db, "usuarios"), where("nombre", "==", username));
+            const querySnapshot = await getDocs(q);
+            
+            // Si no hay resultados, el nombre está disponible
+            if (querySnapshot.empty) return false;
+            
+            // Si hay resultados, verificar que no sea el usuario actual
+            return !querySnapshot.docs.some(doc => doc.data().uid === currentUserId);
+        }
+
+        // Función para obtener el perfil del usuario
+        async function getUserProfile(uid) {
+            try {
+                const q = query(collection(db, "usuarios"), where("uid", "==", uid));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    return querySnapshot.docs[0].data();
+                }
+                
+                return null;
+            } catch (error) {
+                console.error("Error al obtener perfil de usuario:", error);
+                return null;
+            }
+        }
+
+        // Función para obtener los badges del usuario
+        async function getUserBadges(uid) {
+            try {
+                const userBadgesCollection = collection(db, "user_badges");
+                const q = query(userBadgesCollection, where("userId", "==", uid));
+                const querySnapshot = await getDocs(q);
+                
+                // Obtener los IDs de los badges
+                const badgeIds = querySnapshot.docs.map(doc => doc.data().badgeId);
+                
+                // Si no hay badges, retornar array vacío
+                if (badgeIds.length === 0) return [];
+                
+                // Obtener los detalles de cada badge
+                const badgesData = [];
+                for (const badgeId of badgeIds) {
+                    const badgeRef = doc(db, "badges", badgeId);
+                    const badgeSnap = await getDoc(badgeRef);
+                    if (badgeSnap.exists()) {
+                        badgesData.push({
+                            id: badgeId,
+                            ...badgeSnap.data()
+                        });
+                    }
+                }
+                
+                return badgesData;
+            } catch (error) {
+                console.error("Error al obtener badges del usuario:", error);
+                return [];
+            }
+        }
+
+        // Cargar datos del perfil cuando el usuario está autenticado
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                // Datos básicos del usuario
+                profileName.textContent = user.displayName || 'Usuario';
+                profileEmail.textContent = user.email || '';
+                navbarUserName.textContent = user.displayName || 'Usuario';
+                
+                if (user.photoURL) {
+                    profileImage.src = user.photoURL;
+                    navbarUserImage.src = user.photoURL;
+                }
+                
+                // Obtener datos adicionales del perfil
+                const userProfile = await getUserProfile(user.uid);
+                if (userProfile) {
+                    profileName.textContent = userProfile.nombre || user.displayName || 'Usuario';
+                    navbarUserName.textContent = userProfile.nombre || user.displayName || 'Usuario';
+                    userPoints.textContent = userProfile.puntos || 0;
+                    
+                    if (userProfile.bannerURL) {
+                        profileBanner.style.backgroundImage = `url(${userProfile.bannerURL})`;
+                    }
+                }
+                
+                // Obtener badges del usuario
+                const badges = await getUserBadges(user.uid);
+                if (badges.length > 0) {
+                    userBadges.innerHTML = ''; // Limpiar mensaje por defecto
+                    
+                    badges.forEach(badge => {
+                        const badgeElement = document.createElement('div');
+                        badgeElement.className = 'flex flex-col items-center';
+                        
+                        if (badge.imageUrl) {
+                            badgeElement.innerHTML = `
+                                <img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-16 h-16 rounded-full">
+                                <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
+                            `;
+                        } else {
+                            const badgeColor = badge.color || '#ff6b1a';
+                            badgeElement.innerHTML = `
+                                <div class="badge text-2xl" style="background-color: ${badgeColor}">
+                                    <i class="fas fa-${badge.icono || 'award'}"></i>
+                                </div>
+                                <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
+                            `;
+                        }
+                        
+                        userBadges.appendChild(badgeElement);
+                    });
+                }
+                
+                // Aquí puedes agregar código para cargar el historial de torneos
+                // y actualizar la posición en el ranking
+                
+            } else {
+                // Si no hay usuario autenticado, redirigir al inicio
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
