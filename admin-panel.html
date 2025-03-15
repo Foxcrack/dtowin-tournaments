@@ -973,14 +973,142 @@
       }
     });
     </script>
-<!-- Scripts para el panel de administración (ACTUALIZADOS) -->
-<script type="module" src="auth-admin.js"></script>
-<script type="module" src="firebase.js"></script>
-<script type="module" src="badges.js"></script>
-<script type="module" src="admin-panel-badges.js"></script>
-<script type="module" src="admin-panel-badge-create.js"></script>
+<!-- Scripts para el panel de administración (CON VERIFICACIÓN DE PERMISOS) -->
+<script type="module">
+    // Script directo en admin-panel.html
+    import { auth, isUserHost } from './firebase.js';
+    
+    // Variables
+    const sections = {
+        dashboard: document.getElementById('dashboard'),
+        torneos: document.getElementById('torneos'),
+        participantes: document.getElementById('participantes'),
+        badges: document.getElementById('badges'),
+        resultados: document.getElementById('resultados'),
+        configuracion: document.getElementById('configuracion')
+    };
+    
+    // Función para mostrar una sección
+    function showSection(sectionId) {
+        // Ocultar todas las secciones
+        Object.values(sections).forEach(section => {
+            if (section) section.classList.add('hidden');
+        });
+        
+        // Mostrar la sección seleccionada
+        if (sections[sectionId]) {
+            sections[sectionId].classList.remove('hidden');
+        }
+        
+        // Actualizar estilos de navegación
+        document.querySelectorAll('nav a').forEach(link => {
+            link.classList.remove('text-orange-500', 'font-semibold');
+            link.classList.add('hover:bg-gray-100');
+        });
+        
+        // Resaltar enlace activo
+        const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
+        if (activeLink) {
+            activeLink.classList.add('text-orange-500', 'font-semibold');
+        }
+    }
+    
+    // Función para inicializar el panel
+    function initAdminPanel() {
+        // Añadir event listeners a enlaces de navegación
+        document.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = this.getAttribute('href').substring(1);
+                showSection(sectionId);
+            });
+        });
+        
+        // Mostrar dashboard por defecto
+        showSection('dashboard');
+    }
+    
+    // Función para mostrar mensaje de acceso denegado
+    function showAccessDenied() {
+        document.body.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
+                <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+                    <i class="fas fa-lock text-4xl text-red-500 mb-4"></i>
+                    <h1 class="text-2xl font-bold mb-4">Acceso Denegado</h1>
+                    <p class="text-gray-600 mb-6">No tienes permisos para acceder al panel de administración.</p>
+                    <a href="index.html" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition inline-block">
+                        Volver al inicio
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Función para mostrar mensaje de carga
+    function showLoading() {
+        const mainContent = document.querySelector('main') || document.body;
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loadingOverlay';
+        loadingDiv.className = 'fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50';
+        loadingDiv.innerHTML = `
+            <div class="text-center">
+                <div class="spinner w-12 h-12 border-4 border-t-4 border-gray-200 border-t-blue-500 rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-700">Verificando permisos...</p>
+            </div>
+        `;
+        mainContent.appendChild(loadingDiv);
+    }
+    
+    // Función para ocultar mensaje de carga
+    function hideLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.remove();
+        }
+    }
+    
+    // Verificar autenticación y permisos al cargar
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Mostrar carga
+        showLoading();
+        
+        try {
+            const user = auth.currentUser;
+            
+            if (!user) {
+                // Esperar un momento para verificar si se está cargando la autenticación
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                if (!auth.currentUser) {
+                    console.log("No hay usuario autenticado, redirigiendo");
+                    window.location.href = 'index.html';
+                    return;
+                }
+            }
+            
+            // Verificar si el usuario tiene permisos de administrador
+            const hasAdminPermission = await isUserHost();
+            
+            if (hasAdminPermission) {
+                console.log("Usuario autenticado con permisos de administrador");
+                hideLoading();
+                initAdminPanel();
+            } else {
+                console.log("Usuario sin permisos de administrador");
+                hideLoading();
+                showAccessDenied();
+            }
+        } catch (error) {
+            console.error("Error al verificar permisos:", error);
+            hideLoading();
+            showAccessDenied();
+        }
+    });
+</script>
 
-<!-- Estilos adicionales para el spinner y elementos UI -->
+<script type="module" src="firebase.js"></script>
+
+<!-- Estilos para el spinner -->
 <style>
 .spinner {
     animation: spin 1s linear infinite;
@@ -988,28 +1116,6 @@
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-}
-
-/* Estilos para el módulo de badges */
-.badge {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    text-align: center;
-    line-height: 40px;
-    color: white;
-    font-size: 1.2rem;
-}
-
-/* Estilos para notificaciones */
-.notification {
-    transition: opacity 0.5s ease-in-out;
-}
-
-/* Corregir problemas de carga de imágenes */
-img[src^="https://via.placeholder.com"] {
-    display: none;
 }
 </style>
 </body>
