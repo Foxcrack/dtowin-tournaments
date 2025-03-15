@@ -4,14 +4,15 @@ import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstati
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
-// Tu configuración de Firebase (reemplaza con tus propios valores)
+// Tu configuración actualizada de Firebase
 const firebaseConfig = {
-  apiKey: "REEMPLAZA_CON_TU_API_KEY",
-  authDomain: "REEMPLAZA_CON_TU_AUTH_DOMAIN",
-  projectId: "REEMPLAZA_CON_TU_PROJECT_ID",
-  storageBucket: "REEMPLAZA_CON_TU_STORAGE_BUCKET",
-  messagingSenderId: "REEMPLAZA_CON_TU_MESSAGING_SENDER_ID",
-  appId: "REEMPLAZA_CON_TU_APP_ID"
+  apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+  authDomain: "dtowin-tournament.firebaseapp.com",
+  projectId: "dtowin-tournament",
+  storageBucket: "dtowin-tournament.firebasestorage.app",
+  messagingSenderId: "991226820083",
+  appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+  measurementId: "G-R4Q5YKZXGY"
 };
 
 // Inicializar Firebase
@@ -27,7 +28,7 @@ export async function loginWithGoogle() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     
-    // Verifica si el usuario ya existe en la base de datos
+    // Verificar si el usuario ya existe en la base de datos
     const userQuery = query(collection(db, "usuarios"), where("uid", "==", user.uid));
     const querySnapshot = await getDocs(userQuery);
     
