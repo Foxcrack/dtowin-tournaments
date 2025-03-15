@@ -472,7 +472,7 @@
                     // Cierra los modales
                     loginModal.classList.add('hidden');
                     registroModal.classList.add('hidden');
-                   // Actualiza la UI para mostrar que el usuario está logueado
+                    // Actualiza la UI para mostrar que el usuario está logueado
                     updateUIForLoggedInUser(user);
                 } catch (error) {
                     console.error("Error en login:", error);
@@ -486,7 +486,7 @@
             // Cambiar el botón de login por información del usuario
             loginBtn.innerHTML = `
                 <div class="flex items-center">
-                    <img src="${user.photoURL || 'https://via.placeholder.com/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
                     <span>${user.displayName}</span>
                 </div>
             `;
