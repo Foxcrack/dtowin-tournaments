@@ -47,15 +47,25 @@
                 <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
             </div>
             <div class="hidden md:flex items-center space-x-6">
-                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="#perfil" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
                 <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
             </div>
-            <button class="md:hidden text-xl">
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
                 <i class="fas fa-bars"></i>
             </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+            </div>
         </div>
     </nav>
 
@@ -99,7 +109,7 @@
                                 <span class="bg-purple-400 text-white rounded-full px-3 py-1 text-xs">5° - 1 pt</span>
                             </div>
                         </div>
-                        <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold">Inscribirse</button>
+                        <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold tournament-btn">Inscribirse</button>
                     </div>
                 </div>
 
@@ -154,7 +164,7 @@
                                 <span class="bg-gray-400 text-white rounded-full px-3 py-1 text-xs">Todos - Badge Participación</span>
                             </div>
                         </div>
-                        <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold">Inscribirse</button>
+                        <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold tournament-btn">Inscribirse</button>
                     </div>
                 </div>
             </div>
@@ -270,7 +280,7 @@
                 <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
             </div>
             
-            <form>
+            <form id="registroForm">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
                         Nombre de usuario
@@ -293,13 +303,13 @@
                 </div>
                 
                 <div class="mb-6">
-                    <button class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition" type="button">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
                         Registrarse
                     </button>
                     <div class="text-center mt-4">
                         <p class="text-gray-600 text-sm">o</p>
                     </div>
-                    <button class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn" type="button">
+                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn">
                         <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
@@ -324,7 +334,7 @@
                 <p class="text-gray-600">Bienvenido de vuelta</p>
             </div>
             
-            <form>
+            <form id="loginForm">
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
                         Correo electrónico
@@ -343,13 +353,13 @@
                 </div>
                 
                 <div class="mb-6">
-                    <button class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition" type="button">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
                         Iniciar Sesión
                     </button>
                     <div class="text-center mt-4">
                         <p class="text-gray-600 text-sm">o</p>
                     </div>
-                    <button class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn" type="button">
+                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn">
                         <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
@@ -424,7 +434,7 @@
     <!-- Scripts -->
     <script type="module">
         // Importar funciones de Firebase
-        import { loginWithGoogle, auth } from './firebase.js';
+        import { loginWithGoogle, auth, getUserProfile } from './firebase.js';
         
         // Referencias a elementos DOM
         const loginBtn = document.getElementById('loginBtn');
@@ -434,6 +444,22 @@
         const closeLoginModal = document.getElementById('closeLoginModal');
         const closeRegisterModal = document.getElementById('closeRegisterModal');
         const showRegisterLink = document.getElementById('showRegisterLink');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const loginForm = document.getElementById('loginForm');
+        const registroForm = document.getElementById('registroForm');
+        const tournamentButtons = document.querySelectorAll('.tournament-btn');
+        
+        // Menú móvil
+        mobileMenuBtn.addEventListener('click', () => {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
         
         // Eventos para mostrar/ocultar modales
         loginBtn.addEventListener('click', () => {
@@ -456,7 +482,8 @@
             registroModal.classList.remove('flex');
         });
         
-        showRegisterLink.addEventListener('click', () => {
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
             loginModal.classList.add('hidden');
             registroModal.classList.remove('hidden');
             registroModal.classList.add('flex');
@@ -482,23 +509,72 @@
         });
         
         // Función para actualizar la UI cuando el usuario inicia sesión
-        function updateUIForLoggedInUser(user) {
-            // Cambiar el botón de login por información del usuario
-            loginBtn.innerHTML = `
-                <div class="flex items-center">
-                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-                    <span>${user.displayName}</span>
-                </div>
-            `;
-            
-            // Desactivar el botón de registro
-            registerBtn.style.display = 'none';
-            
-            // Aquí puedes añadir más cambios en la UI
+        async function updateUIForLoggedInUser(user) {
+            try {
+                // Obtener datos adicionales del perfil si existen
+                const userProfile = await getUserProfile(user.uid);
+                
+                // Cambiar el botón de login por información del usuario
+                loginBtn.innerHTML = `
+                    <div class="flex items-center">
+                        <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <span>${userProfile?.nombre || user.displayName || 'Usuario'}</span>
+                    </div>
+                `;
+                
+                // Cambiar el comportamiento del botón de login para ir al perfil
+                loginBtn.removeEventListener('click', showLoginModal);
+                loginBtn.addEventListener('click', () => {
+                    window.location.href = 'perfil.html';
+                });
+                
+                // Desactivar el botón de registro
+                registerBtn.style.display = 'none';
+                
+            } catch (error) {
+                console.error("Error al actualizar UI:", error);
+            }
         }
         
-        // Verifica si el usuario ya está logueado al cargar la página
-        auth.onAuthStateChanged(user => {
+        // Función para mostrar el modal de login
+        function showLoginModal() {
+            loginModal.classList.remove('hidden');
+            loginModal.classList.add('flex');
+        }
+        
+        // Manejar inscripción a torneos
+        tournamentButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Verificar si el usuario está autenticado
+                if (auth.currentUser) {
+                    const tournamentName = button.closest('.tournament-card').querySelector('h3').textContent;
+                    alert(`Te has inscrito al torneo: ${tournamentName}`);
+                } else {
+                    alert('Debes iniciar sesión para inscribirte a un torneo');
+                    showLoginModal();
+                }
+            });
+        });
+        
+        // Formularios de login y registro
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Esta funcionalidad utilizaría firebase.js para autenticar al usuario.');
+                // En una implementación real, llamarías a la función de login
+            });
+        }
+        
+        if (registroForm) {
+            registroForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Esta funcionalidad utilizaría firebase.js para registrar al usuario.');
+                // En una implementación real, llamarías a la función de registro
+            });
+        }
+        
+        // Verificar si el usuario ya está logueado al cargar la página
+        auth.onAuthStateChanged(async user => {
             if (user) {
                 updateUIForLoggedInUser(user);
             }
