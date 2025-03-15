@@ -35,7 +35,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
   authDomain: "dtowin-tournament.firebaseapp.com",
   projectId: "dtowin-tournament",
-  storageBucket: "dtowin-tournament.appspot.com", // Corregido
+  storageBucket: "dtowin-tournament.appspot.com", // Corregido: debe ser .appspot.com
   messagingSenderId: "991226820083",
   appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
   measurementId: "G-R4Q5YKZXGY"
@@ -48,7 +48,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// Configurar persistencia de sesión
+// Configurar persistencia de sesión - esto mantiene al usuario conectado hasta que cierre sesión
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
     console.log("Persistencia de sesión configurada correctamente");
@@ -105,6 +105,12 @@ export async function loginWithGoogle() {
     // Si no existe, créalo
     if (querySnapshot.empty) {
       console.log("Usuario nuevo, creando perfil en la base de datos...");
+      
+      // Verificar si hay hosts - si no hay, hacer a este usuario host
+      const hostQuery = query(collection(db, "usuarios"), where("isHost", "==", true));
+      const hostSnapshot = await getDocs(hostQuery);
+      const isFirstUser = hostSnapshot.empty;
+      
       await addDoc(collection(db, "usuarios"), {
         uid: user.uid,
         nombre: user.displayName,
@@ -113,9 +119,9 @@ export async function loginWithGoogle() {
         puntos: 0,
         fechaRegistro: serverTimestamp(),
         ultimoLogin: serverTimestamp(),
-        isHost: false // Por defecto, no es host
+        isHost: isFirstUser // Primer usuario es automáticamente host
       });
-      console.log("Perfil de usuario creado exitosamente");
+      console.log("Perfil de usuario creado exitosamente", isFirstUser ? "(con privilegios de administrador)" : "");
     } else {
       console.log("Usuario ya existe en la base de datos");
       // Actualizar fecha de último login
@@ -174,6 +180,12 @@ export async function checkRedirectResult() {
       // Si no existe, créalo
       if (querySnapshot.empty) {
         console.log("Usuario nuevo, creando perfil en la base de datos...");
+        
+        // Verificar si hay hosts - si no hay, hacer a este usuario host
+        const hostQuery = query(collection(db, "usuarios"), where("isHost", "==", true));
+        const hostSnapshot = await getDocs(hostQuery);
+        const isFirstUser = hostSnapshot.empty;
+        
         await addDoc(collection(db, "usuarios"), {
           uid: user.uid,
           nombre: user.displayName,
@@ -182,9 +194,9 @@ export async function checkRedirectResult() {
           puntos: 0,
           fechaRegistro: serverTimestamp(),
           ultimoLogin: serverTimestamp(),
-          isHost: false // Por defecto, no es host
+          isHost: isFirstUser // Primer usuario es automáticamente host
         });
-        console.log("Perfil de usuario creado exitosamente");
+        console.log("Perfil de usuario creado exitosamente", isFirstUser ? "(con privilegios de administrador)" : "");
       } else {
         console.log("Usuario ya existe en la base de datos");
         // Actualizar fecha de último login
@@ -216,7 +228,7 @@ export async function logoutUser() {
   }
 }
 
-// Función para obtener perfil de usuario
+// Función para obtener perfil de usuario - MEJORADA para crear perfil si no existe
 export async function getUserProfile(uid) {
   try {
     console.log("Obteniendo perfil del usuario:", uid);
@@ -243,6 +255,11 @@ export async function getUserProfile(uid) {
     if (user && user.uid === uid) {
       console.log("Creando perfil de usuario nuevo para:", uid);
       
+      // Verificar si hay hosts - si no hay, hacer a este usuario host
+      const hostQuery = query(collection(db, "usuarios"), where("isHost", "==", true));
+      const hostSnapshot = await getDocs(hostQuery);
+      const isFirstUser = hostSnapshot.empty;
+      
       // Crear nuevo usuario en Firestore
       const newUserRef = await addDoc(collection(db, "usuarios"), {
         uid: user.uid,
@@ -252,7 +269,7 @@ export async function getUserProfile(uid) {
         puntos: 0,
         fechaRegistro: serverTimestamp(),
         ultimoLogin: serverTimestamp(),
-        isHost: false
+        isHost: isFirstUser // Primer usuario es automáticamente host
       });
       
       // Obtener el usuario recién creado
@@ -304,7 +321,7 @@ export function onAuthStateChange(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-// Función para verificar si un usuario es host
+// Función para verificar si un usuario es host (MEJORADA)
 export async function isUserHost(uid) {
   try {
     const userId = uid || (auth.currentUser ? auth.currentUser.uid : null);
@@ -317,11 +334,30 @@ export async function isUserHost(uid) {
     const querySnapshot = await getDocs(userQuery);
     
     if (querySnapshot.empty) {
+      // Si el usuario no existe en Firestore
       return false;
     }
     
     const userData = querySnapshot.docs[0].data();
-    return userData.isHost === true;
+    if (userData.isHost === true) {
+      // Si el usuario ya es host
+      return true;
+    }
+    
+    // Si el usuario no es host, verificar si hay algún host en el sistema
+    const hostQuery = query(collection(db, "usuarios"), where("isHost", "==", true));
+    const hostSnapshot = await getDocs(hostQuery);
+    
+    // Si no hay ningún host, convertir automáticamente a este usuario en host
+    if (hostSnapshot.empty) {
+      console.log("No hay hosts en el sistema. Haciendo host al usuario actual:", userId);
+      await updateDoc(doc(db, "usuarios", querySnapshot.docs[0].id), {
+        isHost: true
+      });
+      return true;
+    }
+    
+    return false;
   } catch (error) {
     console.error("Error al verificar si el usuario es host:", error);
     return false;
