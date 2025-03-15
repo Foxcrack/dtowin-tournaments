@@ -450,55 +450,73 @@
         const registroForm = document.getElementById('registroForm');
         const tournamentButtons = document.querySelectorAll('.tournament-btn');
         
-        // Menú móvil
-        mobileMenuBtn.addEventListener('click', () => {
-            if (mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.remove('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                mobileMenu.classList.add('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        // Inicializar evento para menú móvil
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                if (mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+        }
+        
+        // Función para mostrar el modal de login
+        function showLoginModal() {
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
             }
-        });
+        }
         
         // Eventos para mostrar/ocultar modales
-        loginBtn.addEventListener('click', () => {
-            loginModal.classList.remove('hidden');
-            loginModal.classList.add('flex');
-        });
+        if (loginBtn) {
+            loginBtn.addEventListener('click', showLoginModal);
+        }
         
-        registerBtn.addEventListener('click', () => {
-            registroModal.classList.remove('hidden');
-            registroModal.classList.add('flex');
-        });
+        if (registerBtn) {
+            registerBtn.addEventListener('click', () => {
+                registroModal.classList.remove('hidden');
+                registroModal.classList.add('flex');
+            });
+        }
         
-        closeLoginModal.addEventListener('click', () => {
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-        });
+        if (closeLoginModal) {
+            closeLoginModal.addEventListener('click', () => {
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+            });
+        }
         
-        closeRegisterModal.addEventListener('click', () => {
-            registroModal.classList.add('hidden');
-            registroModal.classList.remove('flex');
-        });
+        if (closeRegisterModal) {
+            closeRegisterModal.addEventListener('click', () => {
+                registroModal.classList.add('hidden');
+                registroModal.classList.remove('flex');
+            });
+        }
         
-        showRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.classList.add('hidden');
-            registroModal.classList.remove('hidden');
-            registroModal.classList.add('flex');
-        });
+        if (showRegisterLink) {
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.classList.add('hidden');
+                registroModal.classList.remove('hidden');
+                registroModal.classList.add('flex');
+            });
+        }
         
         // Botones de Google login
         const googleLoginButtons = document.querySelectorAll('.google-login-btn');
         googleLoginButtons.forEach(button => {
             button.addEventListener('click', async () => {
                 try {
+                    console.log("Intentando iniciar sesión con Google...");
                     const user = await loginWithGoogle();
                     console.log("Usuario logueado:", user);
                     // Cierra los modales
-                    loginModal.classList.add('hidden');
-                    registroModal.classList.add('hidden');
+                    if (loginModal) loginModal.classList.add('hidden');
+                    if (registroModal) registroModal.classList.add('hidden');
                     // Actualiza la UI para mostrar que el usuario está logueado
                     updateUIForLoggedInUser(user);
                 } catch (error) {
@@ -508,36 +526,66 @@
             });
         });
         
-        
-        
         // Función para actualizar la UI cuando el usuario inicia sesión
         async function updateUIForLoggedInUser(user) {
+            console.log("Actualizando UI para usuario logueado");
+            if (!loginBtn) {
+                console.error("Elemento loginBtn no encontrado");
+                return;
+            }
+            
             try {
                 // Obtener datos adicionales del perfil si existen
                 const userProfile = await getUserProfile(user.uid);
-        
+                console.log("Perfil de usuario:", userProfile);
+                
                 // Cambiar el botón de login por información del usuario
-                // CAMBIO AQUÍ: Ahora el texto será negro (text-gray-800) en lugar de blanco
+                // IMPORTANTE: Texto en negro (text-gray-800) con fondo blanco
                 loginBtn.innerHTML = `
                     <div class="flex items-center bg-white rounded-lg px-3 py-1">
                         <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
                         <span class="text-gray-800 font-medium">${userProfile?.nombre || user.displayName || 'Usuario'}</span>
                     </div>
                 `;
-        
+                
                 // Cambiar el comportamiento del botón de login para ir al perfil
                 loginBtn.removeEventListener('click', showLoginModal);
                 loginBtn.addEventListener('click', () => {
                     window.location.href = 'perfil.html';
                 });
+                
+                // Desactivar el botón de registro
+                if (registerBtn) {
+                    registerBtn.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error("Error al actualizar UI:", error);
+            }
+        }
         
-        // Desactivar el botón de registro
-        registerBtn.style.display = 'none';
+        // Manejar inscripción a torneos
+        tournamentButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Verificar si el usuario está autenticado
+                if (auth.currentUser) {
+                    const tournamentName = button.closest('.tournament-card').querySelector('h3').textContent;
+                    alert(`Te has inscrito al torneo: ${tournamentName}`);
+                } else {
+                    alert('Debes iniciar sesión para inscribirte a un torneo');
+                    showLoginModal();
+                }
+            });
+        });
         
-    } catch (error) {
-        console.error("Error al actualizar UI:", error);
-    }
-}
+        // Formularios de login y registro
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Esta funcionalidad utilizaría firebase.js para autenticar al usuario.');
+                // En una implementación real, llamarías a la función de login
+            });
+        }
         
         if (registroForm) {
             registroForm.addEventListener('submit', (e) => {
@@ -548,10 +596,16 @@
         }
         
         // Verificar si el usuario ya está logueado al cargar la página
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                updateUIForLoggedInUser(user);
-            }
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("Verificando estado de autenticación...");
+            auth.onAuthStateChanged(async user => {
+                if (user) {
+                    console.log("Usuario ya autenticado:", user.uid);
+                    updateUIForLoggedInUser(user);
+                } else {
+                    console.log("No hay usuario autenticado");
+                }
+            });
         });
     </script>
 </body>
