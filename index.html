@@ -1,82 +1,508 @@
-<!-- Añade esto justo antes de cerrar el body -->
-<script type="module">
-  import { auth, loginWithGoogle } from './firebase.js';
-  
-  // Referencias a elementos DOM
-  const loginBtn = document.getElementById('loginBtn');
-  const registerBtn = document.getElementById('registerBtn');
-  const loginModal = document.getElementById('loginModal');
-  const registroModal = document.getElementById('registroModal');
-  const closeLoginModal = document.getElementById('closeLoginModal');
-  const closeRegisterModal = document.getElementById('closeRegisterModal');
-  const showRegisterLink = document.getElementById('showRegisterLink');
-  
-  // Eventos para mostrar/ocultar modales
-  loginBtn.addEventListener('click', () => {
-    loginModal.classList.remove('hidden');
-    loginModal.classList.add('flex');
-  });
-  
-  registerBtn.addEventListener('click', () => {
-    registroModal.classList.remove('hidden');
-    registroModal.classList.add('flex');
-  });
-  
-  closeLoginModal.addEventListener('click', () => {
-    loginModal.classList.add('hidden');
-    loginModal.classList.remove('flex');
-  });
-  
-  closeRegisterModal.addEventListener('click', () => {
-    registroModal.classList.add('hidden');
-    registroModal.classList.remove('flex');
-  });
-  
-  showRegisterLink.addEventListener('click', () => {
-    loginModal.classList.add('hidden');
-    registroModal.classList.remove('hidden');
-    registroModal.classList.add('flex');
-  });
-  
-  // Botones de Google login
-  const googleLoginButtons = document.querySelectorAll('.google-login-btn');
-  googleLoginButtons.forEach(button => {
-    button.addEventListener('click', async () => {
-      try {
-        const user = await loginWithGoogle();
-        console.log("Usuario logueado:", user);
-        // Cierra los modales
-        loginModal.classList.add('hidden');
-        registroModal.classList.add('hidden');
-        // Actualiza la UI para mostrar que el usuario está logueado
-        updateUIForLoggedInUser(user);
-      } catch (error) {
-        console.error("Error en login:", error);
-        alert("Error al iniciar sesión. Inténtalo de nuevo.");
-      }
-    });
-  });
-  
-  // Función para actualizar la UI cuando el usuario inicia sesión
-  function updateUIForLoggedInUser(user) {
-    // Cambiar el botón de login por información del usuario
-    loginBtn.innerHTML = `
-      <div class="flex items-center">
-        <img src="${user.photoURL || '/api/placeholder/30/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-        <span>${user.displayName}</span>
-      </div>
-    `;
-    
-    // Desactivar el botón de registro
-    registerBtn.style.display = 'none';
-    
-    // Aquí puedes añadir más cambios en la UI
-  }
-  
-  // Verifica si el usuario ya está logueado al cargar la página
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      updateUIForLoggedInUser(user);
-    }
-  });
-</script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dtowin - Plataforma de Torneos y Eventos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .tournament-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="#perfil" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            </div>
+            <button class="md:hidden text-xl">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="py-16 px-4 gradient-background text-white text-center">
+        <div class="container mx-auto flex flex-col items-center">
+            <img src="https://via.placeholder.com/150" alt="Dtowin Mascot" class="w-32 h-32 mb-6">
+            <h2 class="text-4xl font-bold mb-6">Bienvenido a la Plataforma de Torneos Dtowin</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.</p>
+            <button id="registerBtn" class="bg-white text-red-600 px-6 py-3 rounded-lg font-bold text-lg hover:bg-gray-200 transition shadow-lg">¡Regístrate Ahora!</button>
+        </div>
+    </section>
+
+    <!-- Torneos Section -->
+    <section id="torneos" class="py-16 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Próximos Torneos y Eventos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Torneo 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300">
+                    <img src="https://via.placeholder.com/400x200" alt="Torneo 1" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">Torneo de Verano 2025</h3>
+                            <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Inscripciones Abiertas</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">Compite contra los mejores y gana hasta 5 puntos para el ranking global.</p>
+                        <div class="flex items-center text-gray-500 text-sm mb-4">
+                            <i class="far fa-calendar-alt mr-2"></i>
+                            <span>15 de Marzo, 2025</span>
+                            <i class="far fa-clock ml-4 mr-2"></i>
+                            <span>14:00 - 20:00</span>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                            <h4 class="font-semibold text-gray-700 mb-2">Puntos por posición:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-yellow-500 text-white rounded-full px-3 py-1 text-xs">1° - 5 pts</span>
+                                <span class="bg-gray-400 text-white rounded-full px-3 py-1 text-xs">2° - 4 pts</span>
+                                <span class="bg-orange-400 text-white rounded-full px-3 py-1 text-xs">3° - 3 pts</span>
+                                <span class="bg-blue-400 text-white rounded-full px-3 py-1 text-xs">4° - 2 pts</span>
+                                <span class="bg-purple-400 text-white rounded-full px-3 py-1 text-xs">5° - 1 pt</span>
+                            </div>
+                        </div>
+                        <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold">Inscribirse</button>
+                    </div>
+                </div>
+
+                <!-- Torneo 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300">
+                    <img src="https://via.placeholder.com/400x200" alt="Torneo 2" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">Campeonato Regional</h3>
+                            <span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">Próximamente</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">Clasificatorio para el Gran Campeonato Nacional con puntos bonus.</p>
+                        <div class="flex items-center text-gray-500 text-sm mb-4">
+                            <i class="far fa-calendar-alt mr-2"></i>
+                            <span>5 de Abril, 2025</span>
+                            <i class="far fa-clock ml-4 mr-2"></i>
+                            <span>10:00 - 18:00</span>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                            <h4 class="font-semibold text-gray-700 mb-2">Puntos por posición:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-yellow-500 text-white rounded-full px-3 py-1 text-xs">1° - 10 pts</span>
+                                <span class="bg-gray-400 text-white rounded-full px-3 py-1 text-xs">2° - 8 pts</span>
+                                <span class="bg-orange-400 text-white rounded-full px-3 py-1 text-xs">3° - 6 pts</span>
+                                <span class="bg-blue-400 text-white rounded-full px-3 py-1 text-xs">4° - 4 pts</span>
+                                <span class="bg-purple-400 text-white rounded-full px-3 py-1 text-xs">5° - 2 pts</span>
+                            </div>
+                        </div>
+                        <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">Próximamente</button>
+                    </div>
+                </div>
+
+                <!-- Torneo 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300">
+                    <img src="https://via.placeholder.com/400x200" alt="Torneo 3" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">Evento Especial</h3>
+                            <span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">Badge Exclusivo</span>
+                        </div>
+                        <p class="text-gray-600 mb-4">Evento exclusivo con badge conmemorativo para todos los participantes.</p>
+                        <div class="flex items-center text-gray-500 text-sm mb-4">
+                            <i class="far fa-calendar-alt mr-2"></i>
+                            <span>25 de Marzo, 2025</span>
+                            <i class="far fa-clock ml-4 mr-2"></i>
+                            <span>19:00 - 22:00</span>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                            <h4 class="font-semibold text-gray-700 mb-2">Recompensas:</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-yellow-500 text-white rounded-full px-3 py-1 text-xs">1° - 5 pts + Badge Oro</span>
+                                <span class="bg-gray-400 text-white rounded-full px-3 py-1 text-xs">Todos - Badge Participación</span>
+                            </div>
+                        </div>
+                        <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold">Inscribirse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section id="leaderboard" class="py-16 px-4 bg-gray-50">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global</h2>
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+                <div class="gradient-background text-white p-4">
+                    <div class="grid grid-cols-12 font-semibold">
+                        <div class="col-span-1 text-center">#</div>
+                        <div class="col-span-6">Jugador</div>
+                        <div class="col-span-2 text-center">Torneos</div>
+                        <div class="col-span-3 text-center">Puntos</div>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-200">
+                    <!-- Top 1 -->
+                    <div class="grid grid-cols-12 p-4 items-center bg-yellow-50">
+                        <div class="col-span-1 text-center font-bold text-xl text-yellow-500">1</div>
+                        <div class="col-span-6 flex items-center">
+                            <img src="https://via.placeholder.com/50" alt="Player" class="w-10 h-10 rounded-full mr-3">
+                            <div>
+                                <h3 class="font-semibold">AlexMaster</h3>
+                                <div class="flex">
+                                    <span class="badge bg-yellow-500" title="Campeón Nacional"><i class="fas fa-trophy"></i></span>
+                                    <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-2 text-center">15</div>
+                        <div class="col-span-3 text-center font-bold text-lg">128</div>
+                    </div>
+                    
+                    <!-- Top 2 -->
+                    <div class="grid grid-cols-12 p-4 items-center bg-gray-50">
+                        <div class="col-span-1 text-center font-bold text-xl text-gray-500">2</div>
+                        <div class="col-span-6 flex items-center">
+                            <img src="https://via.placeholder.com/50" alt="Player" class="w-10 h-10 rounded-full mr-3">
+                            <div>
+                                <h3 class="font-semibold">ProGamer123</h3>
+                                <div class="flex">
+                                    <span class="badge bg-blue-500" title="Veterano"><i class="fas fa-medal"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-2 text-center">12</div>
+                        <div class="col-span-3 text-center font-bold text-lg">105</div>
+                    </div>
+                    
+                    <!-- Top 3 -->
+                    <div class="grid grid-cols-12 p-4 items-center bg-orange-50">
+                        <div class="col-span-1 text-center font-bold text-xl text-orange-500">3</div>
+                        <div class="col-span-6 flex items-center">
+                            <img src="https://via.placeholder.com/50" alt="Player" class="w-10 h-10 rounded-full mr-3">
+                            <div>
+                                <h3 class="font-semibold">GameKing</h3>
+                                <div class="flex">
+                                    <span class="badge bg-red-500" title="Invicto"><i class="fas fa-fire"></i></span>
+                                    <span class="badge bg-green-500" title="Mejor Novato"><i class="fas fa-award"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-2 text-center">10</div>
+                        <div class="col-span-3 text-center font-bold text-lg">87</div>
+                    </div>
+                    
+                    <!-- Otros jugadores -->
+                    <div class="grid grid-cols-12 p-4 items-center">
+                        <div class="col-span-1 text-center font-bold">4</div>
+                        <div class="col-span-6 flex items-center">
+                            <img src="https://via.placeholder.com/50" alt="Player" class="w-10 h-10 rounded-full mr-3">
+                            <div>
+                                <h3 class="font-semibold">TournamentPro</h3>
+                                <div class="flex">
+                                    <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-2 text-center">8</div>
+                        <div class="col-span-3 text-center font-bold">72</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-12 p-4 items-center">
+                        <div class="col-span-1 text-center font-bold">5</div>
+                        <div class="col-span-6 flex items-center">
+                            <img src="https://via.placeholder.com/50" alt="Player" class="w-10 h-10 rounded-full mr-3">
+                            <h3 class="font-semibold">CompetitorX</h3>
+                        </div>
+                        <div class="col-span-2 text-center">9</div>
+                        <div class="col-span-3 text-center font-bold">65</div>
+                    </div>
+                </div>
+                <div class="p-4 text-center">
+                    <button class="text-orange-500 hover:text-orange-700 font-semibold">Ver tabla completa</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registro Modal -->
+    <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
+                <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+            </div>
+            
+            <form>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                        Nombre de usuario
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                        Correo electrónico (Gmail)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="******************">
+                </div>
+                
+                <div class="mb-6">
+                    <button class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition" type="button">
+                        Registrarse
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn" type="button">
+                        <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    Al registrarte aceptas nuestros términos y condiciones
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+                <p class="text-gray-600">Bienvenido de vuelta</p>
+            </div>
+            
+            <form>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
+                        Correo electrónico
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="loginPassword" type="password" placeholder="******************">
+                    <a class="inline-block align-baseline font-bold text-sm text-orange-500 hover:text-orange-700" href="#">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+                
+                <div class="mb-6">
+                    <button class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition" type="button">
+                        Iniciar Sesión
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-login-btn" type="button">
+                        <img src="https://via.placeholder.com/20" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-8 px-4">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                    <h3 class="text-xl font-bold">Dtowin Torneos</h3>
+                </div>
+                <p class="text-sm opacity-80">La plataforma líder para organizar y participar en torneos competitivos.</p>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Enlaces</h4>
+                <ul class="space-y-2">
+                    <li><a href="#inicio" class="hover:text-gray-300 transition">Inicio</a></li>
+                    <li><a href="#torneos" class="hover:text-gray-300 transition">Torneos</a></li>
+                    <li><a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Soporte</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:text-gray-300 transition">FAQ</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Contacto</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Términos y Condiciones</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Privacidad</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Síguenos</h4>
+                <div class="flex space-x-4 mb-4">
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fab fa-discord"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fab fa-twitch"></i>
+                    </a>
+                </div>
+                <p class="text-sm opacity-80">Suscríbete para recibir noticias</p>
+                <div class="flex mt-2">
+                    <input type="email" placeholder="Tu correo" class="px-3 py-2 rounded-l-lg w-full focus:outline-none text-gray-700">
+                    <button class="bg-white text-orange-500 px-4 py-2 rounded-r-lg font-semibold hover:bg-gray-100 transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto mt-8 pt-8 border-t border-white border-opacity-20 text-center">
+            <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Importar funciones de Firebase
+        import { loginWithGoogle, auth } from './firebase.js';
+        
+        // Referencias a elementos DOM
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const loginModal = document.getElementById('loginModal');
+        const registroModal = document.getElementById('registroModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const showRegisterLink = document.getElementById('showRegisterLink');
+        
+        // Eventos para mostrar/ocultar modales
+        loginBtn.addEventListener('click', () => {
+            loginModal.classList.remove('hidden');
+            loginModal.classList.add('flex');
+        });
+        
+        registerBtn.addEventListener('click', () => {
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+        
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+        });
+        
+        closeRegisterModal.addEventListener('click', () => {
+            registroModal.classList.add('hidden');
+            registroModal.classList.remove('flex');
+        });
+        
+        showRegisterLink.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+        
+        // Botones de Google login
+        const googleLoginButtons = document.querySelectorAll('.google-login-btn');
+        googleLoginButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                try {
+                    const user = await loginWithGoogle();
+                    console.log("Usuario logueado:", user);
+                    // Cierra los modales
+                    loginModal.classList.add('hidden');
+                    registroModal.classList.add('hidden');
+                   // Actualiza la UI para mostrar que el usuario está logueado
+                    updateUIForLoggedInUser(user);
+                } catch (error) {
+                    console.error("Error en login:", error);
+                    alert("Error al iniciar sesión. Inténtalo de nuevo.");
+                }
+            });
+        });
+        
+        // Función para actualizar la UI cuando el usuario inicia sesión
+        function updateUIForLoggedInUser(user) {
+            // Cambiar el botón de login por información del usuario
+            loginBtn.innerHTML = `
+                <div class="flex items-center">
+                    <img src="${user.photoURL || 'https://via.placeholder.com/30'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                    <span>${user.displayName}</span>
+                </div>
+            `;
+            
+            // Desactivar el botón de registro
+            registerBtn.style.display = 'none';
+            
+            // Aquí puedes añadir más cambios en la UI
+        }
+        
+        // Verifica si el usuario ya está logueado al cargar la página
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                updateUIForLoggedInUser(user);
+            }
+        });
+    </script>
+</body>
+</html>
