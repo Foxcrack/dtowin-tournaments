@@ -7,73 +7,82 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Añadir estos estilos a la sección <style> de admin-badges.html */
-
-    /* Estilo mejorado para el badge */
-    .badge {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        color: white;
-        font-size: 1rem;
-    }
-
-    /* Asegurarse que los íconos se vean correctamente */
-    .badge i {
-        font-size: 1.25rem; /* Tamaño más grande para los íconos */
-    }
-
-    /* Contenedor de imagen con tamaño fijo */
-    .badge-image-container {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        overflow: hidden;
-        background-color: #f9fafb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Estilo para imágenes dentro del contenedor */
-    .badge-image-container img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-    }
-
-    /* Asegurarse que los botones de acción sean visibles */
-    .badge-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .edit-badge-btn,
-    .delete-badge-btn {
-        cursor: pointer;
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-    }
-
-    .edit-badge-btn:hover,
-    .delete-badge-btn:hover {
-        background-color: #f3f4f6;
-    }
-
-    /* Spinner de carga */
-    .spinner {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
+        .badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            color: white;
+            font-size: 1rem;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Estilos mejorados para badges */
+        .badge i {
+            font-size: 1.25rem; /* Tamaño más grande para los íconos */
+        }
+        
+        /* Contenedor de imagen con tamaño fijo */
+        .badge-image-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Estilo para imágenes dentro del contenedor */
+        .badge-image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Asegurarse que los botones de acción sean visibles */
+        .badge-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .edit-badge-btn,
+        .delete-badge-btn {
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+        
+        .edit-badge-btn:hover,
+        .delete-badge-btn:hover {
+            background-color: #f3f4f6;
+        }
     </style>
     
     <!-- Firebase App (la base) siempre es requerida y debe ser la primera -->
@@ -263,274 +272,56 @@
     </footer>
 
     <!-- Script para gestión de badges -->
-    <script>
-    // Ejecuta esto cuando la página cargue
-    document.addEventListener('DOMContentLoaded', function() {
-        // Referencias a elementos del DOM
-        const badgesContainer = document.getElementById('badgesContainer');
-        const createBadgeForm = document.getElementById('createBadgeForm');
-        const submitButton = document.querySelector('#createBadgeForm button[type="submit"]');
-        const cancelButton = document.getElementById('cancelButton');
-        const formSection = document.getElementById('badgeFormSection') || createBadgeForm.closest('.bg-gray-50');
-        const headerCreateBadgeBtn = document.querySelector('button.dtowin-primary');
-        const imagenBadgeInput = document.getElementById('imagenBadge');
-        const badgePreviewContainer = document.getElementById('badgePreviewContainer');
-        
-        // Verificar autenticación
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                // Cargar badges
-                loadBadges();
-            } else {
-                console.log("No hay usuario autenticado");
-                window.location.href = "index.html";
-            }
-        });
-        
-        // Configurar listeners
-        if (headerCreateBadgeBtn) {
-            headerCreateBadgeBtn.addEventListener('click', function() {
-                if (formSection) formSection.classList.remove('hidden');
-            });
-        }
-        
-        if (cancelButton) {
-            cancelButton.addEventListener('click', function() {
-                if (formSection) formSection.classList.add('hidden');
-            });
-        }
-        
-        // Vista previa de imagen
-        if (imagenBadgeInput) {
-            imagenBadgeInput.addEventListener('change', function() {
-                if (!badgePreviewContainer) return;
-                
-                const file = this.files[0];
-                if (file) {
-                    // Verificar que sea una imagen
-                    if (!file.type.startsWith('image/')) {
-                        mostrarNotificacion("El archivo debe ser una imagen", "error");
-                        this.value = '';
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        badgePreviewContainer.innerHTML = `
-                            <img src="${e.target.result}" alt="Vista previa" class="w-full h-full object-contain">
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
-                }
-            });
-        }
-        
-        if (createBadgeForm) {
-            createBadgeForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Obtener valores del formulario
-                const nombre = document.getElementById('nombreBadge').value;
-                const descripcion = document.getElementById('descripcionBadge').value;
-                const color = document.getElementById('colorBadge').value;
-                const icono = document.getElementById('iconoBadge').value;
-                
-                // Crear badge sin subir imagen
-                createBadgeWithoutImage(nombre, descripcion, color, icono);
-            });
-        }
-        
-        // Función para crear badge sin usar Storage
-        async function createBadgeWithoutImage(nombre, descripcion, color, icono) {
-            try {
-                // Mostrar indicador de carga
-                if (submitButton) {
-                    const originalText = submitButton.textContent;
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Procesando...';
-                    
-                    // Añadir badge a Firestore directamente (sin imagen)
-                    await firebase.firestore().collection('badges').add({
-                        nombre: nombre,
-                        descripcion: descripcion,
-                        color: color,
-                        icono: icono,
-                        createdBy: firebase.auth().currentUser.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Mostrar mensaje de éxito
-                    mostrarNotificacion('Badge creado correctamente', 'success');
-                    
-                    // Ocultar formulario y recargar badges
-                    if (formSection) formSection.classList.add('hidden');
-                    createBadgeForm.reset();
-                    
-                    // Recargar lista de badges
-                    loadBadges();
-                    
-                    // Restaurar botón
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                mostrarNotificacion('Error al crear badge: ' + error.message, 'error');
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Crear Badge';
-                }
-            }
-        }
-        
-        // Función para mostrar notificaciones
-        function mostrarNotificacion(mensaje, tipo) {
-            const notificacion = document.createElement('div');
-            
-            // Definir clases según el tipo
-            const bgColor = tipo === 'success' ? 'bg-green-500' : 'bg-red-500';
-            
-            notificacion.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50`;
-            notificacion.textContent = mensaje;
-            
-            document.body.appendChild(notificacion);
-            
-            // Eliminar después de 3 segundos
-            setTimeout(() => {
-                notificacion.remove();
-            }, 3000);
-        }
-        
-        // Cargar badges existentes
-        async function loadBadges() {
-            if (!badgesContainer) return;
-            
-            try {
-                badgesContainer.innerHTML = '<div class="flex justify-center"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
-                
-                const snapshot = await firebase.firestore().collection('badges').get();
-                
-                if (snapshot.empty) {
-                    badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
-                    return;
-                }
-                
-                let html = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
-                
-                snapshot.forEach(doc => {
-                    const badge = doc.data();
-                    html += `
-                        <div class="bg-white rounded-lg p-4 shadow-md flex items-center" data-badge-id="${doc.id}">
-                            <div class="h-12 w-12 mr-3 rounded-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
-                                <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
-                            </div>
-                            <div class="flex-grow">
-                                <h4 class="font-semibold">${badge.nombre || 'Sin nombre'}</h4>
-                                <p class="text-sm text-gray-600">${badge.descripcion || ''}</p>
-                            </div>
-                            <button class="text-red-500 hover:text-red-700 delete-badge-btn">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                badgesContainer.innerHTML = html;
-                
-                // Añadir listeners a botones de eliminar
-                document.querySelectorAll('.delete-badge-btn').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        const card = this.closest('[data-badge-id]');
-                        const id = card.dataset.badgeId;
-                        
-                        if (confirm('¿Estás seguro de que quieres eliminar este badge?')) {
-                            try {
-                                await firebase.firestore().collection('badges').doc(id).delete();
-                                card.remove();
-                                mostrarNotificacion('Badge eliminado correctamente', 'success');
-                                
-                                // Si no quedan badges, actualizar mensaje
-                                if (document.querySelectorAll('[data-badge-id]').length === 0) {
-                                    badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
-                                }
-                            } catch (error) {
-                                console.error('Error:', error);
-                                mostrarNotificacion('Error al eliminar badge', 'error');
-                            }
-                        }
-                    });
-                });
-            } catch (error) {
-                console.error('Error al cargar badges:', error);
-                badgesContainer.innerHTML = `<p class="text-center text-red-500">Error al cargar badges: ${error.message}</p>`;
-            }
-        }
-    });
-    </script>
-    <!-- Añadir esto justo antes del cierre de </body> en el archivo admin-badges.html -->
-
-<!-- Estilos adicionales -->
-<style>
-    /* Estilo mejorado para el badge */
-    .badge {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        color: white;
-        font-size: 1rem;
-    }
-
-    /* Asegurarse que los íconos se vean correctamente */
-    .badge i {
-        font-size: 1.25rem; /* Tamaño más grande para los íconos */
-    }
-
-    /* Contenedor de imagen con tamaño fijo */
-    .badge-image-container {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        overflow: hidden;
-        background-color: #f9fafb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Asegurarse que los botones de acción sean visibles */
-    .badge-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .edit-badge-btn,
-    .delete-badge-btn {
-        cursor: pointer;
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-    }
-
-    .edit-badge-btn:hover,
-    .delete-badge-btn:hover {
-        background-color: #0055ff;
-    }
-</style>
-
-<!-- Script para la gestión de badges -->
-<script type="module">
+    <script type="module">
     // Importar funciones necesarias
     import { getAllBadges, createBadge, editBadge, deleteBadge } from './badges.js';
     import { auth, isUserHost } from './firebase.js';
-    import { showNotification } from './admin-panel.js';
+    
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        // Eliminar notificación existente si hay una
+        const notificacionExistente = document.querySelector('.notification');
+        if (notificacionExistente) {
+            notificacionExistente.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notificacion = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notificacion.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notificacion.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notificacion);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notificacion.classList.add('opacity-0');
+            notificacion.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notificacion.remove();
+            }, 500);
+        }, 3000);
+    }
 
     // Esperar a que el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
@@ -539,7 +330,7 @@
         // Referencias a elementos del DOM
         const badgesContainer = document.getElementById('badgesContainer');
         const createBadgeForm = document.getElementById('createBadgeForm');
-        const formSection = document.getElementById('badgeFormSection') || createBadgeForm?.closest('.bg-gray-50');
+        const formSection = document.getElementById('badgeFormSection');
         const headerCreateBadgeBtn = document.getElementById('headerCreateBadgeBtn');
         const nombreBadgeInput = document.getElementById('nombreBadge');
         const descripcionBadgeInput = document.getElementById('descripcionBadge');
@@ -570,13 +361,11 @@
                 
                 if (!userIsHost) {
                     console.log("No tienes permisos para gestionar badges");
-                    window.location.href = 'index.html';
+                    mostrarNotificacion("No tienes permisos para gestionar badges", "error");
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
                     return;
-                }
-                
-                // Ocultar formulario por defecto
-                if (formSection) {
-                    formSection.classList.add('hidden');
                 }
                 
                 // Configurar event listeners
@@ -586,7 +375,7 @@
                 await cargarBadges();
             } catch (error) {
                 console.error("Error al iniciar gestión:", error);
-                mostrarMensaje("Error al inicializar la gestión de badges", "error");
+                mostrarNotificacion("Error al inicializar la gestión de badges", "error");
             }
         }
 
@@ -624,7 +413,7 @@
             
             // Validación
             if (!nombreBadgeInput || !nombreBadgeInput.value.trim()) {
-                mostrarMensaje("El nombre del badge es obligatorio", "error");
+                mostrarNotificacion("El nombre del badge es obligatorio", "error");
                 return;
             }
             
@@ -653,11 +442,11 @@
                 if (isEditMode && badgeId) {
                     // Editar badge existente
                     await editBadge(badgeId, badgeData, imageFile);
-                    mostrarMensaje("Badge actualizado correctamente", "success");
+                    mostrarNotificacion("Badge actualizado correctamente", "success");
                 } else {
                     // Crear nuevo badge
                     await createBadge(badgeData, imageFile);
-                    mostrarMensaje("Badge creado correctamente", "success");
+                    mostrarNotificacion("Badge creado correctamente", "success");
                 }
                 
                 // Ocultar formulario y resetear
@@ -668,7 +457,7 @@
                 await cargarBadges();
             } catch (error) {
                 console.error("Error al procesar badge:", error);
-                mostrarMensaje(error.message || "Error al procesar el badge", "error");
+                mostrarNotificacion(error.message || "Error al procesar el badge", "error");
             } finally {
                 // Restaurar estado del botón
                 submitButton.disabled = false;
@@ -804,7 +593,7 @@
                         
                     } catch (error) {
                         console.error("Error al cargar badge para editar:", error);
-                        mostrarMensaje("Error al cargar datos del badge", "error");
+                        mostrarNotificacion("Error al cargar datos del badge", "error");
                     }
                 });
             });
@@ -824,7 +613,7 @@
                             // Eliminar la tarjeta del DOM
                             badgeCard.remove();
                             
-                            mostrarMensaje("Badge eliminado correctamente", "success");
+                            mostrarNotificacion("Badge eliminado correctamente", "success");
                             
                             // Si no quedan badges, actualizar mensaje
                             if (document.querySelectorAll('[data-badge-id]').length === 0) {
@@ -837,7 +626,7 @@
                             
                         } catch (error) {
                             console.error("Error al eliminar badge:", error);
-                            mostrarMensaje("Error al eliminar badge", "error");
+                            mostrarNotificacion("Error al eliminar badge", "error");
                         }
                     }
                 });
@@ -886,7 +675,7 @@
             if (file) {
                 // Verificar que sea una imagen
                 if (!file.type.startsWith('image/')) {
-                    mostrarMensaje("El archivo debe ser una imagen", "error");
+                    mostrarNotificacion("El archivo debe ser una imagen", "error");
                     imagenBadgeInput.value = '';
                     return;
                 }
@@ -902,54 +691,7 @@
                 badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
             }
         }
-
-        // Mostrar mensaje de notificación
-        function mostrarMensaje(mensaje, tipo = 'info') {
-            // Utilizar la función global si está disponible
-            if (typeof showNotification === 'function') {
-                showNotification(mensaje, tipo);
-                return;
-            }
-            
-            // Implementación de respaldo
-            const notificacionExistente = document.querySelector('.notification');
-            if (notificacionExistente) {
-                notificacionExistente.remove();
-            }
-            
-            const notificacion = document.createElement('div');
-            
-            let bgColor = 'bg-blue-500';
-            let icon = 'info-circle';
-            
-            if (tipo === 'success') {
-                bgColor = 'bg-green-500';
-                icon = 'check-circle';
-            } else if (tipo === 'error') {
-                bgColor = 'bg-red-500';
-                icon = 'exclamation-circle';
-            } else if (tipo === 'warning') {
-                bgColor = 'bg-yellow-500';
-                icon = 'exclamation-triangle';
-            }
-            
-            notificacion.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-            notificacion.innerHTML = `
-                <i class="fas fa-${icon} mr-2"></i>
-                <span>${mensaje}</span>
-            `;
-            
-            document.body.appendChild(notificacion);
-            
-            setTimeout(() => {
-                notificacion.classList.add('opacity-0');
-                notificacion.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    notificacion.remove();
-                }, 500);
-            }, 3000);
-        }
     });
-</script>
+    </script>
 </body>
 </html>
