@@ -1211,5 +1211,525 @@
     console.log("Gestor de badges mejorado inicializado correctamente");
   });
 </script>
+    <script type="module">
+  // Importar Firebase directamente para mayor control
+  import { 
+    collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, 
+    serverTimestamp, query, where 
+  } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+  import { 
+    ref, uploadBytes, getDownloadURL, deleteObject 
+  } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
+  
+  document.addEventListener('DOMContentLoaded', async function() {
+    console.log("Inicializando sistema de badges directo...");
+    
+    // Obtener referencias de Firebase desde la ventana global
+    const auth = window.auth;
+    const db = window.db;
+    const storage = window.storage;
+    
+    if (!auth || !db || !storage) {
+      console.error("No se encontraron las referencias de Firebase");
+      return;
+    }
+    
+    // Referencias a elementos DOM
+    const createBadgeForm = document.getElementById('createBadgeForm');
+    const badgesContainer = document.getElementById('badgesContainer');
+    const createBadgeBtn = document.querySelector('.dtowin-primary') || document.querySelector('button:contains("Crear Badge")');
+    
+    // Remover alerta de "función en implementación"
+    const alerts = document.querySelectorAll('.alert, .modal, .notification');
+    alerts.forEach(alert => {
+      if (alert.textContent.includes('implementando')) {
+        alert.remove();
+      }
+    });
+    
+    // Funciones directas para trabajar con badges
+    
+    // Crear un badge
+    async function createBadgeDirect(badgeData, imageFile) {
+      try {
+        if (!auth.currentUser) {
+          throw new Error("Debes iniciar sesión para crear un badge");
+        }
+        
+        // Validar datos
+        if (!badgeData.nombre) {
+          throw new Error("El nombre del badge es obligatorio");
+        }
+        
+        // Subir imagen si existe
+        let imageUrl = null;
+        if (imageFile) {
+          const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
+          await uploadBytes(storageRef, imageFile);
+          imageUrl = await getDownloadURL(storageRef);
+        }
+        
+        // Crear documento en Firestore
+        const badgeRef = await addDoc(collection(db, "badges"), {
+          nombre: badgeData.nombre,
+          descripcion: badgeData.descripcion || "",
+          color: badgeData.color || "#ff6b1a",
+          icono: badgeData.icono || "trophy",
+          imageUrl: imageUrl,
+          createdBy: auth.currentUser.uid,
+          createdAt: serverTimestamp()
+        });
+        
+        console.log("Badge creado con ID:", badgeRef.id);
+        return { 
+          success: true, 
+          id: badgeRef.id,
+          nombre: badgeData.nombre,
+          descripcion: badgeData.descripcion,
+          color: badgeData.color,
+          icono: badgeData.icono,
+          imageUrl: imageUrl
+        };
+      } catch (error) {
+        console.error("Error al crear badge:", error);
+        throw error;
+      }
+    }
+    
+    // Obtener todos los badges
+    async function getAllBadgesDirect() {
+      try {
+        const badgesCollection = collection(db, "badges");
+        const badgesSnapshot = await getDocs(badgesCollection);
+        
+        return badgesSnapshot.docs.map(doc => {
+          return { id: doc.id, ...doc.data() };
+        });
+      } catch (error) {
+        console.error("Error al obtener badges:", error);
+        throw error;
+      }
+    }
+    
+    // Eliminar un badge
+    async function deleteBadgeDirect(badgeId) {
+      try {
+        // Obtener datos del badge
+        const badgeRef = doc(db, "badges", badgeId);
+        const badgeSnap = await getDoc(badgeRef);
+        
+        if (!badgeSnap.exists()) {
+          throw new Error("El badge no existe");
+        }
+        
+        const badgeData = badgeSnap.data();
+        
+        // Eliminar imagen si existe
+        if (badgeData.imageUrl) {
+          try {
+            const urlPath = badgeData.imageUrl.split('?')[0];
+            const fileName = urlPath.split('/').pop();
+            const storagePath = `badges/${fileName}`;
+            const imageRef = ref(storage, storagePath);
+            await deleteObject(imageRef);
+          } catch (e) {
+            console.warn("No se pudo eliminar la imagen:", e);
+          }
+        }
+        
+        // Eliminar documento
+        await deleteDoc(badgeRef);
+        
+        return { success: true };
+      } catch (error) {
+        console.error("Error al eliminar badge:", error);
+        throw error;
+      }
+    }
+    
+    // Editar un badge
+    async function editBadgeDirect(badgeId, badgeData, imageFile) {
+      try {
+        const badgeRef = doc(db, "badges", badgeId);
+        const badgeSnap = await getDoc(badgeRef);
+        
+        if (!badgeSnap.exists()) {
+          throw new Error("El badge no existe");
+        }
+        
+        const currentData = badgeSnap.data();
+        
+        // Procesar imagen si hay una nueva
+        let imageUrl = currentData.imageUrl;
+        
+        if (imageFile) {
+          // Eliminar imagen anterior si existe
+          if (currentData.imageUrl) {
+            try {
+              const urlPath = currentData.imageUrl.split('?')[0];
+              const fileName = urlPath.split('/').pop();
+              const storagePath = `badges/${fileName}`;
+              const oldImageRef = ref(storage, storagePath);
+              await deleteObject(oldImageRef);
+            } catch (e) {
+              console.warn("No se pudo eliminar la imagen anterior:", e);
+            }
+          }
+          
+          // Subir nueva imagen
+          const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
+          await uploadBytes(storageRef, imageFile);
+          imageUrl = await getDownloadURL(storageRef);
+        }
+        
+        // Actualizar documento
+        await updateDoc(badgeRef, {
+          nombre: badgeData.nombre,
+          descripcion: badgeData.descripcion || "",
+          color: badgeData.color || "#ff6b1a",
+          icono: badgeData.icono || "trophy",
+          imageUrl: imageUrl,
+          updatedBy: auth.currentUser.uid,
+          updatedAt: serverTimestamp()
+        });
+        
+        return { 
+          success: true,
+          id: badgeId,
+          nombre: badgeData.nombre,
+          descripcion: badgeData.descripcion,
+          color: badgeData.color,
+          icono: badgeData.icono,
+          imageUrl: imageUrl
+        };
+      } catch (error) {
+        console.error("Error al editar badge:", error);
+        throw error;
+      }
+    }
+    
+    // Mostrar notificación
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 right-4 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white py-2 px-4 rounded-lg shadow-lg z-50`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+    
+    // Cargar y mostrar badges
+    async function loadAndDisplayBadges() {
+      if (!badgesContainer) return;
+      
+      try {
+        badgesContainer.innerHTML = '<div class="flex justify-center my-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
+        
+        const badges = await getAllBadgesDirect();
+        
+        if (!badges || badges.length === 0) {
+          badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
+          return;
+        }
+        
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">';
+        
+        badges.forEach(badge => {
+          html += `
+            <div class="bg-white border rounded-lg p-4 shadow flex items-center" data-badge-id="${badge.id}">
+              <div class="h-12 w-12 mr-3 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                ${badge.imageUrl ? 
+                  `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
+                  `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color}">
+                    <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+                  </div>`
+                }
+              </div>
+              <div class="flex-grow">
+                <h4 class="font-semibold">${badge.nombre}</h4>
+                <p class="text-sm text-gray-600 truncate">${badge.descripcion || ''}</p>
+              </div>
+              <div class="flex space-x-2 ml-2">
+                <button class="text-blue-500 hover:text-blue-700 edit-badge-btn" title="Editar badge">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="text-red-500 hover:text-red-700 delete-badge-btn" title="Eliminar badge">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        badgesContainer.innerHTML = html;
+      } catch (error) {
+        console.error("Error al cargar badges:", error);
+        badgesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar badges. Inténtalo de nuevo.</p>';
+      }
+    }
+    
+    // Encontrar o crear un botón para mostrar/ocultar el formulario
+    const headerCreateBadgeBtn = document.querySelector('button[id="headerCreateBadgeBtn"]') || 
+                               document.querySelector('button:contains("Crear Badge")');
+    
+    // Buscar o crear la sección del formulario
+    const formSection = createBadgeForm ? createBadgeForm.closest('.bg-gray-50, .card, .form-section') : null;
+    
+    // Ocultar formulario inicialmente
+    if (formSection) {
+      if (!formSection.classList.contains('hidden')) {
+        formSection.classList.add('hidden');
+      }
+    }
+    
+    // Event listeners
+    
+    // Mostrar formulario al hacer clic en "Crear Badge"
+    if (headerCreateBadgeBtn) {
+      headerCreateBadgeBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // Evitar comportamiento por defecto
+        e.stopPropagation(); // Evitar propagación a otros handlers
+        
+        console.log("Botón de crear badge clickeado");
+        
+        // Resetear formulario
+        if (createBadgeForm) {
+          createBadgeForm.reset();
+          
+          // Cambiar texto del botón
+          const submitBtn = createBadgeForm.querySelector('button[type="submit"]');
+          if (submitBtn) {
+            submitBtn.textContent = 'Crear Badge';
+            submitBtn.dataset.editMode = 'false';
+            delete submitBtn.dataset.badgeId;
+          }
+          
+          // Limpiar preview
+          const previewContainer = document.getElementById('badgePreviewContainer');
+          if (previewContainer) {
+            previewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
+          }
+        }
+        
+        // Mostrar formulario
+        if (formSection) {
+          formSection.classList.remove('hidden');
+          createBadgeForm.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        return false; // Asegurar que no se ejecute ningún otro handler
+      });
+    }
+    
+    // Evento para el formulario
+    if (createBadgeForm) {
+      // Reemplazar con un nuevo evento
+      const oldForm = createBadgeForm;
+      const newForm = oldForm.cloneNode(true);
+      if (oldForm.parentNode) {
+        oldForm.parentNode.replaceChild(newForm, oldForm);
+      }
+      
+      // Añadir el nuevo manejador
+      newForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Obtener referencias a elementos
+        const nombreInput = document.getElementById('nombreBadge');
+        const descripcionInput = document.getElementById('descripcionBadge');
+        const colorInput = document.getElementById('colorBadge');
+        const iconoInput = document.getElementById('iconoBadge');
+        const imagenInput = document.getElementById('imagenBadge');
+        const submitBtn = this.querySelector('button[type="submit"]');
+        
+        // Validación básica
+        if (!nombreInput || !nombreInput.value.trim()) {
+          alert("El nombre del badge es obligatorio");
+          return;
+        }
+        
+        // Preparar datos
+        const badgeData = {
+          nombre: nombreInput.value.trim(),
+          descripcion: descripcionInput ? descripcionInput.value.trim() : "",
+          color: colorInput ? colorInput.value : "#ff6b1a",
+          icono: iconoInput ? iconoInput.value : "trophy"
+        };
+        
+        // Obtener archivo de imagen
+        const imageFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
+        
+        // Modo edición o creación
+        const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
+        const badgeId = submitBtn ? submitBtn.dataset.badgeId : null;
+        
+        // Mostrar indicador de carga
+        const originalText = submitBtn ? submitBtn.textContent : 'Crear Badge';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Procesando...';
+        }
+        
+        try {
+          let result;
+          
+          if (isEditMode && badgeId) {
+            // Editar badge existente
+            result = await editBadgeDirect(badgeId, badgeData, imageFile);
+            showToast("Badge actualizado correctamente");
+          } else {
+            // Crear nuevo badge
+            result = await createBadgeDirect(badgeData, imageFile);
+            showToast("Badge creado correctamente");
+          }
+          
+          // Resetear formulario
+          this.reset();
+          
+          // Ocultar formulario
+          if (formSection) {
+            formSection.classList.add('hidden');
+          }
+          
+          // Recargar la lista de badges
+          await loadAndDisplayBadges();
+          
+        } catch (error) {
+          console.error("Error:", error);
+          showToast(error.message || "Error al procesar badge", "error");
+        } finally {
+          // Restaurar botón
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+          }
+        }
+        
+        return false;
+      });
+      
+      // Vista previa de imagen
+      const imagenInput = document.getElementById('imagenBadge');
+      const previewContainer = document.getElementById('badgePreviewContainer');
+      
+      if (imagenInput && previewContainer) {
+        imagenInput.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              previewContainer.innerHTML = `<img src="${e.target.result}" alt="Vista previa" class="w-full h-full object-contain">`;
+            };
+            reader.readAsDataURL(this.files[0]);
+          }
+        });
+      }
+    }
+    
+    // Delegación de eventos para editar/eliminar badges
+    if (badgesContainer) {
+      badgesContainer.addEventListener('click', async function(e) {
+        // Botón de editar
+        if (e.target.closest('.edit-badge-btn')) {
+          const badgeCard = e.target.closest('[data-badge-id]');
+          if (!badgeCard) return;
+          
+          const badgeId = badgeCard.dataset.badgeId;
+          console.log(`Editando badge: ${badgeId}`);
+          
+          try {
+            // Obtener datos del badge
+            const badgeRef = doc(db, "badges", badgeId);
+            const badgeSnap = await getDoc(badgeRef);
+            
+            if (!badgeSnap.exists()) {
+              throw new Error("Badge no encontrado");
+            }
+            
+            const badge = badgeSnap.data();
+            
+            // Mostrar formulario
+            if (formSection) {
+              formSection.classList.remove('hidden');
+            }
+            
+            // Rellenar campos
+            const nombreInput = document.getElementById('nombreBadge');
+            const descripcionInput = document.getElementById('descripcionBadge');
+            const colorInput = document.getElementById('colorBadge');
+            const iconoInput = document.getElementById('iconoBadge');
+            const previewContainer = document.getElementById('badgePreviewContainer');
+            
+            if (nombreInput) nombreInput.value = badge.nombre || '';
+            if (descripcionInput) descripcionInput.value = badge.descripcion || '';
+            if (colorInput) colorInput.value = badge.color || '#ff6b1a';
+            if (iconoInput) iconoInput.value = badge.icono || 'trophy';
+            
+            // Mostrar preview
+            if (previewContainer && badge.imageUrl) {
+              previewContainer.innerHTML = `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">`;
+            }
+            
+            // Cambiar botón a modo edición
+            const submitBtn = createBadgeForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+              submitBtn.textContent = 'Confirmar Cambios';
+              submitBtn.dataset.editMode = 'true';
+              submitBtn.dataset.badgeId = badgeId;
+            }
+            
+            // Scroll al formulario
+            createBadgeForm.scrollIntoView({ behavior: 'smooth' });
+            
+          } catch (error) {
+            console.error("Error al preparar edición:", error);
+            showToast("Error al preparar la edición del badge", "error");
+          }
+        }
+        
+        // Botón de eliminar
+        if (e.target.closest('.delete-badge-btn')) {
+          const badgeCard = e.target.closest('[data-badge-id]');
+          if (!badgeCard) return;
+          
+          const badgeId = badgeCard.dataset.badgeId;
+          const badgeName = badgeCard.querySelector('h4').textContent;
+          
+          if (confirm(`¿Estás seguro que deseas eliminar el badge "${badgeName}"?`)) {
+            try {
+              await deleteBadgeDirect(badgeId);
+              showToast("Badge eliminado correctamente");
+              
+              // Eliminar la tarjeta del DOM
+              badgeCard.remove();
+              
+              // Si no quedan badges, mostrar mensaje
+              if (badgesContainer.querySelectorAll('[data-badge-id]').length === 0) {
+                badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
+              }
+              
+            } catch (error) {
+              console.error("Error al eliminar badge:", error);
+              showToast("Error al eliminar badge", "error");
+            }
+          }
+        }
+      });
+    }
+    
+    // Cargar badges inicialmente
+    await loadAndDisplayBadges();
+    
+    // Eliminar cualquier alerta existente sobre la implementación
+    document.querySelectorAll('.alert, [role="alert"]').forEach(alert => {
+      if (alert.textContent && alert.textContent.includes('implementando')) {
+        alert.remove();
+      }
+    });
+  });
+</script>
 </body>
 </html>
