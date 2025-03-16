@@ -15,10 +15,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const iconoBadgeInput = document.getElementById('iconoBadge');
     const imagenBadgeInput = document.getElementById('imagenBadge');
     const badgePreviewContainer = document.getElementById('badgePreviewContainer');
+    const formSection = createBadgeForm ? createBadgeForm.closest('.bg-gray-50') : null;
 
     // Verificar que estamos en la página de administración y los elementos existen
     if (createBadgeForm && nombreBadgeInput) {
         console.log("Script de creación de badges inicializado correctamente");
+        
+        // Ocultar el formulario por defecto
+        if (formSection) {
+            formSection.classList.add('hidden');
+        }
         
         // Event listener para el formulario de creación de badges
         createBadgeForm.addEventListener('submit', handleCreateBadge);
@@ -31,11 +37,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Si existe un botón de "crear badge" en el encabezado, añadir event listener
         if (headerCreateBadgeButton) {
             headerCreateBadgeButton.addEventListener('click', function() {
+                // Resetear formulario y configurar modo creación
+                createBadgeForm.reset();
+                
+                if (createBadgeButton) {
+                    createBadgeButton.textContent = 'Crear Badge';
+                    createBadgeButton.dataset.editMode = 'false';
+                    delete createBadgeButton.dataset.badgeId;
+                }
+                
+                // Limpiar vista previa
+                if (badgePreviewContainer) {
+                    badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
+                }
+                
                 // Mostrar formulario si está oculto
-                const formSection = createBadgeForm.closest('.bg-gray-50');
                 if (formSection && formSection.classList.contains('hidden')) {
                     formSection.classList.remove('hidden');
                 }
+                
                 // Hacer scroll al formulario
                 createBadgeForm.scrollIntoView({ behavior: 'smooth' });
             });
@@ -56,12 +76,17 @@ async function handleCreateBadge(event) {
     const colorBadgeInput = document.getElementById('colorBadge');
     const iconoBadgeInput = document.getElementById('iconoBadge');
     const imagenBadgeInput = document.getElementById('imagenBadge');
+    const formSection = createBadgeForm.closest('.bg-gray-50');
     
     // Mostrar indicador de carga
     const submitButton = createBadgeForm.querySelector('button[type="submit"]');
     const originalButtonText = submitButton.innerHTML;
     submitButton.disabled = true;
-    submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Creando...';
+    submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+    
+    // Verificar si estamos en modo edición
+    const isEditMode = submitButton.dataset.editMode === 'true';
+    const badgeId = isEditMode ? submitButton.dataset.badgeId : null;
     
     try {
         // Verificar si el usuario está autenticado
@@ -95,12 +120,26 @@ async function handleCreateBadge(event) {
         // Obtener archivo de imagen
         const imageFile = imagenBadgeInput.files[0];
         
-        // Crear badge
-        const result = await createBadge(badgeData, imageFile);
+        let result;
+        
+        if (isEditMode && badgeId) {
+            // Editar badge existente
+            result = await editBadge(badgeId, badgeData, imageFile);
+            showNotification("Badge actualizado correctamente", "success");
+        } else {
+            // Crear nuevo badge
+            result = await createBadge(badgeData, imageFile);
+            showNotification("Badge creado correctamente", "success");
+        }
         
         if (result.success) {
             // Limpiar formulario
             createBadgeForm.reset();
+            
+            // Ocultar formulario
+            if (formSection) {
+                formSection.classList.add('hidden');
+            }
             
             // Limpiar vista previa
             const badgePreviewContainer = document.getElementById('badgePreviewContainer');
@@ -108,22 +147,24 @@ async function handleCreateBadge(event) {
                 badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
             }
             
+            // Resetear botón
+            submitButton.textContent = 'Crear Badge';
+            submitButton.dataset.editMode = 'false';
+            delete submitButton.dataset.badgeId;
+            
             // Recargar badges
             if (typeof loadBadges === 'function') {
                 loadBadges();
             }
-            
-            // Mostrar notificación
-            showNotification("Badge creado correctamente", "success");
         }
     } catch (error) {
-        console.error("Error al crear badge:", error);
-        showNotification(error.message || "Error al crear badge. Inténtalo de nuevo.", "error");
+        console.error("Error al procesar badge:", error);
+        showNotification(error.message || "Error al procesar badge. Inténtalo de nuevo.", "error");
     } finally {
         // Restaurar botón
         if (submitButton) {
             submitButton.disabled = false;
-            submitButton.innerHTML = originalButtonText || 'Crear Badge';
+            submitButton.innerHTML = isEditMode ? 'Confirmar Cambios' : 'Crear Badge';
         }
     }
 }
@@ -165,3 +206,9 @@ function handleBadgeImagePreview(event) {
         reader.readAsDataURL(file);
     }
 }
+
+// Export any necessary functions
+export {
+    handleCreateBadge,
+    handleBadgeImagePreview
+};
