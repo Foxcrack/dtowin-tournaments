@@ -1,4 +1,4 @@
-// Import Firebase SDK - VERSIÓN CON PERMISOS ADECUADOS
+// Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import { 
   getAuth, 
@@ -60,13 +60,12 @@ provider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// Lista de administradores por defecto - AGREGA AQUÍ LOS UIDs DE ADMINISTRADORES
+// Lista de administradores por defecto
 const adminUIDs = [
   "dvblFee1ZnVKJNWBOR22tSAsNet2"  // UID del administrador principal
-  // Puedes agregar más UIDs aquí
 ];
 
-// Función para inicio de sesión con Google
+// Función simplificada de login con Google
 export async function loginWithGoogle() {
   try {
     console.log("Iniciando proceso de login con Google...");
@@ -76,6 +75,10 @@ export async function loginWithGoogle() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
     console.log("Autenticación exitosa con Google:", user.uid);
+    
+    console.log("UID del usuario:", user.uid);
+    console.log("UID del administrador:", adminUIDs[0]);
+    console.log("¿Es administrador?", adminUIDs.includes(user.uid));
     
     // Verificar si el usuario ya existe en la base de datos
     console.log("Verificando si el usuario existe en la base de datos...");
@@ -88,18 +91,19 @@ export async function loginWithGoogle() {
       
       // Verificar si el usuario debe ser administrador
       const isAdmin = adminUIDs.includes(user.uid);
+      console.log("¿El usuario será creado como administrador?", isAdmin);
       
       await addDoc(collection(db, "usuarios"), {
         uid: user.uid,
-        nombre: user.displayName,
+        nombre: user.displayName || "Usuario",
         email: user.email,
         photoURL: user.photoURL,
         puntos: 0,
         fechaRegistro: serverTimestamp(),
         ultimoLogin: serverTimestamp(),
-        isHost: isAdmin // Solo es host si está en la lista de administradores
+        isHost: isAdmin // Asignar permisos de host según la lista
       });
-      console.log("Perfil de usuario creado exitosamente", isAdmin ? "(con privilegios de administrador)" : "");
+      console.log("Perfil de usuario creado exitosamente");
     } else {
       console.log("Usuario ya existe en la base de datos");
       // Actualizar fecha de último login
@@ -107,6 +111,14 @@ export async function loginWithGoogle() {
       await updateDoc(doc(db, "usuarios", userDoc.id), {
         ultimoLogin: serverTimestamp()
       });
+      
+      // Si el usuario es administrador pero no tiene el flag, actualizarlo
+      if (adminUIDs.includes(user.uid) && !querySnapshot.docs[0].data().isHost) {
+        console.log("Actualizando permisos de administrador...");
+        await updateDoc(doc(db, "usuarios", userDoc.id), {
+          isHost: true
+        });
+      }
     }
     
     return user;
@@ -152,6 +164,29 @@ export async function getUserProfile(uid) {
       return userData;
     }
     
+    // Si no existe el perfil pero existe el usuario, crearlo
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+      // Verificar si el usuario debe ser administrador
+      const isAdmin = adminUIDs.includes(uid);
+      
+      const userRef = await addDoc(collection(db, "usuarios"), {
+        uid: uid,
+        nombre: auth.currentUser.displayName || "Usuario",
+        email: auth.currentUser.email,
+        photoURL: auth.currentUser.photoURL,
+        puntos: 0,
+        fechaRegistro: serverTimestamp(),
+        ultimoLogin: serverTimestamp(),
+        isHost: isAdmin // Solo es host si está en la lista
+      });
+      
+      const userDoc = await getDoc(userRef);
+      return {
+        id: userRef.id,
+        ...userDoc.data()
+      };
+    }
+    
     return null;
   } catch (error) {
     console.error("Error al obtener perfil de usuario:", error);
@@ -159,29 +194,38 @@ export async function getUserProfile(uid) {
   }
 }
 
-// Función para verificar si un usuario es host
-export async function isUserHost(uid) {
+// Función para verificar si un usuario es host (simplificada para debugging)
+export async function isUserHost() {
   try {
-    const userId = uid || (auth.currentUser ? auth.currentUser.uid : null);
+    const user = auth.currentUser;
     
-    if (!userId) {
+    if (!user) {
+      console.error("No hay usuario autenticado");
       return false;
     }
     
-    // Verificar si el UID está en la lista de administradores predefinidos
-    if (adminUIDs.includes(userId)) {
+    console.log("Verificando si el usuario es host:", user.uid);
+    console.log("Lista de administradores:", adminUIDs);
+    
+    // Verificar directamente si está en la lista de administradores
+    if (adminUIDs.includes(user.uid)) {
+      console.log("Usuario es administrador por estar en la lista");
       return true;
     }
     
-    // Si no está en la lista, verificar en la base de datos
-    const userQuery = query(collection(db, "usuarios"), where("uid", "==", userId));
+    // Verificar en la base de datos
+    const userQuery = query(collection(db, "usuarios"), where("uid", "==", user.uid));
     const querySnapshot = await getDocs(userQuery);
     
     if (querySnapshot.empty) {
+      console.error("No se encontró el perfil del usuario");
       return false;
     }
     
     const userData = querySnapshot.docs[0].data();
+    console.log("Información del usuario:", userData);
+    console.log("¿Es host según la base de datos?", userData.isHost === true);
+    
     return userData.isHost === true;
   } catch (error) {
     console.error("Error al verificar si el usuario es host:", error);
