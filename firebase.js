@@ -62,7 +62,7 @@ provider.setCustomParameters({
 
 // Lista de administradores por defecto - AGREGA AQUÍ LOS UIDs DE ADMINISTRADORES
 const adminUIDs = [
-  "dvb1Fee1ZnVKJNWBOR22tSAsNeT2"  // UID del administrador principal
+  "dvblFee1ZnVKJNWBOR22tSAsNet2"  // UID del administrador principal
   // Puedes agregar más UIDs aquí
 ];
 
