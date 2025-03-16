@@ -1,4 +1,5 @@
-// badges.js - Funciones para gestión de badges
+// badges.js - Añadiendo función de edición
+// Importar las funciones necesarias de Firebase
 import { db, auth, storage } from './firebase.js';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
@@ -120,6 +121,100 @@ export async function createBadge(badgeData, imageFile) {
   }
 }
 
+// Nueva función para editar un badge existente
+export async function editBadge(badgeId, badgeData, imageFile) {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error("Debes iniciar sesión para editar un badge");
+    }
+    
+    // Verificar si el usuario es host
+    const userIsHost = await isUserHost();
+    
+    if (!userIsHost) {
+      throw new Error("Solo el host puede editar badges");
+    }
+    
+    // Validar datos del badge
+    if (!badgeData.nombre) {
+      throw new Error("El nombre del badge es obligatorio");
+    }
+    
+    // Obtener referencia al badge
+    const badgeRef = doc(db, "badges", badgeId);
+    const badgeSnap = await getDoc(badgeRef);
+    
+    if (!badgeSnap.exists()) {
+      throw new Error("El badge no existe");
+    }
+    
+    const badgeActual = badgeSnap.data();
+    
+    // Preparar objeto de actualización
+    const updateData = {
+      nombre: badgeData.nombre,
+      descripcion: badgeData.descripcion || "",
+      color: badgeData.color || "#ff6b1a",
+      icono: badgeData.icono || "trophy",
+      updatedBy: user.uid,
+      updatedAt: new Date()
+    };
+    
+    // Si hay una nueva imagen, subirla
+    if (imageFile) {
+      // Verificar que sea un archivo de imagen
+      if (!imageFile.type.startsWith('image/')) {
+        throw new Error("El archivo debe ser una imagen");
+      }
+      
+      // Si el badge tenía una imagen previa, intentar eliminarla
+      if (badgeActual.imageUrl) {
+        try {
+          // Extraer la ruta del archivo de la URL
+          const urlPath = badgeActual.imageUrl.split('?')[0]; // Eliminar query params
+          const fileName = urlPath.split('/').pop(); // Obtener el nombre del archivo
+          const storagePath = `badges/${fileName}`;
+          
+          // Crear referencia al archivo en Storage
+          const oldImageRef = ref(storage, storagePath);
+          
+          // Eliminar el archivo
+          await deleteObject(oldImageRef);
+          console.log("Imagen anterior eliminada:", storagePath);
+        } catch (deleteError) {
+          console.warn("No se pudo eliminar la imagen anterior:", deleteError);
+          // Continuamos con la actualización aunque falle la eliminación
+        }
+      }
+      
+      // Subir la nueva imagen
+      try {
+        const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        updateData.imageUrl = await getDownloadURL(storageRef);
+        console.log("Nueva imagen subida correctamente:", updateData.imageUrl);
+      } catch (uploadError) {
+        console.error("Error al subir la nueva imagen:", uploadError);
+        throw new Error("Error al subir la imagen. Verifica tu conexión e inténtalo de nuevo.");
+      }
+    }
+    
+    // Actualizar el documento en Firestore
+    await updateDoc(badgeRef, updateData);
+    
+    return {
+      id: badgeId,
+      success: true,
+      message: "Badge actualizado correctamente"
+    };
+  } catch (error) {
+    console.error("Error al editar badge:", error);
+    throw error;
+  }
+}
+
 // Obtener todos los badges
 export async function getAllBadges() {
   try {
@@ -187,6 +282,32 @@ export async function deleteBadge(badgeId) {
         console.error("Error al eliminar la imagen del badge:", deleteImageError);
         // Continuamos con la eliminación del badge aunque falle la eliminación de la imagen
       }
+    }
+    
+    // Verificar si el badge está siendo usado en torneos
+    const tournamentBadgesCollection = collection(db, "tournament_badges");
+    const q = query(tournamentBadgesCollection, where("badgeId", "==", badgeId));
+    const tournamentBadgesSnapshot = await getDocs(q);
+    
+    if (!tournamentBadgesSnapshot.empty) {
+      // Eliminar las referencias en torneos
+      for (const docRef of tournamentBadgesSnapshot.docs) {
+        await deleteDoc(doc(db, "tournament_badges", docRef.id));
+      }
+      console.log(`Se eliminaron ${tournamentBadgesSnapshot.size} referencias a este badge en torneos`);
+    }
+    
+    // Verificar si el badge está asignado a usuarios
+    const userBadgesCollection = collection(db, "user_badges");
+    const userBadgesQuery = query(userBadgesCollection, where("badgeId", "==", badgeId));
+    const userBadgesSnapshot = await getDocs(userBadgesQuery);
+    
+    if (!userBadgesSnapshot.empty) {
+      // Eliminar las asignaciones a usuarios
+      for (const docRef of userBadgesSnapshot.docs) {
+        await deleteDoc(doc(db, "user_badges", docRef.id));
+      }
+      console.log(`Se eliminaron ${userBadgesSnapshot.size} asignaciones de este badge a usuarios`);
     }
     
     // Eliminar el badge de Firestore
@@ -371,6 +492,36 @@ export async function assignBadgeToTournament(badgeId, tournamentId, position) {
     };
   } catch (error) {
     console.error("Error al asignar badge al torneo:", error);
+    throw error;
+  }
+}
+
+// Remover badge de un torneo
+export async function removeBadgeFromTournament(tournamentBadgeId) {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error("Debes iniciar sesión para remover badges de torneos");
+    }
+    
+    // Verificar si el usuario es host
+    const userIsHost = await isUserHost();
+    
+    if (!userIsHost) {
+      throw new Error("Solo el host puede remover badges de torneos");
+    }
+    
+    // Eliminar la asignación
+    const tournamentBadgeRef = doc(db, "tournament_badges", tournamentBadgeId);
+    await deleteDoc(tournamentBadgeRef);
+    
+    return {
+      success: true,
+      message: "Badge removido del torneo correctamente"
+    };
+  } catch (error) {
+    console.error("Error al remover badge del torneo:", error);
     throw error;
   }
 }
