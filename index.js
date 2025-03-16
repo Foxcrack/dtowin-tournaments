@@ -1,4 +1,4 @@
-// index.js - Script principal que coordina todos los módulos
+// index.js - Script principal que coordina todos los módulos (versión corregida)
 import { auth } from './firebase.js';
 import { initAdminPanel, showSection, showNotification } from './admin-panel.js';
 import { initBadgesManagement, loadBadges } from './admin-panel-badges.js';
@@ -64,18 +64,29 @@ function initializeComponents() {
         // Inicializar panel principal
         initAdminPanel();
         
+        // Exponer la función de navegación globalmente
+        window.showSection = showSection;
+        
         // Inicializar componentes específicos
-        initBadgesManagement();
-        initTournamentsManagement();
-        initParticipantsManagement();
-        initResultsManagement();
-        initConfigManagement();
+        try { initBadgesManagement(); } catch (e) { console.warn("Error en initBadgesManagement:", e); }
+        try { initTournamentsManagement(); } catch (e) { console.warn("Error en initTournamentsManagement:", e); }
+        try { initParticipantsManagement(); } catch (e) { console.warn("Error en initParticipantsManagement:", e); }
+        try { initResultsManagement(); } catch (e) { console.warn("Error en initResultsManagement:", e); }
+        try { initConfigManagement(); } catch (e) { console.warn("Error en initConfigManagement:", e); }
         
         // Configurar navegación global
         setupGlobalNavigation();
         
         // Ocultar pantalla de carga
         hideLoading();
+        
+        // Si hay un hash en la URL, navegar a esa sección
+        if (window.location.hash) {
+            const sectionId = window.location.hash.substring(1);
+            setTimeout(() => {
+                showSection(sectionId);
+            }, 300);
+        }
         
         console.log("Panel de administración inicializado correctamente");
         
@@ -100,37 +111,28 @@ function setupGlobalNavigation() {
             const sectionId = href.substring(1);
             if (!sectionId) return;
             
+            console.log("Click detectado en enlace a:", sectionId);
+            
             // Mostrar sección
             showSection(sectionId);
+            
+            // Actualizar URL sin recargar página
+            window.history.pushState(null, '', `#${sectionId}`);
             
             // Cargar datos específicos de la sección si es necesario
             switch(sectionId) {
                 case 'badges':
-                    loadBadges();
+                    try { loadBadges(); } catch (e) { console.warn("Error al cargar badges:", e); }
                     break;
                 case 'torneos':
-                    loadTournaments();
+                    try { loadTournaments(); } catch (e) { console.warn("Error al cargar torneos:", e); }
                     break;
                 case 'participantes':
-                    loadParticipants();
+                    try { loadParticipants(); } catch (e) { console.warn("Error al cargar participantes:", e); }
                     break;
             }
         });
     });
-    
-    // Cerrar sesión
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async function() {
-            try {
-                await auth.signOut();
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                showNotification("Error al cerrar sesión", "error");
-            }
-        });
-    }
     
     // Toggle menú móvil
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -148,3 +150,12 @@ function setupGlobalNavigation() {
         });
     }
 }
+
+// También exponer funciones útiles globalmente
+window.adminTools = {
+    showSection,
+    showNotification,
+    loadBadges,
+    loadTournaments,
+    loadParticipants
+};
