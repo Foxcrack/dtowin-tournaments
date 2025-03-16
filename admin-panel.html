@@ -42,6 +42,32 @@
         .notification {
             transition: opacity 0.5s;
         }
+        /* Ajustes para mejorar la vista de badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            margin: 0 5px;
+            color: white;
+        }
+        /* Estilos para modales */
+        .modal {
+            transition: opacity 0.3s ease-in-out;
+        }
+        /* Estilos para selección */
+        .selected-item {
+            border: 2px solid #ff6b1a;
+        }
+        /* Estilos para vista previa */
+        .preview-container {
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -70,32 +96,32 @@
                 <div class="bg-white rounded-lg shadow p-4">
                     <ul>
                         <li>
-                            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold" onclick="showSection('dashboard')">
+                            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold nav-link">
                                 <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                             </a>
                         </li>
                         <li>
-                            <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('torneos')">
+                            <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
                                 <i class="fas fa-trophy mr-2"></i> Torneos
                             </a>
                         </li>
                         <li>
-                            <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('participantes')">
+                            <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
                                 <i class="fas fa-users mr-2"></i> Participantes
                             </a>
                         </li>
                         <li>
-                            <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('badges')">
+                            <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
                                 <i class="fas fa-certificate mr-2"></i> Badges
                             </a>
                         </li>
                         <li>
-                            <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1" onclick="showSection('resultados')">
+                            <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
                                 <i class="fas fa-chart-line mr-2"></i> Resultados
                             </a>
                         </li>
                         <li>
-                            <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100" onclick="showSection('configuracion')">
+                            <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100 nav-link">
                                 <i class="fas fa-cog mr-2"></i> Configuración
                             </a>
                         </li>
@@ -157,8 +183,8 @@
                                     <td class="py-3 px-4">24 / 32</td>
                                     <td class="py-3 px-4"><span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Abierto</span></td>
                                     <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
                                     </td>
                                 </tr>
                                 <tr class="border-b hover:bg-gray-50">
@@ -167,8 +193,8 @@
                                     <td class="py-3 px-4">12 / 40</td>
                                     <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-600 py-1 px-2 rounded text-xs">Próximo</span></td>
                                     <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
                                     </td>
                                 </tr>
                                 <tr class="hover:bg-gray-50">
@@ -177,8 +203,8 @@
                                     <td class="py-3 px-4">18 / 20</td>
                                     <td class="py-3 px-4"><span class="bg-purple-100 text-purple-600 py-1 px-2 rounded text-xs">Badge Especial</span></td>
                                     <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700"><i class="fas fa-edit"></i></button>
+                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
+                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -190,7 +216,7 @@
                 <div id="torneos" class="hidden bg-white rounded-lg shadow p-6 mb-6">
                     <div class="flex justify-between mb-6">
                         <h2 class="text-2xl font-bold">Gestión de Torneos</h2>
-                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition create-tournament-btn">
                             <i class="fas fa-plus mr-2"></i>Crear Torneo
                         </button>
                     </div>
@@ -287,7 +313,7 @@
                                                 <option>Todos</option>
                                             </select>
                                         </div>
-                                        <button class="dtowin-blue text-white px-3 py-1 rounded font-semibold text-sm hover:opacity-90 transition">
+                                        <button class="dtowin-blue text-white px-3 py-1 rounded font-semibold text-sm hover:opacity-90 transition add-badge-btn">
                                             <i class="fas fa-plus mr-1"></i>Añadir Badge
                                         </button>
                                     </div>
@@ -307,7 +333,7 @@
                 <div id="badges" class="hidden bg-white rounded-lg shadow p-6 mb-6">
                     <div class="flex justify-between mb-6">
                         <h2 class="text-2xl font-bold">Gestión de Badges</h2>
-                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <button id="headerCreateBadgeBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
                             <i class="fas fa-plus mr-2"></i>Crear Badge
                         </button>
                     </div>
@@ -611,85 +637,8 @@
     <script type="module" src="admin-panel-config.js"></script>
     <script type="module" src="index.js"></script>
 
-    <!-- Estilos para el spinner -->
-    <style>
-    .spinner {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    .notification {
-        transition: opacity 0.5s;
-    }
-    /* Ajustes para mejorar la vista de badges */
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        text-align: center;
-        margin: 0 5px;
-        color: white;
-    }
-    /* Estilos para modales */
-    .modal {
-        transition: opacity 0.3s ease-in-out;
-    }
-    /* Estilos para selección */
-    .selected-item {
-        border: 2px solid #ff6b1a;
-    }
-    /* Estilos para vista previa */
-    .preview-container {
-        background-size: contain;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-    </style>
-    <!-- Reemplaza la sección del menú lateral con este código corregido -->
-<div class="md:col-span-1">
-    <div class="bg-white rounded-lg shadow p-4">
-        <ul>
-            <li>
-                <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold nav-link">
-                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
-                    <i class="fas fa-trophy mr-2"></i> Torneos
-                </a>
-            </li>
-            <li>
-                <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
-                    <i class="fas fa-users mr-2"></i> Participantes
-                </a>
-            </li>
-            <li>
-                <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
-                    <i class="fas fa-certificate mr-2"></i> Badges
-                </a>
-            </li>
-            <li>
-                <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
-                    <i class="fas fa-chart-line mr-2"></i> Resultados
-                </a>
-            </li>
-            <li>
-                <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100 nav-link">
-                    <i class="fas fa-cog mr-2"></i> Configuración
-                </a>
-            </li>
-        </ul>
-    </div>
-</div>
-
-<!-- Agrega este script al final del archivo, justo antes del cierre de </body> -->
-<script>
+    <!-- Script de navegación -->
+    <script>
     // Script adicional para asegurar que la navegación funciona
     document.addEventListener('DOMContentLoaded', function() {
         console.log("Configurando navegación manual");
@@ -722,34 +671,110 @@
             }
         }
         
+        // Definir función global
+        window.showSection = navigateToSection;
+        
         // Configurar event listeners directamente
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const sectionId = this.getAttribute('href').substring(1);
+                navigateToSection(sectionId);
+                // Actualizar URL sin recargar página
+                window.history.pushState(null, '', `#${sectionId}`);
+            });
+        });
+        
+        // Setup listeners para botones de crear badge
+        const headerCreateBadgeBtn = document.getElementById('headerCreateBadgeBtn');
+        if (headerCreateBadgeBtn) {
+            headerCreateBadgeBtn.addEventListener('click', function() {
+                // Asegurarse de que estamos en la sección de badges
+                navigateToSection('badges');
                 
-                // Intentar usar la función global si está disponible
-                if (typeof window.showSection === 'function') {
-                    window.showSection(sectionId);
-                } else {
-                    // Usar la función de respaldo
-                    navigateToSection(sectionId);
+                // Hacer scroll al formulario
+                const createBadgeForm = document.getElementById('createBadgeForm');
+                if (createBadgeForm) {
+                    createBadgeForm.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+        
+        // Setup para botones de acción en torneos
+        document.querySelectorAll('.view-tournament-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                navigateToSection('torneos');
+            });
+        });
+        
+        document.querySelectorAll('.edit-tournament-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                navigateToSection('torneos');
+                
+                // Mostrar formulario y hacer scroll
+                const createTournamentForm = document.getElementById('createTournamentForm');
+                if (createTournamentForm) {
+                    createTournamentForm.scrollIntoView({ behavior: 'smooth' });
                 }
             });
         });
+        
+        // Setup para botón de crear torneo
+        document.querySelectorAll('.create-tournament-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Asegurarse de que estamos en la sección de torneos
+                navigateToSection('torneos');
+                
+                // Hacer scroll al formulario
+                const createTournamentForm = document.getElementById('createTournamentForm');
+                if (createTournamentForm) {
+                    createTournamentForm.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Setup para formulario de crear badge
+        const createBadgeForm = document.getElementById('createBadgeForm');
+        if (createBadgeForm) {
+            createBadgeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('La función de crear badge se está implementando. Por favor intenta más tarde.');
+            });
+        }
+        
+        // Setup para formulario de crear torneo
+        const createTournamentForm = document.getElementById('createTournamentForm');
+        if (createTournamentForm) {
+            createTournamentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('La función de crear torneo se está implementando. Por favor intenta más tarde.');
+            });
+        }
+        
+        // Preview de imagen para badges
+        const imagenBadge = document.getElementById('imagenBadge');
+        const badgePreviewContainer = document.getElementById('badgePreviewContainer');
+        
+        if (imagenBadge && badgePreviewContainer) {
+            imagenBadge.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        badgePreviewContainer.innerHTML = `<img src="${e.target.result}" alt="Vista previa del badge" class="w-full h-full object-contain">`;
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
         
         // Manejar navegación basada en hash al cargar
         if (window.location.hash) {
             const sectionId = window.location.hash.substring(1);
             setTimeout(() => {
-                if (typeof window.showSection === 'function') {
-                    window.showSection(sectionId);
-                } else {
-                    navigateToSection(sectionId);
-                }
-            }, 500); // Pequeño retraso para asegurar que todo está cargado
+                navigateToSection(sectionId);
+            }, 300);
         }
     });
-</script>
+    </script>
 </body>
 </html>
