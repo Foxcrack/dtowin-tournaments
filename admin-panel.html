@@ -650,5 +650,106 @@
         background-repeat: no-repeat;
     }
     </style>
+    <!-- Reemplaza la sección del menú lateral con este código corregido -->
+<div class="md:col-span-1">
+    <div class="bg-white rounded-lg shadow p-4">
+        <ul>
+            <li>
+                <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold nav-link">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                    <i class="fas fa-trophy mr-2"></i> Torneos
+                </a>
+            </li>
+            <li>
+                <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                    <i class="fas fa-users mr-2"></i> Participantes
+                </a>
+            </li>
+            <li>
+                <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                    <i class="fas fa-certificate mr-2"></i> Badges
+                </a>
+            </li>
+            <li>
+                <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                    <i class="fas fa-chart-line mr-2"></i> Resultados
+                </a>
+            </li>
+            <li>
+                <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100 nav-link">
+                    <i class="fas fa-cog mr-2"></i> Configuración
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Agrega este script al final del archivo, justo antes del cierre de </body> -->
+<script>
+    // Script adicional para asegurar que la navegación funciona
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Configurando navegación manual");
+        
+        // Función de navegación como respaldo
+        function navigateToSection(sectionId) {
+            console.log("Navegación manual a:", sectionId);
+            
+            // Ocultar todas las secciones
+            document.querySelectorAll('#dashboard, #torneos, #participantes, #badges, #resultados, #configuracion').forEach(section => {
+                if (section) section.classList.add('hidden');
+            });
+            
+            // Mostrar la sección seleccionada
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.remove('hidden');
+            }
+            
+            // Actualizar estilos de navegación
+            document.querySelectorAll('nav a').forEach(link => {
+                link.classList.remove('text-orange-500', 'font-semibold');
+                link.classList.add('hover:bg-gray-100');
+            });
+            
+            // Resaltar enlace activo
+            const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
+            if (activeLink) {
+                activeLink.classList.add('text-orange-500', 'font-semibold');
+            }
+        }
+        
+        // Configurar event listeners directamente
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = this.getAttribute('href').substring(1);
+                
+                // Intentar usar la función global si está disponible
+                if (typeof window.showSection === 'function') {
+                    window.showSection(sectionId);
+                } else {
+                    // Usar la función de respaldo
+                    navigateToSection(sectionId);
+                }
+            });
+        });
+        
+        // Manejar navegación basada en hash al cargar
+        if (window.location.hash) {
+            const sectionId = window.location.hash.substring(1);
+            setTimeout(() => {
+                if (typeof window.showSection === 'function') {
+                    window.showSection(sectionId);
+                } else {
+                    navigateToSection(sectionId);
+                }
+            }, 500); // Pequeño retraso para asegurar que todo está cargado
+        }
+    });
+</script>
 </body>
 </html>
