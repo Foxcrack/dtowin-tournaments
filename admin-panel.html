@@ -32,6 +32,16 @@
         .dtowin-cream {
             background-color: #fff3e6;
         }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .notification {
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -39,7 +49,7 @@
     <nav class="gradient-background text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <img src="https://via.placeholder.com/100" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
                 <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
             </div>
             <div class="flex items-center space-x-4">
@@ -188,7 +198,7 @@
                     <div class="mb-6">
                         <div class="bg-gray-50 p-4 rounded-lg mb-4">
                             <h3 class="font-semibold text-lg mb-2">Crear Nuevo Torneo</h3>
-                            <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createTournamentForm">
                                 <div class="md:col-span-2">
                                     <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">
                                         Nombre del Torneo
@@ -267,7 +277,7 @@
                                     <label class="block text-gray-700 text-sm font-bold mb-2">
                                         Badges para el Torneo
                                     </label>
-                                    <div class="flex flex-wrap gap-2 mb-2">
+                                    <div class="badges-container flex flex-wrap gap-2 mb-2">
                                         <div class="bg-gray-100 p-2 rounded-lg flex items-center">
                                             <img src="https://via.placeholder.com/30" alt="Badge" class="w-8 h-8 rounded-full mr-2">
                                             <span class="mr-4">Campeón de Verano</span>
@@ -287,6 +297,9 @@
                                 </div>
                             </form>
                         </div>
+                        
+                        <!-- Lista de torneos -->
+                        <div id="torneosContainer"></div>
                     </div>
                 </div>
                 
@@ -361,52 +374,7 @@
                     
                     <!-- Lista de badges -->
                     <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                <img src="https://via.placeholder.com/100" alt="Campeón" class="w-full h-full object-contain">
-                            </div>
-                            <h4 class="font-semibold">Campeón</h4>
-                            <p class="text-sm text-gray-600">Primer lugar en torneo</p>
-                            <div class="mt-2 flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                <img src="https://via.placeholder.com/100" alt="Subcampeón" class="w-full h-full object-contain">
-                            </div>
-                            <h4 class="font-semibold">Subcampeón</h4>
-                            <p class="text-sm text-gray-600">Segundo lugar en torneo</p>
-                            <div class="mt-2 flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                <img src="https://via.placeholder.com/100" alt="Bronce" class="w-full h-full object-contain">
-                            </div>
-                            <h4 class="font-semibold">Bronce</h4>
-                            <p class="text-sm text-gray-600">Tercer lugar en torneo</p>
-                            <div class="mt-2 flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="bg-white border rounded-lg p-4 shadow-sm flex flex-col items-center text-center">
-                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                <img src="https://via.placeholder.com/100" alt="Evento Especial" class="w-full h-full object-contain">
-                            </div>
-                            <h4 class="font-semibold">Evento Especial</h4>
-                            <p class="text-sm text-gray-600">Participó en evento especial</p>
-                            <div class="mt-2 flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
-                                <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="badgesContainer"></div>
                 </div>
                 
                 <!-- Participantes Section (oculto por defecto) -->
@@ -416,116 +384,21 @@
                     <div class="mb-4">
                         <div class="flex justify-between mb-2">
                             <div class="relative">
-                                <input type="text" placeholder="Buscar participante..." class="border rounded-lg pl-10 pr-4 py-2 w-64">
+                                <input type="text" placeholder="Buscar participante..." class="border rounded-lg pl-10 pr-4 py-2 w-64" id="searchParticipante">
                                 <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                             </div>
                             <div>
-                                <select class="border rounded-lg px-4 py-2">
-                                    <option>Todos los usuarios</option>
-                                    <option>Top 10 leaderboard</option>
-                                    <option>Nuevos usuarios</option>
+                                <select class="border rounded-lg px-4 py-2" id="filterParticipantes">
+                                    <option value="all">Todos los usuarios</option>
+                                    <option value="top10">Top 10 leaderboard</option>
+                                    <option value="new">Nuevos usuarios</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white">
-                            <thead>
-                                <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                                    <th class="py-3 px-4 text-left">Usuario</th>
-                                    <th class="py-3 px-4 text-left">Email</th>
-                                    <th class="py-3 px-4 text-left">Torneos</th>
-                                    <th class="py-3 px-4 text-left">Puntos</th>
-                                    <th class="py-3 px-4 text-left">Badges</th>
-                                    <th class="py-3 px-4 text-left">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-gray-600">
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center">
-                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                            <span>AlexMaster</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">alex@example.com</td>
-                                    <td class="py-3 px-4">15</td>
-                                    <td class="py-3 px-4">128</td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex">
-                                            <span class="badge bg-yellow-500" title="Campeón Nacional"><i class="fas fa-trophy"></i></span>
-                                            <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center">
-                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                            <span>ProGamer123</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">progamer@example.com</td>
-                                    <td class="py-3 px-4">12</td>
-                                    <td class="py-3 px-4">105</td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex">
-                                            <span class="badge bg-blue-500" title="Veterano"><i class="fas fa-medal"></i></span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center">
-                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                            <span>GameKing</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">gameking@example.com</td>
-                                    <td class="py-3 px-4">10</td>
-                                    <td class="py-3 px-4">87</td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex">
-                                            <span class="badge bg-red-500" title="Invicto"><i class="fas fa-fire"></i></span>
-                                            <span class="badge bg-green-500" title="Mejor Novato"><i class="fas fa-award"></i></span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4">
-                                        <div class="flex items-center">
-                                            <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                            <span>TournamentPro</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">tournament@example.com</td>
-                                    <td class="py-3 px-4">8</td>
-                                    <td class="py-3 px-4">72</td>
-                                    <td class="py-3 px-4">
-                                        <div class="flex">
-                                            <span class="badge bg-purple-500" title="Evento Especial"><i class="fas fa-star"></i></span>
-                                        </div>
-                                    </td>
-                                    <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 mr-2"><i class="fas fa-award"></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="participantesContainer" class="overflow-x-auto">
+                        <!-- Contenido dinámico de participantes -->
                     </div>
                     
                     <!-- Modal para asignar badge (normalmente oculto) -->
@@ -540,30 +413,7 @@
                             </div>
                             
                             <div class="grid grid-cols-2 gap-3 mb-6">
-                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                        <img src="https://via.placeholder.com/100" alt="Campeón" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="font-semibold">Campeón</p>
-                                </div>
-                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                        <img src="https://via.placeholder.com/100" alt="Subcampeón" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="font-semibold">Subcampeón</p>
-                                </div>
-                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                        <img src="https://via.placeholder.com/100" alt="Bronce" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="font-semibold">Bronce</p>
-                                </div>
-                                <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50">
-                                    <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                        <img src="https://via.placeholder.com/100" alt="Evento Especial" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="font-semibold">Evento Especial</p>
-                                </div>
+                                <!-- Contenido dinámico de badges -->
                             </div>
                             
                             <div class="text-center">
@@ -582,168 +432,18 @@
                             Seleccionar Torneo
                         </label>
                         <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="torneoSelect">
-                            <option>Torneo de Verano 2025</option>
-                            <option>Campeonato Regional</option>
-                            <option>Evento Especial</option>
+                            <option value="">Seleccionar Torneo</option>
                         </select>
                     </div>
                     
-                    <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                        <h3 class="font-semibold text-lg mb-4">Registrar Resultados - Torneo de Verano 2025</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full bg-white">
-                                <thead>
-                                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                                        <th class="py-3 px-4 text-left">Posición</th>
-                                        <th class="py-3 px-4 text-left">Participante</th>
-                                        <th class="py-3 px-4 text-left">Puntos a Asignar</th>
-                                        <th class="py-3 px-4 text-left">Badges</th>
-                                        <th class="py-3 px-4 text-left">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-gray-600">
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="py-3 px-4 font-bold">1°</td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                                <select class="border rounded py-1 px-2">
-                                                    <option>Seleccionar Participante</option>
-                                                    <option>AlexMaster</option>
-                                                    <option>ProGamer123</option>
-                                                    <option>GameKing</option>
-                                                </select>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <input type="number" value="5" class="border rounded w-16 py-1 px-2">
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
-                                                </div>
-                                                <button class="text-blue-500 hover:text-blue-700">
-                                                    <i class="fas fa-plus-circle"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="py-3 px-4 font-bold">2°</td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                                <select class="border rounded py-1 px-2">
-                                                    <option>Seleccionar Participante</option>
-                                                    <option>AlexMaster</option>
-                                                    <option>ProGamer123</option>
-                                                    <option>GameKing</option>
-                                                </select>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <input type="number" value="4" class="border rounded w-16 py-1 px-2">
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
-                                                </div>
-                                                <button class="text-blue-500 hover:text-blue-700">
-                                                    <i class="fas fa-plus-circle"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="py-3 px-4 font-bold">3°</td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/40" alt="User" class="w-8 h-8 rounded-full mr-3">
-                                                <select class="border rounded py-1 px-2">
-                                                    <option>Seleccionar Participante</option>
-                                                    <option>AlexMaster</option>
-                                                    <option>ProGamer123</option>
-                                                    <option>GameKing</option>
-                                                </select>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <input type="number" value="3" class="border rounded w-16 py-1 px-2">
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <div class="h-8 w-8 mr-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                                    <img src="https://via.placeholder.com/50" alt="Badge" class="w-full h-full object-contain">
-                                                </div>
-                                                <button class="text-blue-500 hover:text-blue-700">
-                                                    <i class="fas fa-plus-circle"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Pendiente</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-4 flex justify-end">
-                            <button class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Resultados</button>
-                        </div>
+                    <div id="resultadosContainer" class="bg-gray-50 p-4 rounded-lg mb-6">
+                        <!-- Contenido dinámico para formulario de resultados -->
                     </div>
                     
                     <div class="bg-white border rounded-lg p-4 shadow-sm">
                         <h3 class="font-semibold text-lg mb-3">Historial de Resultados</h3>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full bg-white">
-                                <thead>
-                                    <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                                        <th class="py-3 px-4 text-left">Torneo</th>
-                                        <th class="py-3 px-4 text-left">Fecha</th>
-                                        <th class="py-3 px-4 text-left">Participantes</th>
-                                        <th class="py-3 px-4 text-left">Ganador</th>
-                                        <th class="py-3 px-4 text-left">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-gray-600">
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="py-3 px-4">Evento Especial</td>
-                                        <td class="py-3 px-4">10 de Febrero, 2025</td>
-                                        <td class="py-3 px-4">20</td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/40" alt="User" class="w-6 h-6 rounded-full mr-2">
-                                                <span>AlexMaster</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        </td>
-                                    </tr>
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="py-3 px-4">Copa de Invierno</td>
-                                        <td class="py-3 px-4">5 de Enero, 2025</td>
-                                        <td class="py-3 px-4">32</td>
-                                        <td class="py-3 px-4">
-                                            <div class="flex items-center">
-                                                <img src="https://via.placeholder.com/40" alt="User" class="w-6 h-6 rounded-full mr-2">
-                                                <span>GameKing</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <button class="text-blue-500 hover:text-blue-700 mr-2"><i class="fas fa-eye"></i></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div id="historialResultados" class="overflow-x-auto">
+                            <!-- Contenido dinámico para historial de resultados -->
                         </div>
                     </div>
                 </div>
@@ -755,7 +455,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h3 class="font-semibold text-lg mb-3">Configuración General</h3>
-                            <form>
+                            <form id="configForm">
                                 <div class="mb-4">
                                     <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreSitio">
                                         Nombre del Sitio
@@ -767,7 +467,7 @@
                                         Logo del Sitio
                                     </label>
                                     <div class="flex items-center">
-                                        <img src="https://via.placeholder.com/100" alt="Current Logo" class="w-12 h-12 rounded-full mr-3">
+                                        <img src="dtowin.png" alt="Current Logo" id="logoPreview" class="w-12 h-12 rounded-full mr-3">
                                         <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="logoSitio" type="file">
                                     </div>
                                 </div>
@@ -784,39 +484,39 @@
                                     <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionSitio" rows="3">Plataforma oficial de torneos Dtowin. Participa, compite y gana puntos para escalar en el ranking.</textarea>
                                 </div>
                                 <div class="flex justify-end">
-                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
                                 </div>
                             </form>
                         </div>
                         
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h3 class="font-semibold text-lg mb-3">Notificaciones y Emails</h3>
-                            <form>
+                            <form id="notificationsForm">
                                 <div class="mb-4">
                                     <label class="block text-gray-700 text-sm font-bold mb-2">
                                         Notificaciones por Email
                                     </label>
                                     <div class="bg-white p-3 rounded border mb-2">
                                         <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-newUsers" checked>
                                             <span>Nuevos registros de usuarios</span>
                                         </label>
                                     </div>
                                     <div class="bg-white p-3 rounded border mb-2">
                                         <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-tournamentRegistrations" checked>
                                             <span>Inscripciones a torneos</span>
                                         </label>
                                     </div>
                                     <div class="bg-white p-3 rounded border mb-2">
                                         <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-tournamentResults" checked>
                                             <span>Resultados de torneos</span>
                                         </label>
                                     </div>
                                     <div class="bg-white p-3 rounded border">
                                         <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2">
+                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-weeklyReports">
                                             <span>Reportes semanales</span>
                                         </label>
                                     </div>
@@ -828,14 +528,14 @@
                                     <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="emailAdmin" type="email" value="admin@dtowin.com">
                                 </div>
                                 <div class="flex justify-end">
-                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
+                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
                                 </div>
                             </form>
                         </div>
                         
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h3 class="font-semibold text-lg mb-3">Seguridad</h3>
-                            <form>
+                            <form id="securityForm">
                                 <div class="mb-4">
                                     <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordActual">
                                         Contraseña Actual
@@ -855,7 +555,7 @@
                                     <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordConfirmar" type="password" placeholder="••••••••">
                                 </div>
                                 <div class="flex justify-end">
-                                    <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Cambiar Contraseña</button>
+                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Cambiar Contraseña</button>
                                 </div>
                             </form>
                         </div>
@@ -865,10 +565,10 @@
                             <div class="mb-4">
                                 <p class="text-gray-600 mb-3">Exporta todos los datos de la plataforma o importa datos existentes.</p>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <button class="dtowin-blue text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                    <button id="exportDataBtn" class="dtowin-blue text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
                                         <i class="fas fa-download mr-2"></i>Exportar Datos
                                     </button>
-                                    <button class="dtowin-red text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                    <button id="importDataBtn" class="dtowin-red text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
                                         <i class="fas fa-upload mr-2"></i>Importar Datos
                                     </button>
                                 </div>
@@ -879,7 +579,7 @@
                                 </label>
                                 <div class="bg-white p-3 rounded border mb-2">
                                     <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" class="w-4 h-4 mr-2" checked>
+                                        <input type="checkbox" id="backupEnabled" class="w-4 h-4 mr-2" checked>
                                         <span>Habilitar respaldo automático semanal</span>
                                     </label>
                                 </div>
@@ -898,225 +598,57 @@
         </div>
     </footer>
 
-    <!-- JavaScript para la navegación entre secciones -->
-    <script>
-        // Función para mostrar sección y ocultar las demás
-        function showSection(sectionId) {
-            // Ocultar todas las secciones
-            document.querySelectorAll('#dashboard, #torneos, #participantes, #badges, #resultados, #configuracion').forEach(section => {
-                section.classList.add('hidden');
-            });
-            
-            // Mostrar la sección seleccionada
-            document.getElementById(sectionId).classList.remove('hidden');
-            
-            // Actualizar estilos de navegación
-            document.querySelectorAll('nav a').forEach(link => {
-                link.classList.remove('text-orange-500', 'font-semibold');
-                link.classList.add('hover:bg-gray-100');
-            });
-            
-            // Resaltar enlace activo
-            document.querySelector(`a[href="#${sectionId}"]`).classList.add('text-orange-500', 'font-semibold');
-        }
-        
-        // Asignar eventos a los enlaces de navegación
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const sectionId = this.getAttribute('href').substring(1);
-                showSection(sectionId);
-            });
-        });
-        
-        // Inicializar en dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            showSection('dashboard');
-        });
-    </script>
+    <!-- Scripts -->
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="badges.js"></script>
+    <script type="module" src="tournaments.js"></script>
+    <script type="module" src="admin-panel.js"></script>
+    <script type="module" src="admin-panel-badges.js"></script>
+    <script type="module" src="admin-panel-badge-create.js"></script>
+    <script type="module" src="admin-panel-tournaments.js"></script>
+    <script type="module" src="admin-panel-participants.js"></script>
+    <script type="module" src="admin-panel-results.js"></script>
+    <script type="module" src="admin-panel-config.js"></script>
+    <script type="module" src="index.js"></script>
 
-    <!-- Script para la vista previa de imágenes de badges -->
-    <script>
-    // Función para mostrar vista previa de la imagen seleccionada
-    function handleBadgeImagePreview(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-          // Obtener el elemento de vista previa
-          const previewContainer = document.getElementById('badgePreviewContainer');
-          
-          // Limpiar el contenedor
-          previewContainer.innerHTML = '';
-          
-          // Crear un elemento de imagen
-          const imgElement = document.createElement('img');
-          imgElement.src = e.target.result;
-          imgElement.className = 'w-full h-full object-contain';
-          imgElement.alt = 'Vista previa del badge';
-          
-          // Añadir la imagen al contenedor
-          previewContainer.appendChild(imgElement);
-        }
-        
-        // Leer el archivo como URL de datos
-        reader.readAsDataURL(file);
-      }
+    <!-- Estilos para el spinner -->
+    <style>
+    .spinner {
+        animation: spin 1s linear infinite;
     }
-
-    // Agregar un event listener al input de imagen
-    document.addEventListener('DOMContentLoaded', function() {
-      const imagenBadgeInput = document.getElementById('imagenBadge');
-      if (imagenBadgeInput) {
-        imagenBadgeInput.addEventListener('change', handleBadgeImagePreview);
-      }
-    });
-    </script>
-<!-- Scripts para el panel de administración (CON VERIFICACIÓN DE PERMISOS) -->
-<script type="module">
-    // Script directo en admin-panel.html
-    import { auth, isUserHost } from './firebase.js';
-    
-    // Variables
-    const sections = {
-        dashboard: document.getElementById('dashboard'),
-        torneos: document.getElementById('torneos'),
-        participantes: document.getElementById('participantes'),
-        badges: document.getElementById('badges'),
-        resultados: document.getElementById('resultados'),
-        configuracion: document.getElementById('configuracion')
-    };
-    
-    // Función para mostrar una sección
-    function showSection(sectionId) {
-        // Ocultar todas las secciones
-        Object.values(sections).forEach(section => {
-            if (section) section.classList.add('hidden');
-        });
-        
-        // Mostrar la sección seleccionada
-        if (sections[sectionId]) {
-            sections[sectionId].classList.remove('hidden');
-        }
-        
-        // Actualizar estilos de navegación
-        document.querySelectorAll('nav a').forEach(link => {
-            link.classList.remove('text-orange-500', 'font-semibold');
-            link.classList.add('hover:bg-gray-100');
-        });
-        
-        // Resaltar enlace activo
-        const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
-        if (activeLink) {
-            activeLink.classList.add('text-orange-500', 'font-semibold');
-        }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
-    
-    // Función para inicializar el panel
-    function initAdminPanel() {
-        // Añadir event listeners a enlaces de navegación
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const sectionId = this.getAttribute('href').substring(1);
-                showSection(sectionId);
-            });
-        });
-        
-        // Mostrar dashboard por defecto
-        showSection('dashboard');
+    .notification {
+        transition: opacity 0.5s;
     }
-    
-    // Función para mostrar mensaje de acceso denegado
-    function showAccessDenied() {
-        document.body.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-                <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-                    <i class="fas fa-lock text-4xl text-red-500 mb-4"></i>
-                    <h1 class="text-2xl font-bold mb-4">Acceso Denegado</h1>
-                    <p class="text-gray-600 mb-6">No tienes permisos para acceder al panel de administración.</p>
-                    <a href="index.html" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition inline-block">
-                        Volver al inicio
-                    </a>
-                </div>
-            </div>
-        `;
+    /* Ajustes para mejorar la vista de badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        text-align: center;
+        margin: 0 5px;
+        color: white;
     }
-    
-    // Función para mostrar mensaje de carga
-    function showLoading() {
-        const mainContent = document.querySelector('main') || document.body;
-        const loadingDiv = document.createElement('div');
-        loadingDiv.id = 'loadingOverlay';
-        loadingDiv.className = 'fixed inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50';
-        loadingDiv.innerHTML = `
-            <div class="text-center">
-                <div class="spinner w-12 h-12 border-4 border-t-4 border-gray-200 border-t-blue-500 rounded-full mx-auto mb-4"></div>
-                <p class="text-gray-700">Verificando permisos...</p>
-            </div>
-        `;
-        mainContent.appendChild(loadingDiv);
+    /* Estilos para modales */
+    .modal {
+        transition: opacity 0.3s ease-in-out;
     }
-    
-    // Función para ocultar mensaje de carga
-    function hideLoading() {
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if (loadingOverlay) {
-            loadingOverlay.remove();
-        }
+    /* Estilos para selección */
+    .selected-item {
+        border: 2px solid #ff6b1a;
     }
-    
-    // Verificar autenticación y permisos al cargar
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Mostrar carga
-        showLoading();
-        
-        try {
-            const user = auth.currentUser;
-            
-            if (!user) {
-                // Esperar un momento para verificar si se está cargando la autenticación
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                if (!auth.currentUser) {
-                    console.log("No hay usuario autenticado, redirigiendo");
-                    window.location.href = 'index.html';
-                    return;
-                }
-            }
-            
-            // Verificar si el usuario tiene permisos de administrador
-            const hasAdminPermission = await isUserHost();
-            
-            if (hasAdminPermission) {
-                console.log("Usuario autenticado con permisos de administrador");
-                hideLoading();
-                initAdminPanel();
-            } else {
-                console.log("Usuario sin permisos de administrador");
-                hideLoading();
-                showAccessDenied();
-            }
-        } catch (error) {
-            console.error("Error al verificar permisos:", error);
-            hideLoading();
-            showAccessDenied();
-        }
-    });
-</script>
-
-<script type="module" src="firebase.js"></script>
-
-<!-- Estilos para el spinner -->
-<style>
-.spinner {
-    animation: spin 1s linear infinite;
-}
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-</style>
+    /* Estilos para vista previa */
+    .preview-container {
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    </style>
 </body>
 </html>
