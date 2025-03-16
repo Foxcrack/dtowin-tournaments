@@ -7,16 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .badge {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 40px;
-            margin: 0 5px;
-            color: white;
-        }
         .gradient-background {
             background: linear-gradient(135deg, #0042ff, #ff3000);
         }
@@ -28,62 +18,6 @@
         }
         .dtowin-red {
             background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .notification {
-            transition: opacity 0.5s;
-        }
-        /* Ajustes para mejorar la vista de badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            text-align: center;
-            margin: 0 5px;
-            color: white;
-        }
-        /* Estilos para modales */
-        .modal {
-            transition: opacity 0.3s ease-in-out;
-        }
-        /* Estilos para selección */
-        .selected-item {
-            border: 2px solid #ff6b1a;
-        }
-        /* Estilos para vista previa */
-        .preview-container {
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        /* Estilos para notificaciones */
-        .toast {
-            position: fixed;
-            bottom: 1rem;
-            right: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            color: white;
-            z-index: 50;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .toast-success {
-            background-color: #10b981;
-        }
-        .toast-error {
-            background-color: #ef4444;
         }
     </style>
 </head>
@@ -113,32 +47,32 @@
                 <div class="bg-white rounded-lg shadow p-4">
                     <ul>
                         <li>
-                            <a href="#dashboard" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 text-orange-500 font-semibold nav-link">
+                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
                                 <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                             </a>
                         </li>
                         <li>
-                            <a href="#torneos" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
                                 <i class="fas fa-trophy mr-2"></i> Torneos
                             </a>
                         </li>
                         <li>
-                            <a href="#participantes" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
                                 <i class="fas fa-users mr-2"></i> Participantes
                             </a>
                         </li>
                         <li>
-                            <a href="#badges" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
                                 <i class="fas fa-certificate mr-2"></i> Badges
                             </a>
                         </li>
                         <li>
-                            <a href="#resultados" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 nav-link">
+                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
                                 <i class="fas fa-chart-line mr-2"></i> Resultados
                             </a>
                         </li>
                         <li>
-                            <a href="#configuracion" class="block py-2 px-4 rounded hover:bg-gray-100 nav-link">
+                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
                                 <i class="fas fa-cog mr-2"></i> Configuración
                             </a>
                         </li>
@@ -149,8 +83,9 @@
             <!-- Main Content -->
             <div class="md:col-span-4">
                 <!-- Dashboard Section -->
-                <div id="dashboard" class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
                     <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div class="bg-blue-500 text-white rounded-lg p-4 flex items-center">
                             <div class="text-4xl mr-4">
@@ -181,7 +116,38 @@
                         </div>
                     </div>
                     
-                    <h3 class="text-xl font-semibold mb-4">Próximos Torneos</h3>
+                    <h3 class="text-xl font-semibold mb-4">Acceso Rápido</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <a href="admin-torneos.html" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 hover:shadow-lg transition">
+                            <div class="flex items-center">
+                                <i class="fas fa-trophy text-3xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-lg">Torneos</h4>
+                                    <p class="text-sm opacity-80">Gestionar torneos</p>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="admin-participantes.html" class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4 hover:shadow-lg transition">
+                            <div class="flex items-center">
+                                <i class="fas fa-users text-3xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-lg">Participantes</h4>
+                                    <p class="text-sm opacity-80">Gestionar usuarios</p>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="admin-badges.html" class="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg p-4 hover:shadow-lg transition">
+                            <div class="flex items-center">
+                                <i class="fas fa-certificate text-3xl mr-3"></i>
+                                <div>
+                                    <h4 class="font-bold text-lg">Badges</h4>
+                                    <p class="text-sm opacity-80">Gestionar badges</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold mt-6 mb-4">Próximos Torneos</h3>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white">
                             <thead>
@@ -200,404 +166,24 @@
                                     <td class="py-3 px-4">24 / 32</td>
                                     <td class="py-3 px-4"><span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Abierto</span></td>
                                     <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
+                                        <a href="admin-torneos.html" class="text-blue-500 hover:text-blue-700 mr-2">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
                                     </td>
                                 </tr>
                                 <tr class="border-b hover:bg-gray-50">
                                     <td class="py-3 px-4">Campeonato Regional</td>
                                     <td class="py-3 px-4">5 de Abril, 2025</td>
-                                    <td class="py-3 px-4">12 / 40</td>
-                                    <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-600 py-1 px-2 rounded text-xs">Próximo</span></td>
+                                    <td class="py-3 16px-4">12 / 40</td>
+                                    <td class="p3 px-4"><span class="bg-yellow-100 text-yellow-600 py-1 px-2 rounded text-xs">Próximo</span></td>
                                     <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4">Evento Especial</td>
-                                    <td class="py-3 px-4">25 de Marzo, 2025</td>
-                                    <td class="py-3 px-4">18 / 20</td>
-                                    <td class="py-3 px-4"><span class="bg-purple-100 text-purple-600 py-1 px-2 rounded text-xs">Badge Especial</span></td>
-                                    <td class="py-3 px-4">
-                                        <button class="text-blue-500 hover:text-blue-700 mr-2 view-tournament-btn"><i class="fas fa-eye"></i></button>
-                                        <button class="text-orange-500 hover:text-orange-700 edit-tournament-btn"><i class="fas fa-edit"></i></button>
+                                        <a href="admin-torneos.html" class="text-blue-500 hover:t-blue-700 mr-2">
+                                            <i class="faseye"></i> Ver
+                                        </a>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-                
-                <!-- Torneos Section (oculto por defecto) -->
-                <div id="torneos" class="hidden bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Torneos</h2>
-                        <button class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition create-tournament-btn">
-                            <i class="fas fa-plus mr-2"></i>Crear Torneo
-                        </button>
-                    </div>
-
-                    <div class="mb-6">
-                        <div class="bg-gray-50 p-4 rounded-lg mb-4 hidden">
-                            <h3 class="font-semibold text-lg mb-2">Crear Nuevo Torneo</h3>
-                            <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createTournamentForm">
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">
-                                        Nombre del Torneo
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombre" type="text" placeholder="Nombre del torneo">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha">
-                                        Fecha
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="fecha" type="date">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="hora">
-                                        Hora
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="hora" type="time">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="capacidad">
-                                        Capacidad
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="capacidad" type="number" min="1" placeholder="32">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="estado">
-                                        Estado
-                                    </label>
-                                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="estado">
-                                        <option>Próximamente</option>
-                                        <option>Inscripciones Abiertas</option>
-                                        <option>En Progreso</option>
-                                        <option>Finalizado</option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcion">
-                                        Descripción
-                                    </label>
-                                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcion" rows="3" placeholder="Descripción del torneo"></textarea>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">
-                                        Puntos por Posición
-                                    </label>
-                                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-                                        <div>
-                                            <label class="text-xs">1° Lugar</label>
-                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="5">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs">2° Lugar</label>
-                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="4">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs">3° Lugar</label>
-                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="3">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs">4° Lugar</label>
-                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="2">
-                                        </div>
-                                        <div>
-                                            <label class="text-xs">5° Lugar</label>
-                                            <input class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" min="0" value="1">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="imagen">
-                                        Imagen del Torneo
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="imagen" type="file">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">
-                                        Badges para el Torneo
-                                    </label>
-                                    <div class="badges-container flex flex-wrap gap-2 mb-2">
-                                        <button class="dtowin-blue text-white px-3 py-1 rounded font-semibold text-sm hover:opacity-90 transition add-badge-btn">
-                                            <i class="fas fa-plus mr-1"></i>Añadir Badge
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="md:col-span-2 flex justify-end">
-                                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Crear Torneo</button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <!-- Lista de torneos -->
-                        <div id="torneosContainer"></div>
-                    </div>
-                </div>
-                
-                <!-- Badges Section (oculto por defecto) -->
-                <div id="badges" class="hidden bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Badges</h2>
-                        <button id="headerCreateBadgeBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                            <i class="fas fa-plus mr-2"></i>Crear Badge
-                        </button>
-                    </div>
-                    
-                    <!-- Form para crear badge -->
-                    <div class="bg-gray-50 p-4 rounded-lg mb-6 hidden form-section">
-                        <h3 class="font-semibold text-lg mb-2">Crear Nuevo Badge</h3>
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
-                                    Nombre del Badge
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
-                                    Descripción
-                                </label>
-                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
-                                    Color
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
-                                    Ícono
-                                </label>
-                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
-                                    <option value="trophy">Trofeo</option>
-                                    <option value="medal">Medalla</option>
-                                    <option value="star">Estrella</option>
-                                    <option value="award">Premio</option>
-                                    <option value="crown">Corona</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
-                                    Imagen del Badge (PNG recomendado)
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                    id="imagenBadge" 
-                                    type="file" 
-                                    accept="image/png, image/jpeg">
-                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
-                            </div>
-                            <div class="flex items-center">
-                                <!-- Contenedor de vista previa -->
-                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden">
-                                    <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm text-gray-600">Vista previa</p>
-                                    <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
-                                </div>
-                            </div>
-                            <div class="md:col-span-2 flex justify-end">
-                                <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Crear Badge</button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- Lista de badges -->
-                    <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
-                    <div id="badgesContainer" class="mt-4"></div>
-                </div>
-                
-                <!-- Participantes Section (oculto por defecto) -->
-                <div id="participantes" class="hidden bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 class="text-2xl font-bold mb-6">Gestión de Participantes</h2>
-                    
-                    <div class="mb-4">
-                        <div class="flex justify-between mb-2">
-                            <div class="relative">
-                                <input type="text" placeholder="Buscar participante..." class="border rounded-lg pl-10 pr-4 py-2 w-64" id="searchParticipante">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                            </div>
-                            <div>
-                                <select class="border rounded-lg px-4 py-2" id="filterParticipantes">
-                                    <option value="all">Todos los usuarios</option>
-                                    <option value="top10">Top 10 leaderboard</option>
-                                    <option value="new">Nuevos usuarios</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="participantesContainer" class="overflow-x-auto">
-                        <!-- Contenido dinámico de participantes -->
-                    </div>
-                </div>
-                
-                <!-- Resultados Section (oculto por defecto) -->
-                <div id="resultados" class="hidden bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 class="text-2xl font-bold mb-6">Resultados de Torneos</h2>
-                    
-                    <div class="mb-6">
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="torneoSelect">
-                            Seleccionar Torneo
-                        </label>
-                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="torneoSelect">
-                            <option value="">Seleccionar Torneo</option>
-                        </select>
-                    </div>
-                    
-                    <div id="resultadosContainer" class="bg-gray-50 p-4 rounded-lg mb-6">
-                        <!-- Contenido dinámico para formulario de resultados -->
-                    </div>
-                    
-                    <div class="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 class="font-semibold text-lg mb-3">Historial de Resultados</h3>
-                        <div id="historialResultados" class="overflow-x-auto">
-                            <!-- Contenido dinámico para historial de resultados -->
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Configuración Section (oculto por defecto) -->
-                <div id="configuracion" class="hidden bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 class="text-2xl font-bold mb-6">Configuración de la Plataforma</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-lg mb-3">Configuración General</h3>
-                            <form id="configForm">
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreSitio">
-                                        Nombre del Sitio
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreSitio" type="text" value="Dtowin Torneos">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="logoSitio">
-                                        Logo del Sitio
-                                    </label>
-                                    <div class="flex items-center">
-                                        <img src="dtowin.png" alt="Current Logo" id="logoPreview" class="w-12 h-12 rounded-full mr-3">
-                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="logoSitio" type="file">
-                                    </div>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="colorPrimario">
-                                        Color Primario
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorPrimario" type="color" value="#ff6b1a">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionSitio">
-                                        Descripción del Sitio
-                                    </label>
-                                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionSitio" rows="3">Plataforma oficial de torneos Dtowin. Participa, compite y gana puntos para escalar en el ranking.</textarea>
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-lg mb-3">Notificaciones y Emails</h3>
-                            <form id="notificationsForm">
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2">
-                                        Notificaciones por Email
-                                    </label>
-                                    <div class="bg-white p-3 rounded border mb-2">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-newUsers" checked>
-                                            <span>Nuevos registros de usuarios</span>
-                                        </label>
-                                    </div>
-                                    <div class="bg-white p-3 rounded border mb-2">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-tournamentRegistrations" checked>
-                                            <span>Inscripciones a torneos</span>
-                                        </label>
-                                    </div>
-                                    <div class="bg-white p-3 rounded border mb-2">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-tournamentResults" checked>
-                                            <span>Resultados de torneos</span>
-                                        </label>
-                                    </div>
-                                    <div class="bg-white p-3 rounded border">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="checkbox" class="w-4 h-4 mr-2" name="notification-weeklyReports">
-                                            <span>Reportes semanales</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="emailAdmin">
-                                        Email de Administrador
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="emailAdmin" type="email" value="admin@dtowin.com">
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-lg mb-3">Seguridad</h3>
-                            <form id="securityForm">
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordActual">
-                                        Contraseña Actual
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordActual" type="password" placeholder="••••••••">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordNueva">
-                                        Nueva Contraseña
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordNueva" type="password" placeholder="••••••••">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="passwordConfirmar">
-                                        Confirmar Contraseña
-                                    </label>
-                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="passwordConfirmar" type="password" placeholder="••••••••">
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="submit" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">Cambiar Contraseña</button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-lg mb-3">Exportar/Importar Datos</h3>
-                            <div class="mb-4">
-                                <p class="text-gray-600 mb-3">Exporta todos los datos de la plataforma o importa datos existentes.</p>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button id="exportDataBtn" class="dtowin-blue text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                        <i class="fas fa-download mr-2"></i>Exportar Datos
-                                    </button>
-                                    <button id="importDataBtn" class="dtowin-red text-white py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                        <i class="fas fa-upload mr-2"></i>Importar Datos
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">
-                                    Respaldo Automático
-                                </label>
-                                <div class="bg-white p-3 rounded border mb-2">
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" id="backupEnabled" class="w-4 h-4 mr-2" checked>
-                                        <span>Habilitar respaldo automático semanal</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -613,590 +199,5 @@
 
     <!-- Scripts -->
     <script type="module" src="firebase.js"></script>
-    <script type="module" src="badges.js"></script>
-    <script type="module" src="tournaments.js"></script>
-    <script type="module" src="admin-panel.js"></script>
-    
-    <!-- Script de navegación -->
-    <script>
-    // Script adicional para asegurar que la navegación funciona
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("Configurando navegación");
-        
-        // Función de navegación
-        function navigateToSection(sectionId) {
-            console.log("Navegando a:", sectionId);
-            
-            // Ocultar todas las secciones
-            document.querySelectorAll('#dashboard, #torneos, #participantes, #badges, #resultados, #configuracion').forEach(section => {
-                if (section) section.classList.add('hidden');
-            });
-            
-            // Mostrar la sección seleccionada
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.classList.remove('hidden');
-            }
-            
-            // Actualizar estilos de navegación
-            document.querySelectorAll('nav a').forEach(link => {
-                link.classList.remove('text-orange-500', 'font-semibold');
-                link.classList.add('hover:bg-gray-100');
-            });
-            
-            // Resaltar enlace activo
-            const activeLink = document.querySelector(`a[href="#${sectionId}"]`);
-            if (activeLink) {
-                activeLink.classList.add('text-orange-500', 'font-semibold');
-            }
-        }
-        
-        // Definir función global
-        window.showSection = navigateToSection;
-        
-        // Configurar event listeners directamente
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const sectionId = this.getAttribute('href').substring(1);
-                navigateToSection(sectionId);
-                // Actualizar URL sin recargar página
-                window.history.pushState(null, '', `#${sectionId}`);
-            });
-        });
-        
-        // Manejar navegación basada en hash al cargar
-        if (window.location.hash) {
-            const sectionId = window.location.hash.substring(1);
-            setTimeout(() => {
-                navigateToSection(sectionId);
-            }, 300);
-        }
-    });
-    </script>
-    
-    <!-- Script de gestión de badges -->
-    <script type="module">
-      // Importar Firebase directamente
-      import { 
-        collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, 
-        serverTimestamp, query, where 
-      } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-      import { 
-        ref, uploadBytes, getDownloadURL, deleteObject 
-      } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
-      
-      document.addEventListener('DOMContentLoaded', async function() {
-        console.log("Inicializando sistema de badges directo...");
-        
-        // Obtener referencias de Firebase desde la ventana global
-        const auth = window.auth;
-        const db = window.db;
-        const storage = window.storage;
-        
-        if (!auth || !db || !storage) {
-          console.error("No se encontraron las referencias de Firebase");
-          return;
-        }
-        
-        // Referencias a elementos DOM
-        const createBadgeForm = document.getElementById('createBadgeForm');
-        const badgesContainer = document.getElementById('badgesContainer');
-        const headerCreateBadgeBtn = document.getElementById('headerCreateBadgeBtn');
-        const formSection = document.querySelector('.form-section');
-        
-        // Remover alerta de "función en implementación"
-        const alerts = document.querySelectorAll('.alert, .modal, .notification');
-        alerts.forEach(alert => {
-          if (alert && alert.textContent && alert.textContent.includes('implementando')) {
-            alert.remove();
-          }
-        });
-        
-        // Funciones directas para trabajar con badges
-        
-        // Crear un badge
-        async function createBadgeDirect(badgeData, imageFile) {
-          try {
-            if (!auth.currentUser) {
-              throw new Error("Debes iniciar sesión para crear un badge");
-            }
-            
-            // Validar datos
-            if (!badgeData.nombre) {
-              throw new Error("El nombre del badge es obligatorio");
-            }
-            
-            // Subir imagen si existe
-            let imageUrl = null;
-            if (imageFile) {
-              const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-              await uploadBytes(storageRef, imageFile);
-              imageUrl = await getDownloadURL(storageRef);
-            }
-            
-            // Crear documento en Firestore
-            const badgeRef = await addDoc(collection(db, "badges"), {
-              nombre: badgeData.nombre,
-              descripcion: badgeData.descripcion || "",
-              color: badgeData.color || "#ff6b1a",
-              icono: badgeData.icono || "trophy",
-              imageUrl: imageUrl,
-              createdBy: auth.currentUser.uid,
-              createdAt: serverTimestamp()
-            });
-            
-            console.log("Badge creado con ID:", badgeRef.id);
-            return { 
-              success: true, 
-              id: badgeRef.id,
-              nombre: badgeData.nombre,
-              descripcion: badgeData.descripcion,
-              color: badgeData.color,
-              icono: badgeData.icono,
-              imageUrl: imageUrl
-            };
-          } catch (error) {
-            console.error("Error al crear badge:", error);
-            throw error;
-          }
-        }
-        
-        // Obtener todos los badges
-        async function getAllBadgesDirect() {
-          try {
-            const badgesCollection = collection(db, "badges");
-            const badgesSnapshot = await getDocs(badgesCollection);
-            
-            return badgesSnapshot.docs.map(doc => {
-              return { id: doc.id, ...doc.data() };
-            });
-          } catch (error) {
-            console.error("Error al obtener badges:", error);
-            throw error;
-          }
-        }
-        
-        // Eliminar un badge
-        async function deleteBadgeDirect(badgeId) {
-          try {
-            // Obtener datos del badge
-            const badgeRef = doc(db, "badges", badgeId);
-            const badgeSnap = await getDoc(badgeRef);
-            
-            if (!badgeSnap.exists()) {
-              throw new Error("El badge no existe");
-            }
-            
-            const badgeData = badgeSnap.data();
-            
-            // Eliminar imagen si existe
-            if (badgeData.imageUrl) {
-              try {
-                const urlPath = badgeData.imageUrl.split('?')[0];
-                const fileName = urlPath.split('/').pop();
-                const storagePath = `badges/${fileName}`;
-                const imageRef = ref(storage, storagePath);
-                await deleteObject(imageRef);
-              } catch (e) {
-                console.warn("No se pudo eliminar la imagen:", e);
-              }
-            }
-            
-            // Eliminar documento
-            await deleteDoc(badgeRef);
-            
-            return { success: true };
-          } catch (error) {
-            console.error("Error al eliminar badge:", error);
-            throw error;
-          }
-        }
-        
-        // Editar un badge
-        async function editBadgeDirect(badgeId, badgeData, imageFile) {
-          try {
-            const badgeRef = doc(db, "badges", badgeId);
-            const badgeSnap = await getDoc(badgeRef);
-            
-            if (!badgeSnap.exists()) {
-              throw new Error("El badge no existe");
-            }
-            
-            const currentData = badgeSnap.data();
-            
-            // Procesar imagen si hay una nueva
-            let imageUrl = currentData.imageUrl;
-            
-            if (imageFile) {
-              // Eliminar imagen anterior si existe
-              if (currentData.imageUrl) {
-                try {
-                  const urlPath = currentData.imageUrl.split('?')[0];
-                  const fileName = urlPath.split('/').pop();
-                  const storagePath = `badges/${fileName}`;
-                  const oldImageRef = ref(storage, storagePath);
-                  await deleteObject(oldImageRef);
-                } catch (e) {
-                  console.warn("No se pudo eliminar la imagen anterior:", e);
-                }
-              }
-              
-              // Subir nueva imagen
-              const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-              await uploadBytes(storageRef, imageFile);
-              imageUrl = await getDownloadURL(storageRef);
-            }
-            
-            // Actualizar documento
-            await updateDoc(badgeRef, {
-              nombre: badgeData.nombre,
-              descripcion: badgeData.descripcion || "",
-              color: badgeData.color || "#ff6b1a",
-              icono: badgeData.icono || "trophy",
-              imageUrl: imageUrl,
-              updatedBy: auth.currentUser.uid,
-              updatedAt: serverTimestamp()
-            });
-            
-            return { 
-              success: true,
-              id: badgeId,
-              nombre: badgeData.nombre,
-              descripcion: badgeData.descripcion,
-              color: badgeData.color,
-              icono: badgeData.icono,
-              imageUrl: imageUrl
-            };
-          } catch (error) {
-            console.error("Error al editar badge:", error);
-            throw error;
-          }
-        }
-        
-        // Mostrar notificación
-        function showToast(message, type = 'success') {
-          const toast = document.createElement('div');
-          toast.className = `fixed bottom-4 right-4 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white py-2 px-4 rounded-lg shadow-lg z-50`;
-          toast.textContent = message;
-          document.body.appendChild(toast);
-          
-          setTimeout(() => {
-            toast.remove();
-          }, 3000);
-        }
-        
-        // Cargar y mostrar badges
-        async function loadAndDisplayBadges() {
-          if (!badgesContainer) return;
-          
-          try {
-            badgesContainer.innerHTML = '<div class="flex justify-center my-8"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
-            
-            const badges = await getAllBadgesDirect();
-            
-            if (!badges || badges.length === 0) {
-              badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
-              return;
-            }
-            
-            let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">';
-            
-            badges.forEach(badge => {
-              html += `
-                <div class="bg-white border rounded-lg p-4 shadow flex items-center" data-badge-id="${badge.id}">
-                  <div class="h-12 w-12 mr-3 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                    ${badge.imageUrl ? 
-                      `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
-                      `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color}">
-                        <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
-                      </div>`
-                    }
-                  </div>
-                  <div class="flex-grow">
-                    <h4 class="font-semibold">${badge.nombre}</h4>
-                    <p class="text-sm text-gray-600 truncate">${badge.descripcion || ''}</p>
-                  </div>
-                  <div class="flex space-x-2 ml-2">
-                    <button class="text-blue-500 hover:text-blue-700 edit-badge-btn" title="Editar badge">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700 delete-badge-btn" title="Eliminar badge">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-              `;
-            });
-            
-            html += '</div>';
-            badgesContainer.innerHTML = html;
-          } catch (error) {
-            console.error("Error al cargar badges:", error);
-            badgesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar badges. Inténtalo de nuevo.</p>';
-          }
-        }
-        
-        // Ocultar formulario inicialmente
-        if (formSection) {
-          formSection.classList.add('hidden');
-        }
-        
-        // Event listeners
-        
-        // Mostrar formulario al hacer clic en "Crear Badge"
-        if (headerCreateBadgeBtn) {
-          headerCreateBadgeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            console.log("Botón de crear badge clickeado");
-            
-            // Asegurarse de mostrar la sección de badges
-            window.showSection('badges');
-            
-            // Resetear formulario
-            if (createBadgeForm) {
-              createBadgeForm.reset();
-              
-              // Cambiar texto del botón
-              const submitBtn = createBadgeForm.querySelector('button[type="submit"]');
-              if (submitBtn) {
-                submitBtn.textContent = 'Crear Badge';
-                submitBtn.dataset.editMode = 'false';
-                delete submitBtn.dataset.badgeId;
-              }
-              
-              // Limpiar preview
-              const previewContainer = document.getElementById('badgePreviewContainer');
-              if (previewContainer) {
-                previewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
-              }
-            }
-            
-            // Mostrar formulario
-            if (formSection) {
-              formSection.classList.remove('hidden');
-              createBadgeForm.scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            return false;
-          });
-        }
-        
-        // Evento para el formulario
-        if (createBadgeForm) {
-          // Limpiar eventos previos
-          const oldForm = createBadgeForm;
-          const newForm = oldForm.cloneNode(true);
-          if (oldForm.parentNode) {
-            oldForm.parentNode.replaceChild(newForm, oldForm);
-          }
-          
-          // Añadir el nuevo manejador
-          newForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Obtener referencias a elementos
-            const nombreInput = document.getElementById('nombreBadge');
-            const descripcionInput = document.getElementById('descripcionBadge');
-            const colorInput = document.getElementById('colorBadge');
-            const iconoInput = document.getElementById('iconoBadge');
-            const imagenInput = document.getElementById('imagenBadge');
-            const submitBtn = this.querySelector('button[type="submit"]');
-            
-            // Validación básica
-            if (!nombreInput || !nombreInput.value.trim()) {
-              showToast("El nombre del badge es obligatorio", "error");
-              return;
-            }
-            
-            // Preparar datos
-            const badgeData = {
-              nombre: nombreInput.value.trim(),
-              descripcion: descripcionInput ? descripcionInput.value.trim() : "",
-              color: colorInput ? colorInput.value : "#ff6b1a",
-              icono: iconoInput ? iconoInput.value : "trophy"
-            };
-            
-            // Obtener archivo de imagen
-            const imageFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
-            
-            // Modo edición o creación
-            const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
-            const badgeId = submitBtn ? submitBtn.dataset.badgeId : null;
-            
-            // Mostrar indicador de carga
-            const originalText = submitBtn ? submitBtn.textContent : 'Crear Badge';
-            if (submitBtn) {
-              submitBtn.disabled = true;
-              submitBtn.textContent = 'Procesando...';
-            }
-            
-            try {
-              let result;
-              
-              if (isEditMode && badgeId) {
-                // Editar badge existente
-                result = await editBadgeDirect(badgeId, badgeData, imageFile);
-                showToast("Badge actualizado correctamente");
-              } else {
-                // Crear nuevo badge
-                result = await createBadgeDirect(badgeData, imageFile);
-                showToast("Badge creado correctamente");
-              }
-              
-              // Resetear formulario
-              this.reset();
-              
-              // Ocultar formulario
-              if (formSection) {
-                formSection.classList.add('hidden');
-              }
-              
-              // Recargar la lista de badges
-              await loadAndDisplayBadges();
-              
-            } catch (error) {
-              console.error("Error:", error);
-              showToast(error.message || "Error al procesar badge", "error");
-            } finally {
-              // Restaurar botón
-              if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-              }
-            }
-            
-            return false;
-          });
-          
-          // Vista previa de imagen
-          const imagenInput = document.getElementById('imagenBadge');
-          const previewContainer = document.getElementById('badgePreviewContainer');
-          
-          if (imagenInput && previewContainer) {
-            imagenInput.addEventListener('change', function() {
-              if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                  previewContainer.innerHTML = `<img src="${e.target.result}" alt="Vista previa" class="w-full h-full object-contain">`;
-                };
-                reader.readAsDataURL(this.files[0]);
-              }
-            });
-          }
-        }
-        
-        // Delegación de eventos para editar/eliminar badges
-        if (badgesContainer) {
-          badgesContainer.addEventListener('click', async function(e) {
-            // Botón de editar
-            if (e.target.closest('.edit-badge-btn')) {
-              const badgeCard = e.target.closest('[data-badge-id]');
-              if (!badgeCard) return;
-              
-              const badgeId = badgeCard.dataset.badgeId;
-              console.log(`Editando badge: ${badgeId}`);
-              
-              try {
-                // Obtener datos del badge
-                const badgeRef = doc(db, "badges", badgeId);
-                const badgeSnap = await getDoc(badgeRef);
-                
-                if (!badgeSnap.exists()) {
-                  throw new Error("Badge no encontrado");
-                }
-                
-                const badge = badgeSnap.data();
-                
-                // Mostrar formulario
-                if (formSection) {
-                  formSection.classList.remove('hidden');
-                }
-                
-                // Rellenar campos
-                const nombreInput = document.getElementById('nombreBadge');
-                const descripcionInput = document.getElementById('descripcionBadge');
-                const colorInput = document.getElementById('colorBadge');
-                const iconoInput = document.getElementById('iconoBadge');
-                const previewContainer = document.getElementById('badgePreviewContainer');
-                
-                if (nombreInput) nombreInput.value = badge.nombre || '';
-                if (descripcionInput) descripcionInput.value = badge.descripcion || '';
-                if (colorInput) colorInput.value = badge.color || '#ff6b1a';
-                if (iconoInput) iconoInput.value = badge.icono || 'trophy';
-                
-                // Mostrar preview
-                if (previewContainer && badge.imageUrl) {
-                  previewContainer.innerHTML = `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">`;
-                }
-                
-                // Cambiar botón a modo edición
-                const submitBtn = document.querySelector('#createBadgeForm button[type="submit"]');
-                if (submitBtn) {
-                  submitBtn.textContent = 'Confirmar Cambios';
-                  submitBtn.dataset.editMode = 'true';
-                  submitBtn.dataset.badgeId = badgeId;
-                }
-                
-                // Scroll al formulario
-                createBadgeForm.scrollIntoView({ behavior: 'smooth' });
-                
-              } catch (error) {
-                console.error("Error al preparar edición:", error);
-                showToast("Error al preparar la edición del badge", "error");
-              }
-            }
-            
-            // Botón de eliminar
-            if (e.target.closest('.delete-badge-btn')) {
-              const badgeCard = e.target.closest('[data-badge-id]');
-              if (!badgeCard) return;
-              
-              const badgeId = badgeCard.dataset.badgeId;
-              const badgeName = badgeCard.querySelector('h4').textContent;
-              
-              if (confirm(`¿Estás seguro que deseas eliminar el badge "${badgeName}"?`)) {
-                try {
-                  await deleteBadgeDirect(badgeId);
-                  showToast("Badge eliminado correctamente");
-                  
-                  // Eliminar la tarjeta del DOM
-                  badgeCard.remove();
-                  
-                  // Si no quedan badges, mostrar mensaje
-                  if (badgesContainer.querySelectorAll('[data-badge-id]').length === 0) {
-                    badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
-                  }
-                  
-                } catch (error) {
-                  console.error("Error al eliminar badge:", error);
-                  showToast("Error al eliminar badge", "error");
-                }
-              }
-            }
-          });
-        }
-        
-        // Si la URL tiene #badges, mostrar esa sección
-        if (window.location.hash === '#badges') {
-          window.showSection('badges');
-        }
-        
-        // Cargar badges inicialmente
-        window.setTimeout(async () => {
-          await loadAndDisplayBadges();
-        }, 500);
-        
-        // Eliminar cualquier alerta existente
-        document.querySelectorAll('.alert, [role="alert"]').forEach(alert => {
-          if (alert && alert.textContent && alert.textContent.includes('implementando')) {
-            alert.remove();
-          }
-        });
-      });
-    </script>
 </body>
 </html>
