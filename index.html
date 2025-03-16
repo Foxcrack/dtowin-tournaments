@@ -602,6 +602,78 @@
             }
         });
     });
+        // Código para añadir al final del script en index.html, justo antes de cerrar el
+
+// Función para comprobar si el usuario es admin y mostrar el botón correspondiente
+async function checkAndShowAdminButton() {
+    try {
+        const user = auth.currentUser;
+        
+        if (!user) {
+            console.log("No hay usuario autenticado");
+            return;
+        }
+        
+        // Verificar si el usuario es administrador
+        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
+        const isAdmin = adminUIDs.includes(user.uid);
+        console.log("¿El usuario actual es admin?", isAdmin);
+        
+        // Si el usuario es admin, mostrar el botón de Admin
+        if (isAdmin) {
+            // Buscar el elemento de navegación donde queremos añadir el botón
+            const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+            
+            if (navLinks) {
+                // Crear el botón de Admin
+                const adminButton = document.createElement("a");
+                adminButton.href = "admin-panel.html";
+                adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
+                adminButton.textContent = "Admin";
+                
+                // Insertar antes del botón de "Mi Perfil" o al final si no existe
+                const profileLink = navLinks.querySelector('a[href="perfil.html"]');
+                if (profileLink) {
+                    navLinks.insertBefore(adminButton, profileLink.nextSibling);
+                } else {
+                    navLinks.appendChild(adminButton);
+                }
+                
+                // También agregar al menú móvil si existe
+                const mobileMenu = document.getElementById("mobileMenu");
+                if (mobileMenu) {
+                    const mobileMenuLinks = mobileMenu.querySelector("div");
+                    if (mobileMenuLinks) {
+                        const mobileAdminLink = document.createElement("a");
+                        mobileAdminLink.href = "admin-panel.html";
+                        mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
+                        mobileAdminLink.textContent = "Admin";
+                        mobileMenuLinks.appendChild(mobileAdminLink);
+                    }
+                }
+                
+                console.log("Botón de Admin añadido correctamente");
+            } else {
+                console.error("No se pudo encontrar la barra de navegación");
+            }
+        }
+    } catch (error) {
+        console.error("Error al verificar permisos de admin:", error);
+    }
+}
+
+// Llamar a la función cuando se carga la página y cuando cambia el estado de autenticación
+document.addEventListener('DOMContentLoaded', () => {
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            updateUIForLoggedInUser(user);
+            checkAndShowAdminButton(); // Verificar y mostrar botón de admin
+        } else {
+            console.log("No hay usuario autenticado");
+        }
+    });
+});
     </script>
 </body>
 </html>
