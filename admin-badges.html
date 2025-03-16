@@ -1,751 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Badges - Dtowin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            text-align: center;
-            margin: 0 5px;
-            color: white;
-        }
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #f19d44;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    </style>
-    <!-- Firebase App (la base) siempre es requerida y debe ser la primera -->
-<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
-<!-- Agrega los productos de Firebase que quieras usar -->
-<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
-
-<!-- Inicialización de Firebase -->
 <script>
-// Configuración de Firebase (usa la misma que tienes en firebase.js)
-const firebaseConfig = {
-    apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-    authDomain: "dtowin-tournament.firebaseapp.com",
-    projectId: "dtowin-tournament",
-    storageBucket: "dtowin-tournament.appspot.com",
-    messagingSenderId: "991226820083",
-    appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
-    measurementId: "G-R4Q5YKZXGY"
-};
-
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-
-// Hacer Firebase disponible globalmente
-window.firebase = firebase;
-window.db = firebase.firestore();
-window.auth = firebase.auth();
-window.storage = firebase.storage();
-<script src="gestion-badges.js"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <a href="admin-panel.html" class="flex items-center">
-                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
-                </a>
-            </div>
-            <div class="flex items-center space-x-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-                <div id="userProfile" class="flex items-center space-x-2">
-                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">Admin</span>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <!-- Sidebar -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <ul>
-                        <li>
-                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-trophy mr-2"></i> Torneos
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-users mr-2"></i> Participantes
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
-                                <i class="fas fa-certificate mr-2"></i> Badges
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-chart-line mr-2"></i> Resultados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i> Configuración
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="md:col-span-4">
-                <!-- Badges Section -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Badges</h2>
-                        <button id="headerCreateBadgeBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                            <i class="fas fa-plus mr-2"></i>Crear Badge
-                        </button>
-                    </div>
-                    
-                    <!-- Form para crear badge (oculto inicialmente) -->
-                    <div id="badgeFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden">
-                        <h3 class="font-semibold text-lg mb-2" id="formTitle">Crear Nuevo Badge</h3>
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
-                                    Nombre del Badge
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
-                                    Descripción
-                                </label>
-                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
-                                    Color
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
-                                    Ícono
-                                </label>
-                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
-                                    <option value="trophy">Trofeo</option>
-                                    <option value="medal">Medalla</option>
-                                    <option value="star">Estrella</option>
-                                    <option value="award">Premio</option>
-                                    <option value="crown">Corona</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
-                                    Imagen del Badge (PNG recomendado)
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                    id="imagenBadge" 
-                                    type="file" 
-                                    accept="image/png, image/jpeg">
-                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
-                            </div>
-                            <div class="flex items-center">
-                                <!-- Contenedor de vista previa -->
-                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden">
-                                    <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm text-gray-600">Vista previa</p>
-                                    <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
-                                </div>
-                            </div>
-                            <div class="md:col-span-2 flex justify-end">
-                                <button type="button" id="cancelButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition mr-2">
-                                    Cancelar
-                                </button>
-                                <button type="submit" id="submitButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                    Crear Badge
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <!-- Lista de badges -->
-                    <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
-                    <div id="badgesContainer" class="mt-4">
-                        <div class="flex justify-center my-8">
-                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
-            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
-        </div>
-    </footer>
-
-    <!-- Scripts -->
-    <script type="module">
-        // Importar Firebase directamente
-        import { 
-            collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, 
-            serverTimestamp, query, where 
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-        import { 
-            ref, uploadBytes, getDownloadURL, deleteObject 
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
-        
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log("Inicializando sistema de badges...");
-            
-            // Obtener referencias de Firebase desde la ventana global
-            const auth = window.auth;
-            const db = window.db;
-            const storage = window.storage;
-            
-            if (!auth || !db || !storage) {
-                console.error("No se encontraron las referencias de Firebase. Importando manualmente...");
-                
-                // Si no están disponibles, intentar importarlas
-                try {
-                    const { auth: importedAuth, db: importedDb, storage: importedStorage } = await import('./firebase.js');
-                    window.auth = importedAuth;
-                    window.db = importedDb;
-                    window.storage = importedStorage;
-                } catch (e) {
-                    console.error("Error al importar Firebase:", e);
-                    alert("Error al cargar Firebase. Verifica tu conexión e inténtalo de nuevo.");
-                    return;
-                }
-            }
-            
-            // Referencias a elementos DOM
-            const createBadgeForm = document.getElementById('createBadgeForm');
-            const badgesContainer = document.getElementById('badgesContainer');
-            const headerCreateBadgeBtn = document.getElementById('headerCreateBadgeBtn');
-            const badgeFormSection = document.getElementById('badgeFormSection');
-            const cancelButton = document.getElementById('cancelButton');
-            const submitButton = document.getElementById('submitButton');
-            const formTitle = document.getElementById('formTitle');
-            
-            // Funciones para trabajar con badges
-            
-            // Crear un badge
-            async function createBadge(badgeData, imageFile) {
-                try {
-                    if (!auth.currentUser) {
-                        throw new Error("Debes iniciar sesión para crear un badge");
-                    }
-                    
-                    // Validar datos
-                    if (!badgeData.nombre) {
-                        throw new Error("El nombre del badge es obligatorio");
-                    }
-                    
-                    // Subir imagen si existe
-                    let imageUrl = null;
-                    if (imageFile) {
-                        const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-                        await uploadBytes(storageRef, imageFile);
-                        imageUrl = await getDownloadURL(storageRef);
-                    }
-                    
-                    // Crear documento en Firestore
-                    const badgeRef = await addDoc(collection(db, "badges"), {
-                        nombre: badgeData.nombre,
-                        descripcion: badgeData.descripcion || "",
-                        color: badgeData.color || "#ff6b1a",
-                        icono: badgeData.icono || "trophy",
-                        imageUrl: imageUrl,
-                        createdBy: auth.currentUser.uid,
-                        createdAt: serverTimestamp()
-                    });
-                    
-                    console.log("Badge creado con ID:", badgeRef.id);
-                    return { 
-                        success: true, 
-                        id: badgeRef.id,
-                        nombre: badgeData.nombre,
-                        descripcion: badgeData.descripcion,
-                        color: badgeData.color,
-                        icono: badgeData.icono,
-                        imageUrl: imageUrl
-                    };
-                } catch (error) {
-                    console.error("Error al crear badge:", error);
-                    throw error;
-                }
-            }
-            
-            // Obtener todos los badges
-            async function getAllBadges() {
-                try {
-                    const badgesCollection = collection(db, "badges");
-                    const badgesSnapshot = await getDocs(badgesCollection);
-                    
-                    return badgesSnapshot.docs.map(doc => {
-                        return { id: doc.id, ...doc.data() };
-                    });
-                } catch (error) {
-                    console.error("Error al obtener badges:", error);
-                    throw error;
-                }
-            }
-            
-            // Eliminar un badge
-            async function deleteBadge(badgeId) {
-                try {
-                    // Obtener datos del badge
-                    const badgeRef = doc(db, "badges", badgeId);
-                    const badgeSnap = await getDoc(badgeRef);
-                    
-                    if (!badgeSnap.exists()) {
-                        throw new Error("El badge no existe");
-                    }
-                    
-                    const badgeData = badgeSnap.data();
-                    
-                    // Eliminar imagen si existe
-                    if (badgeData.imageUrl) {
-                        try {
-                            const urlPath = badgeData.imageUrl.split('?')[0];
-                            const fileName = urlPath.split('/').pop();
-                            const storagePath = `badges/${fileName}`;
-                            const imageRef = ref(storage, storagePath);
-                            await deleteObject(imageRef);
-                        } catch (e) {
-                            console.warn("No se pudo eliminar la imagen:", e);
-                        }
-                    }
-                    
-                    // Eliminar documento
-                    await deleteDoc(badgeRef);
-                    
-                    return { success: true };
-                } catch (error) {
-                    console.error("Error al eliminar badge:", error);
-                    throw error;
-                }
-            }
-            
-            // Editar un badge
-            async function editBadge(badgeId, badgeData, imageFile) {
-                try {
-                    const badgeRef = doc(db, "badges", badgeId);
-                    const badgeSnap = await getDoc(badgeRef);
-                    
-                    if (!badgeSnap.exists()) {
-                        throw new Error("El badge no existe");
-                    }
-                    
-                    const currentData = badgeSnap.data();
-                    
-                    // Procesar imagen si hay una nueva
-                    let imageUrl = currentData.imageUrl;
-                    
-                    if (imageFile) {
-                        // Eliminar imagen anterior si existe
-                        if (currentData.imageUrl) {
-                            try {
-                                const urlPath = currentData.imageUrl.split('?')[0];
-                                const fileName = urlPath.split('/').pop();
-                                const storagePath = `badges/${fileName}`;
-                                const oldImageRef = ref(storage, storagePath);
-                                await deleteObject(oldImageRef);
-                            } catch (e) {
-                                console.warn("No se pudo eliminar la imagen anterior:", e);
-                            }
-                        }
-                        
-                        // Subir nueva imagen
-                        const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-                        await uploadBytes(storageRef, imageFile);
-                        imageUrl = await getDownloadURL(storageRef);
-                    }
-                    
-                    // Actualizar documento
-                    await updateDoc(badgeRef, {
-                        nombre: badgeData.nombre,
-                        descripcion: badgeData.descripcion || "",
-                        color: badgeData.color || "#ff6b1a",
-                        icono: badgeData.icono || "trophy",
-                        imageUrl: imageUrl,
-                        updatedBy: auth.currentUser.uid,
-                        updatedAt: serverTimestamp()
-                    });
-                    
-                    return { 
-                        success: true,
-                        id: badgeId,
-                        nombre: badgeData.nombre,
-                        descripcion: badgeData.descripcion,
-                        color: badgeData.color,
-                        icono: badgeData.icono,
-                        imageUrl: imageUrl
-                    };
-                } catch (error) {
-                    console.error("Error al editar badge:", error);
-                    throw error;
-                }
-            }
-            
-            // Mostrar notificación
-            function showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `fixed bottom-4 right-4 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white py-2 px-4 rounded-lg shadow-lg z-50`;
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
-            }
-            
-            // Cargar y mostrar badges
-            async function loadAndDisplayBadges() {
-                if (!badgesContainer) return;
-                
-                try {
-                    badgesContainer.innerHTML = '<div class="flex justify-center my-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
-                    
-                    const badges = await getAllBadges();
-                    
-                    if (!badges || badges.length === 0) {
-                        badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
-                        return;
-                    }
-                    
-                    let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">';
-                    
-                    badges.forEach(badge => {
-                        html += `
-                            <div class="bg-white border rounded-lg p-4 shadow flex items-center" data-badge-id="${badge.id}">
-                                <div class="h-12 w-12 mr-3 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                                    ${badge.imageUrl ? 
-                                        `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
-                                        `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color}">
-                                            <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
-                                        </div>`
-                                    }
-                                </div>
-                                <div class="flex-grow">
-                                    <h4 class="font-semibold">${badge.nombre}</h4>
-                                    <p class="text-sm text-gray-600 truncate">${badge.descripcion || ''}</p>
-                                </div>
-                                <div class="flex space-x-2 ml-2">
-                                    <button class="text-blue-500 hover:text-blue-700 edit-badge-btn" title="Editar badge">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="text-red-500 hover:text-red-700 delete-badge-btn" title="Eliminar badge">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                    badgesContainer.innerHTML = html;
-                } catch (error) {
-                    console.error("Error al cargar badges:", error);
-                    badgesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar badges. Inténtalo de nuevo.</p>';
-                }
-            }
-            
-            // Event listeners
-            
-            // Mostrar formulario al hacer clic en "Crear Badge"
-            if (headerCreateBadgeBtn) {
-                headerCreateBadgeBtn.addEventListener('click', function() {
-                    // Resetear formulario
-                    if (createBadgeForm) {
-                        createBadgeForm.reset();
-                        
-                        // Cambiar texto del botón y título
-                        formTitle.textContent = 'Crear Nuevo Badge';
-                        submitButton.textContent = 'Crear Badge';
-                        submitButton.dataset.editMode = 'false';
-                        delete submitButton.dataset.badgeId;
-                        
-                        // Limpiar preview
-                        const previewContainer = document.getElementById('badgePreviewContainer');
-                        if (previewContainer) {
-                            previewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
-                        }
-                    }
-                    
-                    // Mostrar formulario
-                    if (badgeFormSection) {
-                        badgeFormSection.classList.remove('hidden');
-                    }
-                });
-            }
-            
-            // Ocultar formulario al hacer clic en "Cancelar"
-            if (cancelButton) {
-                cancelButton.addEventListener('click', function() {
-                    if (badgeFormSection) {
-                        badgeFormSection.classList.add('hidden');
-                    }
-                });
-            }
-            
-            // Evento para el formulario
-            if (createBadgeForm) {
-                createBadgeForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    // Obtener referencias a elementos
-                    const nombreInput = document.getElementById('nombreBadge');
-                    const descripcionInput = document.getElementById('descripcionBadge');
-                    const colorInput = document.getElementById('colorBadge');
-                    const iconoInput = document.getElementById('iconoBadge');
-                    const imagenInput = document.getElementById('imagenBadge');
-                    
-                    // Validación básica
-                    if (!nombreInput || !nombreInput.value.trim()) {
-                        showToast("El nombre del badge es obligatorio", "error");
-                        return;
-                    }
-                    
-                    // Preparar datos
-                    const badgeData = {
-                        nombre: nombreInput.value.trim(),
-                        descripcion: descripcionInput ? descripcionInput.value.trim() : "",
-                        color: colorInput ? colorInput.value : "#ff6b1a",
-                        icono: iconoInput ? iconoInput.value : "trophy"
-                    };
-                    
-                    // Obtener archivo de imagen
-                    const imageFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
-                    
-                    // Modo edición o creación
-                    const isEditMode = submitButton.dataset.editMode === 'true';
-                    const badgeId = submitButton.dataset.badgeId;
-                    
-                    // Mostrar indicador de carga
-                    const originalText = submitButton.textContent;
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></span> Procesando...';
-                    
-                    try {
-                        let result;
-                        
-                        if (isEditMode && badgeId) {
-                            // Editar badge existente
-                            result = await editBadge(badgeId, badgeData, imageFile);
-                            showToast("Badge actualizado correctamente");
-                        } else {
-                            // Crear nuevo badge
-                            result = await createBadge(badgeData, imageFile);
-                            showToast("Badge creado correctamente");
-                        }
-                        
-                        // Resetear formulario
-                        this.reset();
-                        
-                        // Ocultar formulario
-                        if (badgeFormSection) {
-                            badgeFormSection.classList.add('hidden');
-                        }
-                        
-                        // Recargar la lista de badges
-                        await loadAndDisplayBadges();
-                        
-                    } catch (error) {
-                        console.error("Error:", error);
-                        showToast(error.message || "Error al procesar badge", "error");
-                    } finally {
-                        // Restaurar botón
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText;
-                    }
-                });
-                
-                // Vista previa de imagen
-                const imagenInput = document.getElementById('imagenBadge');
-                const previewContainer = document.getElementById('badgePreviewContainer');
-                
-                if (imagenInput && previewContainer) {
-                    imagenInput.addEventListener('change', function() {
-                        if (this.files && this.files[0]) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                previewContainer.innerHTML = `<img src="${e.target.result}" alt="Vista previa" class="w-full h-full object-contain">`;
-                            };
-                            reader.readAsDataURL(this.files[0]);
-                        }
-                    });
-                }
-            }
-            
-            // Delegación de eventos para editar/eliminar badges
-            if (badgesContainer) {
-                badgesContainer.addEventListener('click', async function(e) {
-                    // Botón de editar
-                    if (e.target.closest('.edit-badge-btn')) {
-                        const badgeCard = e.target.closest('[data-badge-id]');
-                        if (!badgeCard) return;
-                        
-                        const badgeId = badgeCard.dataset.badgeId;
-                        console.log(`Editando badge: ${badgeId}`);
-                        
-                        try {
-                            // Obtener datos del badge
-                            const badgeRef = doc(db, "badges", badgeId);
-                            const badgeSnap = await getDoc(badgeRef);
-                            
-                            if (!badgeSnap.exists()) {
-                                throw new Error("Badge no encontrado");
-                            }
-                            
-                            const badge = badgeSnap.data();
-                            
-                            // Cambiar título y botón
-                            formTitle.textContent = 'Editar Badge';
-                            submitButton.textContent = 'Confirmar Cambios';
-                            submitButton.dataset.editMode = 'true';
-                            submitButton.dataset.badgeId = badgeId;
-                            
-                            // Rellenar campos
-                            const nombreInput = document.getElementById('nombreBadge');
-                            const descripcionInput = document.getElementById('descripcionBadge');
-                            const colorInput = document.getElementById('colorBadge');
-                            const iconoInput = document.getElementById('iconoBadge');
-                            const previewContainer = document.getElementById('badgePreviewContainer');
-                            
-                            if (nombreInput) nombreInput.value = badge.nombre || '';
-                            if (descripcionInput) descripcionInput.value = badge.descripcion || '';
-                            if (colorInput) colorInput.value = badge.color || '#ff6b1a';
-                            if (iconoInput) iconoInput.value = badge.icono || 'trophy';
-                            
-                            // Mostrar preview
-                            if (previewContainer && badge.imageUrl) {
-                                previewContainer.innerHTML = `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">`;
-                            }
-                            
-                            // Mostrar formulario
-                            if (badgeFormSection) {
-                                badgeFormSection.classList.remove('hidden');
-                                badgeFormSection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                            
-                        } catch (error) {
-                            console.error("Error al preparar edición:", error);
-                            showToast("Error al preparar la edición del badge", "error");
-                        }
-                    }
-                    
-                    // Botón de eliminar
-                    if (e.target.closest('.delete-badge-btn')) {
-                        const badgeCard = e.target.closest('[data-badge-id]');
-                        if (!badgeCard) return;
-                        
-                        const badgeId = badgeCard.dataset.badgeId;
-                        const badgeName = badgeCard.querySelector('h4').textContent;
-                        
-                        if (confirm(`¿Estás seguro que deseas eliminar el badge "${badgeName}"?`)) {
-                            try {
-                                await deleteBadge(badgeId);
-                                showToast("Badge eliminado correctamente");
-                                
-                                // Eliminar la tarjeta del DOM
-                                badgeCard.remove();
-                                
-                                // Si no quedan badges, mostrar mensaje
-                                if (badgesContainer.querySelectorAll('[data-badge-id]').length === 0) {
-                                    badgesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay badges disponibles. Crea el primer badge.</p>';
-                                }
-                                
-                            } catch (error) {
-                                console.error("Error al eliminar badge:", error);
-                                showToast("Error al eliminar badge", "error");
-                            }
-                        }
-                    }
-                });
-            }
-            
-            // Cargar badges inicialmente
-            await loadAndDisplayBadges();
-        });
-        
-<script type="module">
-    // Importaciones directas de Firebase - asegúrate que las URL sean correctas
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-    import { 
-        getFirestore, collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-        query, where, serverTimestamp 
-    } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-    import { 
-        getStorage, ref, uploadBytes, getDownloadURL, deleteObject 
-    } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
-
-    // Configuración de Firebase (usa la misma que tienes en firebase.js)
-    const firebaseConfig = {
-        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-        authDomain: "dtowin-tournament.firebaseapp.com",
-        projectId: "dtowin-tournament",
-        storageBucket: "dtowin-tournament.appspot.com",
-        messagingSenderId: "991226820083",
-        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
-        measurementId: "G-R4Q5YKZXGY"
-    };
-
-    // Inicializar Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
-
-    // Referencias al DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Inicializando gestor de badges...");
+    
+    // Referencias a Firebase ya globales
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+    
+    // Referencias a elementos del DOM
     const badgesContainer = document.getElementById('badgesContainer');
     const createBadgeForm = document.getElementById('createBadgeForm');
-    const formSection = createBadgeForm ? createBadgeForm.closest('.bg-gray-50') : null;
+    const formSection = document.getElementById('badgeFormSection');
     const headerCreateBadgeBtn = document.getElementById('headerCreateBadgeBtn');
     const nombreBadgeInput = document.getElementById('nombreBadge');
     const descripcionBadgeInput = document.getElementById('descripcionBadge');
@@ -753,77 +18,459 @@ window.storage = firebase.storage();
     const iconoBadgeInput = document.getElementById('iconoBadge');
     const imagenBadgeInput = document.getElementById('imagenBadge');
     const badgePreviewContainer = document.getElementById('badgePreviewContainer');
-    const submitButton = createBadgeForm ? createBadgeForm.querySelector('button[type="submit"]') : null;
+    const submitButton = document.getElementById('submitButton');
     const cancelButton = document.getElementById('cancelButton');
     const formTitle = document.getElementById('formTitle');
 
-    // Función para mostrar notificaciones
-    function mostrarNotificacion(mensaje, tipo = 'info') {
-        // Eliminar notificación existente si hay una
-        const notificacionExistente = document.querySelector('.notification');
-        if (notificacionExistente) {
-            notificacionExistente.remove();
+    // Verificar autenticación
+    auth.onAuthStateChanged(async function(user) {
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            iniciarGestion(user);
+        } else {
+            console.log("No hay usuario autenticado, redirigiendo...");
+            window.location.href = 'index.html';
         }
-        
-        // Crear elemento de notificación
-        const notificacion = document.createElement('div');
-        
-        // Clases según el tipo de notificación
-        let bgColor = 'bg-blue-500';
-        let icon = 'info-circle';
-        
-        if (tipo === 'success') {
-            bgColor = 'bg-green-500';
-            icon = 'check-circle';
-        } else if (tipo === 'error') {
-            bgColor = 'bg-red-500';
-            icon = 'exclamation-circle';
-        } else if (tipo === 'warning') {
-            bgColor = 'bg-yellow-500';
-            icon = 'exclamation-triangle';
-        }
-        
-        // Estilos de la notificación
-        notificacion.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-        notificacion.innerHTML = `
-            <i class="fas fa-${icon} mr-2"></i>
-            <span>${mensaje}</span>
-        `;
-        
-        // Añadir al DOM
-        document.body.appendChild(notificacion);
-        
-        // Eliminar después de 3 segundos
-        setTimeout(() => {
-            notificacion.classList.add('opacity-0');
-            notificacion.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                notificacion.remove();
-            }, 500);
-        }, 3000);
-    }
-
-    // Función para verificar si el usuario es administrador
-    async function esUsuarioAdmin(userId) {
+    });
+    
+    // Iniciar gestión
+    async function iniciarGestion(user) {
         try {
-            // Lista de IDs de administradores
-            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+            // Verificar si el usuario es host/admin
+            const userIsHost = await esUsuarioHost(user.uid);
             
-            // Si está en la lista directamente
-            if (adminUIDs.includes(userId)) {
+            if (!userIsHost) {
+                console.log("No tienes permisos para gestionar badges");
+                mostrarNotificacion("No tienes permisos para gestionar badges", "error");
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+            
+            // Configurar event listeners
+            configurarEventListeners();
+            
+            // Cargar badges existentes
+            await cargarBadges();
+        } catch (error) {
+            console.error("Error al iniciar gestión:", error);
+            mostrarNotificacion("Error al inicializar la gestión de badges", "error");
+        }
+    }
+    
+    // Verificar si el usuario es host
+    async function esUsuarioHost(uid) {
+        try {
+            // Verificar directamente si está en lista de admins
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Ajusta tu UID de admin aquí
+            if (adminUIDs.includes(uid)) {
                 return true;
             }
             
             // Verificar en base de datos
-            const usersRef = collection(db, "usuarios");
-            const q = query(usersRef, where("uid", "==", userId), where("isHost", "==", true));
-            const querySnapshot = await getDocs(q);
-            
+            const usersRef = db.collection("usuarios");
+            const querySnapshot = await usersRef.where("uid", "==", uid).where("isHost", "==", true).get();
             return !querySnapshot.empty;
         } catch (error) {
-            console.error("Error al verificar si es administrador:", error);
+            console.error("Error al verificar permisos de host:", error);
             return false;
         }
+    }
+    
+    // Resto de tu código para gestión de badges
+    // Aquí iría el resto de las funciones: 
+    // configurarEventListeners(), manejarEnvioFormulario(), cargarBadges(), etc...
+    
+    // Función para obtener todos los badges
+    async function getAllBadges() {
+        try {
+            const badgesRef = db.collection("badges");
+            const snapshot = await badgesRef.get();
+            const badges = [];
+            
+            snapshot.forEach(doc => {
+                badges.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            return badges;
+        } catch (error) {
+            console.error("Error al obtener badges:", error);
+            throw error;
+        }
+    }
+    
+    // Crear badge
+    async function createBadge(badgeData, imageFile, userId) {
+        try {
+            // Subir imagen si existe
+            let imageUrl = null;
+            if (imageFile) {
+                const storageRef = storage.ref(`badges/${Date.now()}_${imageFile.name}`);
+                const uploadTask = await storageRef.put(imageFile);
+                imageUrl = await uploadTask.ref.getDownloadURL();
+            }
+            
+            // Crear badge en Firestore
+            await db.collection("badges").add({
+                nombre: badgeData.nombre,
+                descripcion: badgeData.descripcion || "",
+                color: badgeData.color || "#ff6b1a",
+                icono: badgeData.icono || "trophy",
+                imageUrl: imageUrl,
+                createdBy: userId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Error al crear badge:", error);
+            throw error;
+        }
+    }
+    
+    // Editar badge
+    async function editBadge(badgeId, badgeData, imageFile, userId) {
+        try {
+            const badgeRef = db.collection("badges").doc(badgeId);
+            const badgeDoc = await badgeRef.get();
+            
+            if (!badgeDoc.exists) {
+                throw new Error("El badge no existe");
+            }
+            
+            const currentData = badgeDoc.data();
+            let imageUrl = currentData.imageUrl;
+            
+            // Si hay nueva imagen
+            if (imageFile) {
+                // Eliminar imagen anterior si existe
+                if (imageUrl) {
+                    try {
+                        const urlPath = imageUrl.split('?')[0];
+                        const fileName = urlPath.split('/').pop();
+                        const oldImageRef = storage.ref(`badges/${fileName}`);
+                        await oldImageRef.delete();
+                    } catch (e) {
+                        console.warn("No se pudo eliminar imagen anterior:", e);
+                    }
+                }
+                
+                // Subir nueva imagen
+                const storageRef = storage.ref(`badges/${Date.now()}_${imageFile.name}`);
+                const uploadTask = await storageRef.put(imageFile);
+                imageUrl = await uploadTask.ref.getDownloadURL();
+            }
+            
+            // Actualizar datos
+            await badgeRef.update({
+                nombre: badgeData.nombre,
+                descripcion: badgeData.descripcion || "",
+                color: badgeData.color || "#ff6b1a",
+                icono: badgeData.icono || "trophy",
+                imageUrl: imageUrl,
+                updatedBy: userId,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Error al editar badge:", error);
+            throw error;
+        }
+    }
+    
+    // Eliminar badge
+    async function deleteBadge(badgeId) {
+        try {
+            const badgeRef = db.collection("badges").doc(badgeId);
+            const badgeDoc = await badgeRef.get();
+            
+            if (!badgeDoc.exists) {
+                throw new Error("El badge no existe");
+            }
+            
+            const badgeData = badgeDoc.data();
+            
+            // Eliminar imagen si existe
+            if (badgeData.imageUrl) {
+                try {
+                    const urlPath = badgeData.imageUrl.split('?')[0];
+                    const fileName = urlPath.split('/').pop();
+                    await storage.ref(`badges/${fileName}`).delete();
+                } catch (e) {
+                    console.warn("No se pudo eliminar la imagen:", e);
+                }
+            }
+            
+            // Eliminar el documento
+            await badgeRef.delete();
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Error al eliminar badge:", error);
+            throw error;
+        }
+    }
+    
+    // Ahora implementa las funciones que faltan usando lo de arriba
+    
+    // Configurar listeners de eventos
+    function configurarEventListeners() {
+        // Botón de crear badge
+        if (headerCreateBadgeBtn) {
+            headerCreateBadgeBtn.addEventListener('click', () => {
+                resetearFormulario();
+                mostrarFormulario();
+            });
+        }
+        
+        // Botón de cancelar
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => {
+                ocultarFormulario();
+            });
+        }
+        
+        // Envío del formulario
+        if (createBadgeForm) {
+            createBadgeForm.addEventListener('submit', manejarEnvioFormulario);
+        }
+        
+        // Vista previa de imagen
+        if (imagenBadgeInput) {
+            imagenBadgeInput.addEventListener('change', manejarVistaPrevia);
+        }
+    }
+
+    // Manejar envío del formulario
+    async function manejarEnvioFormulario(event) {
+        event.preventDefault();
+        
+        // Validación
+        if (!nombreBadgeInput || !nombreBadgeInput.value.trim()) {
+            mostrarNotificacion("El nombre del badge es obligatorio", "error");
+            return;
+        }
+        
+        // Preparar datos del badge
+        const badgeData = {
+            nombre: nombreBadgeInput.value.trim(),
+            descripcion: descripcionBadgeInput ? descripcionBadgeInput.value.trim() : "",
+            color: colorBadgeInput ? colorBadgeInput.value : "#ff6b1a",
+            icono: iconoBadgeInput ? iconoBadgeInput.value : "trophy"
+        };
+        
+        // Obtener archivo de imagen si se seleccionó
+        const imageFile = imagenBadgeInput && imagenBadgeInput.files.length > 0 ? 
+                        imagenBadgeInput.files[0] : null;
+        
+        // Verificar si estamos en modo edición
+        const isEditMode = submitButton.dataset.editMode === 'true';
+        const badgeId = submitButton.dataset.badgeId;
+        
+        // Mostrar estado de carga
+        const textoOriginalBoton = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+        
+        try {
+            if (isEditMode && badgeId) {
+                // Editar badge existente
+                await editBadge(badgeId, badgeData, imageFile, auth.currentUser.uid);
+                mostrarNotificacion("Badge actualizado correctamente", "success");
+            } else {
+                // Crear nuevo badge
+                await createBadge(badgeData, imageFile, auth.currentUser.uid);
+                mostrarNotificacion("Badge creado correctamente", "success");
+            }
+            
+            // Ocultar formulario y resetear
+            ocultarFormulario();
+            resetearFormulario();
+            
+            // Recargar badges para mostrar la lista actualizada
+            await cargarBadges();
+        } catch (error) {
+            console.error("Error al procesar badge:", error);
+            mostrarNotificacion(error.message || "Error al procesar el badge", "error");
+        } finally {
+            // Restaurar estado del botón
+            submitButton.disabled = false;
+            submitButton.textContent = textoOriginalBoton;
+        }
+    }
+
+    // Cargar y mostrar badges
+    async function cargarBadges() {
+        if (!badgesContainer) {
+            console.warn("No se encontró el contenedor de badges");
+            return;
+        }
+        
+        try {
+            // Mostrar spinner de carga
+            badgesContainer.innerHTML = `
+                <div class="flex justify-center py-8">
+                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                </div>
+            `;
+            
+            // Obtener badges
+            const badges = await getAllBadges();
+            
+            // Si no hay badges
+            if (!badges || badges.length === 0) {
+                badgesContainer.innerHTML = `
+                    <p class="text-center text-gray-600 py-4">
+                        No hay badges disponibles. Crea el primer badge.
+                    </p>
+                `;
+                return;
+            }
+            
+            // Crear grid de badges
+            let badgesHTML = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+            
+            badges.forEach(badge => {
+                badgesHTML += `
+                    <div class="bg-white rounded-lg shadow p-4 flex items-center" data-badge-id="${badge.id}">
+                        <div class="h-12 w-12 mr-3 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                            ${badge.imageUrl ? 
+                                `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
+                                `<div class="badge w-full h-full" style="background-color: ${badge.color || '#ff6b1a'}">
+                                    <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+                                </div>`
+                            }
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="font-semibold">${badge.nombre || 'Sin nombre'}</h4>
+                            <p class="text-sm text-gray-600 truncate">${badge.descripcion || ''}</p>
+                        </div>
+                        <div class="flex flex-col space-y-2 badge-actions">
+                            <button class="text-blue-500 hover:text-blue-700 edit-badge-btn" title="Editar badge">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 delete-badge-btn" title="Eliminar badge">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            badgesHTML += '</div>';
+            badgesContainer.innerHTML = badgesHTML;
+            
+            // Añadir event listeners a los botones de editar y eliminar
+            configurarBotonesAccion();
+            
+        } catch (error) {
+            console.error("Error al cargar badges:", error);
+            badgesContainer.innerHTML = `
+                <p class="text-center text-red-500 py-4">
+                    Error al cargar badges. Inténtalo de nuevo.
+                </p>
+            `;
+        }
+    }
+
+    // Configurar botones de acción (editar/eliminar) en las tarjetas de badges
+    function configurarBotonesAccion() {
+        // Botones de editar
+        document.querySelectorAll('.edit-badge-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const badgeCard = this.closest('[data-badge-id]');
+                const badgeId = badgeCard.dataset.badgeId;
+                
+                try {
+                    // Obtener datos del badge
+                    const badgeRef = db.collection("badges").doc(badgeId);
+                    const badgeDoc = await badgeRef.get();
+                    
+                    if (!badgeDoc.exists) {
+                        throw new Error("Badge no encontrado");
+                    }
+                    
+                    const badge = badgeDoc.data();
+                    console.log("Editando badge:", badge);
+                    
+                    // Configurar formulario para edición
+                    if (formTitle) formTitle.textContent = 'Editar Badge';
+                    
+                    // Llenar campos del formulario
+                    if (nombreBadgeInput) nombreBadgeInput.value = badge.nombre || '';
+                    if (descripcionBadgeInput) descripcionBadgeInput.value = badge.descripcion || '';
+                    if (colorBadgeInput) colorBadgeInput.value = badge.color || '#ff6b1a';
+                    if (iconoBadgeInput) iconoBadgeInput.value = badge.icono || 'trophy';
+                    
+                    // Mostrar vista previa de imagen si existe
+                    if (badgePreviewContainer) {
+                        if (badge.imageUrl) {
+                            badgePreviewContainer.innerHTML = `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">`;
+                        } else {
+                            badgePreviewContainer.innerHTML = `<i class="fas fa-image text-4xl text-gray-400"></i>`;
+                        }
+                    }
+                    
+                    // Configurar botón para modo edición
+                    if (submitButton) {
+                        submitButton.textContent = 'Confirmar Cambios';
+                        submitButton.dataset.editMode = 'true';
+                        submitButton.dataset.badgeId = badgeId;
+                    }
+                    
+                    // Mostrar formulario
+                    mostrarFormulario();
+                    
+                    // Hacer scroll al formulario
+                    if (formSection) {
+                        formSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                    
+                } catch (error) {
+                    console.error("Error al cargar badge para editar:", error);
+                    mostrarNotificacion("Error al cargar datos del badge", "error");
+                }
+            });
+        });
+        
+        // Botones de eliminar
+        document.querySelectorAll('.delete-badge-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const badgeCard = this.closest('[data-badge-id]');
+                const badgeId = badgeCard.dataset.badgeId;
+                const badgeName = badgeCard.querySelector('h4').textContent;
+                
+                // Mostrar confirmación
+                if (confirm(`¿Estás seguro que deseas eliminar el badge "${badgeName}"?`)) {
+                    try {
+                        await deleteBadge(badgeId);
+                        
+                        // Eliminar la tarjeta del DOM
+                        badgeCard.remove();
+                        
+                        mostrarNotificacion("Badge eliminado correctamente", "success");
+                        
+                        // Si no quedan badges, actualizar mensaje
+                        if (document.querySelectorAll('[data-badge-id]').length === 0) {
+                            badgesContainer.innerHTML = `
+                                <p class="text-center text-gray-600 py-4">
+                                    No hay badges disponibles. Crea el primer badge.
+                                </p>
+                            `;
+                        }
+                        
+                    } catch (error) {
+                        console.error("Error al eliminar badge:", error);
+                        mostrarNotificacion("Error al eliminar badge", "error");
+                    }
+                }
+            });
+        });
     }
 
     // Función para mostrar el formulario
@@ -884,447 +531,51 @@ window.storage = firebase.storage();
             badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
         }
     }
-
-    // Crear un nuevo badge
-    async function crearBadge(badgeData, imageFile, userId) {
-        try {
-            // Subir imagen si se proporcionó
-            let imageUrl = null;
-            if (imageFile) {
-                if (!imageFile.type.startsWith('image/')) {
-                    throw new Error("El archivo debe ser una imagen");
-                }
-                
-                const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(storageRef);
-            }
-            
-            // Crear documento de badge en Firestore
-            await addDoc(collection(db, "badges"), {
-                nombre: badgeData.nombre,
-                descripcion: badgeData.descripcion || "",
-                color: badgeData.color || "#ff6b1a",
-                icono: badgeData.icono || "trophy",
-                imageUrl: imageUrl,
-                createdBy: userId,
-                createdAt: serverTimestamp()
-            });
-            
-            return { success: true };
-        } catch (error) {
-            console.error("Error al crear badge:", error);
-            throw error;
-        }
-    }
-
-    // Editar un badge existente
-    async function editarBadge(badgeId, badgeData, imageFile, userId) {
-        try {
-            // Obtener referencia del badge
-            const badgeRef = doc(db, "badges", badgeId);
-            const badgeSnap = await getDoc(badgeRef);
-            
-            if (!badgeSnap.exists()) {
-                throw new Error("El badge no existe");
-            }
-            
-            const datosActuales = badgeSnap.data();
-            
-            // Manejar actualización de imagen
-            let imageUrl = datosActuales.imageUrl;
-            
-            if (imageFile) {
-                // Eliminar imagen anterior si existe
-                if (datosActuales.imageUrl) {
-                    try {
-                        const urlPath = datosActuales.imageUrl.split('?')[0];
-                        const fileName = urlPath.split('/').pop();
-                        const storagePath = `badges/${fileName}`;
-                        const oldImageRef = ref(storage, storagePath);
-                        await deleteObject(oldImageRef);
-                    } catch (e) {
-                        console.warn("No se pudo eliminar la imagen anterior:", e);
-                    }
-                }
-                
-                // Subir nueva imagen
-                const storageRef = ref(storage, `badges/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(storageRef);
-            }
-            
-            // Actualizar documento
-            await updateDoc(badgeRef, {
-                nombre: badgeData.nombre,
-                descripcion: badgeData.descripcion || "",
-                color: badgeData.color || "#ff6b1a",
-                icono: badgeData.icono || "trophy",
-                imageUrl: imageUrl,
-                updatedBy: userId,
-                updatedAt: serverTimestamp()
-            });
-            
-            return { success: true };
-        } catch (error) {
-            console.error("Error al editar badge:", error);
-            throw error;
-        }
-    }
-
-    // Eliminar un badge
-    async function eliminarBadge(badgeId) {
-        try {
-            // Obtener datos del badge para acceder a la URL de la imagen
-            const badgeRef = doc(db, "badges", badgeId);
-            const badgeSnap = await getDoc(badgeRef);
-            
-            if (!badgeSnap.exists()) {
-                throw new Error("El badge no existe");
-            }
-            
-            const badgeData = badgeSnap.data();
-            
-            // Eliminar imagen del storage si existe
-            if (badgeData.imageUrl) {
-                try {
-                    const urlPath = badgeData.imageUrl.split('?')[0];
-                    const fileName = urlPath.split('/').pop();
-                    const storagePath = `badges/${fileName}`;
-                    const imageRef = ref(storage, storagePath);
-                    await deleteObject(imageRef);
-                } catch (e) {
-                    console.warn("No se pudo eliminar la imagen:", e);
-                }
-            }
-            
-            // Eliminar badge de la colección de badges
-            await deleteDoc(badgeRef);
-            
-            // Verificar asignaciones de badge en otras colecciones
-            try {
-                // Verificar badges de torneos
-                const tournamentBadgesRef = collection(db, "tournament_badges");
-                const tournamentBadgesQuery = query(tournamentBadgesRef, where("badgeId", "==", badgeId));
-                const tournamentBadgesSnap = await getDocs(tournamentBadgesQuery);
-                
-                if (!tournamentBadgesSnap.empty) {
-                    for (const docSnap of tournamentBadgesSnap.docs) {
-                        await deleteDoc(doc(db, "tournament_badges", docSnap.id));
-                    }
-                    console.log(`Eliminadas ${tournamentBadgesSnap.size} asignaciones de badges a torneos`);
-                }
-                
-                // Verificar badges de usuarios
-                const userBadgesRef = collection(db, "user_badges");
-                const userBadgesQuery = query(userBadgesRef, where("badgeId", "==", badgeId));
-                const userBadgesSnap = await getDocs(userBadgesQuery);
-                
-                if (!userBadgesSnap.empty) {
-                    for (const docSnap of userBadgesSnap.docs) {
-                        await deleteDoc(doc(db, "user_badges", docSnap.id));
-                    }
-                    console.log(`Eliminadas ${userBadgesSnap.size} asignaciones de badges a usuarios`);
-                }
-            } catch (e) {
-                console.warn("Error al limpiar referencias de badges:", e);
-            }
-            
-            return { success: true };
-        } catch (error) {
-            console.error("Error al eliminar badge:", error);
-            throw error;
-        }
-    }
-
-    // Cargar y mostrar badges
-    async function cargarBadges() {
-        if (!badgesContainer) {
-            console.warn("No se encontró el contenedor de badges");
-            return;
+    
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        // Eliminar notificación existente si hay una
+        const notificacionExistente = document.querySelector('.notification');
+        if (notificacionExistente) {
+            notificacionExistente.remove();
         }
         
-        try {
-            // Mostrar spinner de carga
-            badgesContainer.innerHTML = `
-                <div class="flex justify-center py-8">
-                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                </div>
-            `;
-            
-            // Obtener badges de Firestore
-            const badgesRef = collection(db, "badges");
-            const badgesSnapshot = await getDocs(badgesRef);
-            
-            // Verificar si tenemos badges
-            if (badgesSnapshot.empty) {
-                badgesContainer.innerHTML = `
-                    <p class="text-center text-gray-600 py-4">
-                        No hay badges disponibles. Crea el primer badge.
-                    </p>
-                `;
-                return;
-            }
-            
-            // Procesar badges y generar HTML
-            const badges = badgesSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            let badgesHTML = '<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">';
-            
-            badges.forEach(badge => {
-                badgesHTML += `
-                    <div class="bg-white rounded-lg shadow p-4 flex items-center" data-badge-id="${badge.id}">
-                        <div class="h-12 w-12 mr-3 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
-                            ${badge.imageUrl ? 
-                                `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
-                                `<div class="badge" style="background-color: ${badge.color}">
-                                    <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
-                                </div>`
-                            }
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="font-semibold">${badge.nombre}</h4>
-                            <p class="text-sm text-gray-600 truncate">${badge.descripcion || ''}</p>
-                        </div>
-                        <div class="flex flex-col space-y-2">
-                            <button class="text-blue-500 hover:text-blue-700 edit-badge-btn" title="Editar badge">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 delete-badge-btn" title="Eliminar badge">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            badgesHTML += '</div>';
-            badgesContainer.innerHTML = badgesHTML;
-            
-            // Añadir event listeners a los botones de editar y eliminar
-            configurarBotonesAccion();
-            
-        } catch (error) {
-            console.error("Error al cargar badges:", error);
-            badgesContainer.innerHTML = `
-                <p class="text-center text-red-500 py-4">
-                    Error al cargar badges. Inténtalo de nuevo.
-                </p>
-            `;
+        // Crear elemento de notificación
+        const notificacion = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
         }
+        
+        // Estilos de la notificación
+        notificacion.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notificacion.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notificacion);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notificacion.classList.add('opacity-0');
+            notificacion.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notificacion.remove();
+            }, 500);
+        }, 3000);
     }
-
-    // Configurar botones de acción (editar/eliminar) en las tarjetas de badges
-    function configurarBotonesAccion() {
-        // Botones de editar
-        document.querySelectorAll('.edit-badge-btn').forEach(button => {
-            button.addEventListener('click', async function() {
-                const badgeCard = this.closest('[data-badge-id]');
-                const badgeId = badgeCard.dataset.badgeId;
-                
-                try {
-                    // Obtener datos del badge
-                    const badgeRef = doc(db, "badges", badgeId);
-                    const badgeSnap = await getDoc(badgeRef);
-                    
-                    if (!badgeSnap.exists()) {
-                        throw new Error("Badge no encontrado");
-                    }
-                    
-                    const badge = badgeSnap.data();
-                    
-                    // Configurar formulario para edición
-                    if (formTitle) formTitle.textContent = 'Editar Badge';
-                    
-                    // Llenar campos del formulario
-                    if (nombreBadgeInput) nombreBadgeInput.value = badge.nombre || '';
-                    if (descripcionBadgeInput) descripcionBadgeInput.value = badge.descripcion || '';
-                    if (colorBadgeInput) colorBadgeInput.value = badge.color || '#ff6b1a';
-                    if (iconoBadgeInput) iconoBadgeInput.value = badge.icono || 'trophy';
-                    
-                    // Mostrar vista previa de imagen si existe
-                    if (badgePreviewContainer) {
-                        if (badge.imageUrl) {
-                            badgePreviewContainer.innerHTML = `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">`;
-                        } else {
-                            badgePreviewContainer.innerHTML = `<i class="fas fa-image text-4xl text-gray-400"></i>`;
-                        }
-                    }
-                    
-                    // Configurar botón para modo edición
-                    if (submitButton) {
-                        submitButton.textContent = 'Confirmar Cambios';
-                        submitButton.dataset.editMode = 'true';
-                        submitButton.dataset.badgeId = badgeId;
-                    }
-                    
-                    // Mostrar formulario
-                    mostrarFormulario();
-                    
-                    // Hacer scroll al formulario
-                    if (formSection) {
-                        formSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                    
-                } catch (error) {
-                    console.error("Error al cargar badge para editar:", error);
-                    mostrarNotificacion("Error al cargar datos del badge", "error");
-                }
-            });
-        });
-        
-        // Botones de eliminar
-        document.querySelectorAll('.delete-badge-btn').forEach(button => {
-            button.addEventListener('click', async function() {
-                const badgeCard = this.closest('[data-badge-id]');
-                const badgeId = badgeCard.dataset.badgeId;
-                const badgeName = badgeCard.querySelector('h4').textContent;
-                
-                // Mostrar confirmación
-                if (confirm(`¿Estás seguro que deseas eliminar el badge "${badgeName}"?`)) {
-                    try {
-                        await eliminarBadge(badgeId);
-                        
-                        // Eliminar la tarjeta del DOM
-                        badgeCard.remove();
-                        
-                        mostrarNotificacion("Badge eliminado correctamente", "success");
-                        
-                        // Si no quedan badges, actualizar mensaje
-                        if (document.querySelectorAll('[data-badge-id]').length === 0) {
-                            badgesContainer.innerHTML = `
-                                <p class="text-center text-gray-600 py-4">
-                                    No hay badges disponibles. Crea el primer badge.
-                                </p>
-                            `;
-                        }
-                        
-                    } catch (error) {
-                        console.error("Error al eliminar badge:", error);
-                        mostrarNotificacion("Error al eliminar badge", "error");
-                    }
-                }
-            });
-        });
-    }
-
-    // Configurar botones y formulario
-    function configurarEventListeners(userId) {
-        // Ocultar formulario por defecto
-        ocultarFormulario();
-        
-        // Botón de crear badge
-        if (headerCreateBadgeBtn) {
-            headerCreateBadgeBtn.addEventListener('click', () => {
-                resetearFormulario();
-                mostrarFormulario();
-            });
-        }
-        
-        // Botón de cancelar
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                ocultarFormulario();
-            });
-        }
-        
-        // Envío del formulario
-        if (createBadgeForm) {
-            createBadgeForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                
-                // Validación
-                if (!nombreBadgeInput || !nombreBadgeInput.value.trim()) {
-                    mostrarNotificacion("El nombre del badge es obligatorio", "error");
-                    return;
-                }
-                
-                // Preparar datos del badge
-                const badgeData = {
-                    nombre: nombreBadgeInput.value.trim(),
-                    descripcion: descripcionBadgeInput ? descripcionBadgeInput.value.trim() : "",
-                    color: colorBadgeInput ? colorBadgeInput.value : "#ff6b1a",
-                    icono: iconoBadgeInput ? iconoBadgeInput.value : "trophy"
-                };
-                
-                // Obtener archivo de imagen si se seleccionó
-                const imageFile = imagenBadgeInput && imagenBadgeInput.files.length > 0 ? 
-                                imagenBadgeInput.files[0] : null;
-                
-                // Verificar si estamos en modo edición
-                const isEditMode = submitButton.dataset.editMode === 'true';
-                const badgeId = submitButton.dataset.badgeId;
-                
-                // Mostrar estado de carga
-                const textoOriginalBoton = submitButton.textContent;
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
-                
-                try {
-                    if (isEditMode && badgeId) {
-                        // Editar badge existente
-                        await editarBadge(badgeId, badgeData, imageFile, userId);
-                        mostrarNotificacion("Badge actualizado correctamente", "success");
-                    } else {
-                        // Crear nuevo badge
-                        await crearBadge(badgeData, imageFile, userId);
-                        mostrarNotificacion("Badge creado correctamente", "success");
-                    }
-                    
-                    // Ocultar formulario y resetear
-                    ocultarFormulario();
-                    resetearFormulario();
-                    
-                    // Recargar badges para mostrar la lista actualizada
-                    await cargarBadges();
-                } catch (error) {
-                    console.error("Error al procesar badge:", error);
-                    mostrarNotificacion(error.message || "Error al procesar el badge", "error");
-                } finally {
-                    // Restaurar estado del botón
-                    submitButton.disabled = false;
-                    submitButton.textContent = textoOriginalBoton;
-                }
-            });
-        }
-        
-        // Vista previa de imagen
-        if (imagenBadgeInput) {
-            imagenBadgeInput.addEventListener('change', manejarVistaPrevia);
-        }
-    }
-
-    // Inicializar cuando Firebase Auth esté listo
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            // Usuario autenticado
-            console.log("Usuario autenticado:", user.uid);
-            
-            // Verificar si el usuario es administrador
-            const isAdmin = await esUsuarioAdmin(user.uid);
-            
-            if (!isAdmin) {
-                mostrarNotificacion("No tienes permisos para gestionar badges", "error");
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 3000);
-                return;
-            }
-            
-            // Inicialización completa
-            configurarEventListeners(user.uid);
-            await cargarBadges();
-            console.log("Gestión de badges inicializada correctamente");
-            
-        } else {
-            // Usuario no autenticado, redirigir al inicio
-            console.log("No hay usuario autenticado, redirigiendo...");
-            window.location.href = 'index.html';
-        }
-    });
-<script src="fix-badges.js"></script>
-</body>
-</html>
+});
+</script>
