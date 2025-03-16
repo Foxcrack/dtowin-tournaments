@@ -41,36 +41,6 @@
             to { transform: rotate(360deg); }
         }
     </style>
-    
-    <!-- Firebase App (la base) siempre es requerida y debe ser la primera -->
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
-    <!-- Agrega los productos de Firebase que quieras usar -->
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
-
-    <!-- Inicialización de Firebase -->
-    <script>
-    // Configuración de Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-        authDomain: "dtowin-tournament.firebaseapp.com",
-        projectId: "dtowin-tournament",
-        storageBucket: "dtowin-tournament.appspot.com",
-        messagingSenderId: "991226820083",
-        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
-        measurementId: "G-R4Q5YKZXGY"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-
-    // Hacer Firebase disponible globalmente
-    window.firebase = firebase;
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
-    window.storage = firebase.storage();
-    </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navbar -->
@@ -214,15 +184,15 @@
                                 <div class="grid grid-cols-3 gap-2">
                                     <div>
                                         <label class="block text-xs text-gray-600">1° lugar</label>
-                                        <input type="number" min="0" value="5" class="w-full border rounded py-1 px-2">
+                                        <input type="number" min="0" value="5" id="puntos1" class="w-full border rounded py-1 px-2">
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-600">2° lugar</label>
-                                        <input type="number" min="0" value="3" class="w-full border rounded py-1 px-2">
+                                        <input type="number" min="0" value="3" id="puntos2" class="w-full border rounded py-1 px-2">
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-600">3° lugar</label>
-                                        <input type="number" min="0" value="1" class="w-full border rounded py-1 px-2">
+                                        <input type="number" min="0" value="1" id="puntos3" class="w-full border rounded py-1 px-2">
                                     </div>
                                 </div>
                             </div>
@@ -232,7 +202,7 @@
                                     Badges del Torneo
                                 </label>
                                 <div class="bg-white p-3 border rounded-lg">
-                                    <button type="button" class="dtowin-blue text-white px-3 py-1 rounded text-sm mb-2">
+                                    <button type="button" id="addBadgeBtn" class="dtowin-blue text-white px-3 py-1 rounded text-sm mb-2">
                                         <i class="fas fa-plus mr-1"></i> Añadir Badge
                                     </button>
                                     <div class="badges-container">
@@ -264,6 +234,44 @@
         </div>
     </div>
 
+    <!-- Modal para selección de badges -->
+    <div id="badgeSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeBadgeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Seleccionar Badge</h3>
+                <p class="text-gray-600">Elige un badge para asignar al torneo</p>
+            </div>
+            
+            <div id="badgesList" class="grid grid-cols-2 gap-3 mb-6">
+                <div class="flex justify-center col-span-2">
+                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Posición que recibe este badge:
+                </label>
+                <select id="badgePosition" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="first">1° Lugar</option>
+                    <option value="second">2° Lugar</option>
+                    <option value="third">3° Lugar</option>
+                    <option value="top3">Top 3</option>
+                    <option value="all">Todos los participantes</option>
+                </select>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button id="assignBadgeButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition" disabled>
+                    Asignar Badge
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="gradient-background text-white py-4 px-4 mt-8">
         <div class="container mx-auto text-center">
@@ -271,7 +279,1104 @@
         </div>
     </footer>
 
-    <!-- Script para la gestión de torneos -->
-    <script type="module" src="admin-panel-tournaments.js"></script>
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+    
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Hacer Firebase disponible globalmente
+    window.firebase = firebase;
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.storage = firebase.storage();
+    </script>
+
+    <!-- Script directamente en la página -->
+    <script>
+    // Script incorporado para la gestión de torneos
+    document.addEventListener('DOMContentLoaded', function() {
+        // Referencias a elementos DOM
+        const torneosContainer = document.getElementById('torneosContainer');
+        const tournamentFormSection = document.getElementById('tournamentFormSection');
+        const createTournamentForm = document.getElementById('createTournamentForm');
+        const headerCreateTournamentBtn = document.getElementById('headerCreateTournamentBtn');
+        const addBadgeBtn = document.getElementById('addBadgeBtn');
+        const cancelButton = document.getElementById('cancelButton');
+        const submitButton = document.getElementById('submitButton');
+        const formTitle = document.getElementById('formTitle');
+        const imagenInput = document.getElementById('imagen');
+        
+        // Modal de badges
+        const badgeSelectionModal = document.getElementById('badgeSelectionModal');
+        const closeBadgeModal = document.getElementById('closeBadgeModal');
+        const badgesList = document.getElementById('badgesList');
+        const badgePosition = document.getElementById('badgePosition');
+        const assignBadgeButton = document.getElementById('assignBadgeButton');
+        
+        // Verificar autenticación
+        firebase.auth().onAuthStateChanged(async function(user) {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                // Verificar si es administrador
+                const isAdmin = await esUsuarioAdmin(user.uid);
+                
+                if (!isAdmin) {
+                    mostrarNotificacion("No tienes permisos para gestionar torneos", "error");
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                    return;
+                }
+                
+                // Cargar torneos
+                cargarTorneos();
+                
+                // Configurar eventos
+                configurarEventos();
+                
+            } else {
+                console.log("No hay usuario autenticado");
+                window.location.href = "index.html";
+            }
+        });
+        
+        // Función para verificar si el usuario es administrador
+        async function esUsuarioAdmin(userId) {
+            try {
+                // Lista de IDs de administradores
+                const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+                
+                // Si está en la lista directamente
+                if (adminUIDs.includes(userId)) {
+                    return true;
+                }
+                
+                // Verificar en base de datos
+                const snapshot = await db.collection("usuarios")
+                    .where("uid", "==", userId)
+                    .where("isHost", "==", true)
+                    .get();
+                
+                return !snapshot.empty;
+            } catch (error) {
+                console.error("Error al verificar si es administrador:", error);
+                return false;
+            }
+        }
+        
+        // Configurar eventos
+        function configurarEventos() {
+            // Botón de crear torneo
+            if (headerCreateTournamentBtn) {
+                headerCreateTournamentBtn.addEventListener('click', function() {
+                    resetearFormulario();
+                    mostrarFormulario();
+                });
+            }
+            
+            // Botón de cancelar
+            if (cancelButton) {
+                cancelButton.addEventListener('click', ocultarFormulario);
+            }
+            
+            // Botón de añadir badge
+            if (addBadgeBtn) {
+                addBadgeBtn.addEventListener('click', mostrarModalBadges);
+            }
+            
+            // Formulario de creación/edición
+            if (createTournamentForm) {
+                createTournamentForm.addEventListener('submit', manejarCrearTorneo);
+            }
+            
+            // Vista previa de imagen
+            if (imagenInput) {
+                imagenInput.addEventListener('change', manejarVistaPrevia);
+            }
+            
+            // Modal de badges
+            if (closeBadgeModal) {
+                closeBadgeModal.addEventListener('click', function() {
+                    badgeSelectionModal.classList.add('hidden');
+                });
+            }
+            
+            if (assignBadgeButton) {
+                assignBadgeButton.addEventListener('click', asignarBadgeATorneo);
+            }
+        }
+        
+        // Mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo = 'info') {
+            // Eliminar notificación existente si hay una
+            const notificacionExistente = document.querySelector('.notification');
+            if (notificacionExistente) {
+                notificacionExistente.remove();
+            }
+            
+            // Crear elemento de notificación
+            const notificacion = document.createElement('div');
+            
+            // Clases según el tipo de notificación
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
+            
+            if (tipo === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (tipo === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (tipo === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Estilos de la notificación
+            notificacion.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notificacion.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${mensaje}</span>
+            `;
+            
+            // Añadir al DOM
+            document.body.appendChild(notificacion);
+            
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notificacion.classList.add('opacity-0');
+                notificacion.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    notificacion.remove();
+                }, 500);
+            }, 3000);
+        }
+        
+        // Mostrar el formulario
+        function mostrarFormulario() {
+            if (tournamentFormSection) {
+                tournamentFormSection.classList.remove('hidden');
+                // Hacer scroll al formulario
+                tournamentFormSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Ocultar el formulario
+        function ocultarFormulario() {
+            if (tournamentFormSection) {
+                tournamentFormSection.classList.add('hidden');
+            }
+        }
+        
+        // Resetear el formulario
+        function resetearFormulario() {
+            if (createTournamentForm) {
+                createTournamentForm.reset();
+                
+                // Restaurar texto del botón y título
+                if (formTitle) formTitle.textContent = 'Crear Nuevo Torneo';
+                if (submitButton) {
+                    submitButton.textContent = 'Crear Torneo';
+                    submitButton.dataset.editMode = 'false';
+                    delete submitButton.dataset.tournamentId;
+                }
+                
+                // Limpiar vista previa
+                const imagePreview = document.querySelector('.image-preview');
+                if (imagePreview) {
+                    imagePreview.remove();
+                }
+                
+                // Limpiar badges
+                const badgesContainer = document.querySelector('.badges-container');
+                if (badgesContainer) {
+                    badgesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
+                }
+            }
+        }
+        
+        // Manejar vista previa de imagen
+        function manejarVistaPrevia() {
+            const file = this.files[0];
+            if (!file) return;
+            
+            // Verificar que es una imagen
+            if (!file.type.startsWith('image/')) {
+                mostrarNotificacion("El archivo debe ser una imagen", "error");
+                this.value = '';
+                return;
+            }
+            
+            // Eliminar preview existente
+            const container = this.parentElement;
+            const existingPreview = container.querySelector('.image-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Crear preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview mt-2';
+                previewDiv.innerHTML = `
+                    <p class="text-sm text-gray-600">Vista previa:</p>
+                    <img src="${e.target.result}" alt="Vista previa" class="h-32 object-cover rounded mt-1">
+                `;
+                container.appendChild(previewDiv);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Mostrar modal de selección de badges
+        async function mostrarModalBadges() {
+            try {
+                badgeSelectionModal.classList.remove('hidden');
+                
+                // Cargar badges disponibles
+                badgesList.innerHTML = '<div class="flex justify-center col-span-2"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
+                
+                // Obtener badges
+                const badgesSnapshot = await db.collection("badges").get();
+                
+                if (badgesSnapshot.empty) {
+                    badgesList.innerHTML = '<p class="col-span-2 text-center text-gray-500">No hay badges disponibles. Crea un badge primero.</p>';
+                    return;
+                }
+                
+                // Crear grid de badges
+                let badgesHTML = '';
+                badgesSnapshot.forEach(doc => {
+                    const badge = doc.data();
+                    badgesHTML += `
+                        <div class="border rounded-lg p-3 flex flex-col items-center cursor-pointer hover:bg-gray-50 badge-option" data-badge-id="${doc.id}">
+                            <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
+                                ${badge.imageUrl ? 
+                                    `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
+                                    `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color}">
+                                        <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+                                    </div>`
+                                }
+                            </div>
+                            <p class="font-semibold text-center">${badge.nombre}</p>
+                        </div>
+                    `;
+                });
+                
+                badgesList.innerHTML = badgesHTML;
+                
+                // Configurar selección de badge
+                document.querySelectorAll('.badge-option').forEach(badgeElement => {
+                    badgeElement.addEventListener('click', function() {
+                        // Quitar selección anterior
+                        document.querySelectorAll('.badge-option').forEach(el => el.classList.remove('ring-2', 'ring-orange-500'));
+                        
+                        // Añadir selección
+                        this.classList.add('ring-2', 'ring-orange-500');
+                        
+                        // Habilitar botón de asignar
+                        assignBadgeButton.disabled = false;
+                    });
+                });
+                
+            } catch (error) {
+                console.error("Error al mostrar modal de badges:", error);
+                mostrarNotificacion("Error al cargar badges disponibles", "error");
+            }
+        }
+        
+        // Asignar badge al torneo
+        async function asignarBadgeATorneo() {
+            const selectedBadge = document.querySelector('.badge-option.ring-2');
+            if (!selectedBadge) {
+                mostrarNotificacion("Selecciona un badge primero", "warning");
+                return;
+            }
+            
+            const badgeId = selectedBadge.dataset.badgeId;
+            const position = badgePosition.value;
+            const tournamentId = submitButton.dataset.tournamentId;
+            
+            // Si no hay ID de torneo, es un torneo nuevo
+            if (!tournamentId) {
+                mostrarNotificacion("Guarda el torneo primero para asignar badges", "warning");
+                badgeSelectionModal.classList.add('hidden');
+                return;
+            }
+            
+            try {
+                // Mostrar carga
+                const originalText = assignBadgeButton.textContent;
+                assignBadgeButton.disabled = true;
+                assignBadgeButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Asignando...';
+                
+                // Verificar si ya existe esta asignación
+                const badgeCheckQuery = await db.collection("tournament_badges")
+                    .where("tournamentId", "==", tournamentId)
+                    .where("badgeId", "==", badgeId)
+                    .where("position", "==", position)
+                    .get();
+                
+                if (!badgeCheckQuery.empty) {
+                    mostrarNotificacion("Este badge ya está asignado para esa posición", "warning");
+                    assignBadgeButton.disabled = false;
+                    assignBadgeButton.textContent = originalText;
+                    return;
+                }
+                
+                // Crear asignación
+                await db.collection("tournament_badges").add({
+                    tournamentId: tournamentId,
+                    badgeId: badgeId,
+                    position: position,
+                    createdBy: firebase.auth().currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Cerrar modal
+                badgeSelectionModal.classList.add('hidden');
+                
+                // Cargar badges del torneo
+                await cargarBadgesTorneo(tournamentId);
+                
+                mostrarNotificacion("Badge asignado correctamente", "success");
+                
+            } catch (error) {
+                console.error("Error al asignar badge:", error);
+                mostrarNotificacion("Error al asignar badge al torneo", "error");
+            } finally {
+                // Restaurar botón
+                assignBadgeButton.disabled = false;
+                assignBadgeButton.textContent = 'Asignar Badge';
+            }
+        }
+        
+        // Manejar creación/edición de torneo
+        async function manejarCrearTorneo(event) {
+            event.preventDefault();
+            
+            // Obtener datos del formulario
+            const nombre = document.getElementById('nombre').value.trim();
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const fecha = document.getElementById('fecha').value;
+            const hora = document.getElementById('hora').value;
+            const capacidad = document.getElementById('capacidad').value;
+            const estado = document.getElementById('estado').value;
+            const imagen = document.getElementById('imagen').files[0];
+            
+            // Validación
+            if (!nombre) {
+                mostrarNotificacion("El nombre del torneo es obligatorio", "error");
+                return;
+            }
+            
+            if (!fecha) {
+                mostrarNotificacion("La fecha del torneo es obligatoria", "error");
+                return;
+            }
+            
+            // Puntos por posición
+            const puntosPosicion = {
+                1: parseInt(document.getElementById('puntos1').value) || 0,
+                2: parseInt(document.getElementById('puntos2').value) || 0,
+                3: parseInt(document.getElementById('puntos3').value) || 0
+            };
+            
+            // Verificar si estamos en modo edición
+            const isEditMode = submitButton.dataset.editMode === 'true';
+            const tournamentId = submitButton.dataset.tournamentId;
+            
+            // Mostrar carga
+            const originalButtonText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+            
+            try {
+                // Preparar datos del torneo
+                const datosComunes = {
+                    nombre: nombre,
+                    descripcion: descripcion,
+                    capacidad: parseInt(capacidad) || null,
+                    estado: estado,
+                    puntosPosicion: puntosPosicion
+                };
+                
+                // Convertir fecha y hora a objeto Date
+                if (fecha) {
+                    const fechaObj = new Date(`${fecha}T${hora || '00:00'}`);
+                    datosComunes.fecha = firebase.firestore.Timestamp.fromDate(fechaObj);
+                    datosComunes.hora = hora || '00:00';
+                }
+                
+                if (isEditMode && tournamentId) {
+                    // Editar torneo existente
+                    await editarTorneo(tournamentId, datosComunes, imagen);
+                    mostrarNotificacion("Torneo actualizado correctamente", "success");
+                } else {
+                    // Crear nuevo torneo
+                    await crearTorneo(datosComunes, imagen);
+                    mostrarNotificacion("Torneo creado correctamente", "success");
+                }
+                
+                // Resetear y ocultar formulario
+                resetearFormulario();
+                ocultarFormulario();
+                
+                // Recargar lista de torneos
+                await cargarTorneos();
+                
+            } catch (error) {
+                console.error("Error al procesar torneo:", error);
+                mostrarNotificacion(error.message || "Error al procesar el torneo", "error");
+            } finally {
+                // Restaurar botón
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        }
+        
+        // Crear un nuevo torneo
+        async function crearTorneo(datos, imagen) {
+            try {
+                // Subir imagen si se proporcionó
+                let imageUrl = null;
+                if (imagen) {
+                    // Verificar que es una imagen
+                    if (!imagen.type.startsWith('image/')) {
+                        throw new Error("El archivo debe ser una imagen");
+                    }
+                    
+                    // Subir a Storage
+                    const storageRef = storage.ref(`torneos/${Date.now()}_${imagen.name}`);
+                    const snapshot = await storageRef.put(imagen);
+                    imageUrl = await snapshot.ref.getDownloadURL();
+                }
+                
+                // Crear documento en Firestore
+                const datosCompletos = {
+                    ...datos,
+                    imageUrl: imageUrl,
+                    createdBy: firebase.auth().currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    participants: [],
+                    visible: true
+                };
+                
+                await db.collection("torneos").add(datosCompletos);
+                
+                return { success: true };
+                
+            } catch (error) {
+                console.error("Error al crear torneo:", error);
+                throw error;
+            }
+        }
+        
+        // Editar torneo existente
+        async function editarTorneo(tournamentId, datos, imagen) {
+            try {
+                // Obtener datos actuales
+                const tournamentRef = db.collection("torneos").doc(tournamentId);
+                const tournamentSnap = await tournamentRef.get();
+                
+                if (!tournamentSnap.exists) {
+                    throw new Error("El torneo no existe");
+                }
+                
+                const datosActuales = tournamentSnap.data();
+                
+                // Manejar imagen
+                let imageUrl = datosActuales.imageUrl;
+                
+                if (imagen) {
+                    // Verificar que es una imagen
+                    if (!imagen.type.startsWith('image/')) {
+                        throw new Error("El archivo debe ser una imagen");
+                    }
+                    
+                    // Eliminar imagen anterior si existe
+                    if (datosActuales.imageUrl) {
+                        try {
+                            const urlPath = datosActuales.imageUrl.split('?')[0];
+                            const fileName = urlPath.split('/').pop();
+                            const storagePath = `torneos/${fileName}`;
+                            await storage.ref(storagePath).delete();
+                        } catch (e) {
+                            console.warn("No se pudo eliminar la imagen anterior:", e);
+                        }
+                    }
+                    
+                    // Subir nueva imagen
+                    const storageRef = storage.ref(`torneos/${Date.now()}_${imagen.name}`);
+                    const snapshot = await storageRef.put(imagen);
+                    imageUrl = await snapshot.ref.getDownloadURL();
+                }
+                
+                // Actualizar documento
+                const datosActualizados = {
+                    ...datos,
+                    imageUrl: imageUrl,
+                    participants: datosActuales.participants || [],
+                    visible: datosActuales.visible !== false,
+                    updatedBy: firebase.auth().currentUser.uid,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await tournamentRef.update(datosActualizados);
+                
+                return { success: true };
+                
+            } catch (error) {
+                console.error("Error al editar torneo:", error);
+                throw error;
+            }
+        }
+        
+        // Cargar lista de torneos
+        async function cargarTorneos() {
+            try {
+                // Mostrar carga
+                torneosContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
+                
+                // Obtener torneos
+                const torneosSnapshot = await db.collection("torneos").get();
+                
+                // Si no hay torneos
+                if (torneosSnapshot.empty) {
+                    torneosContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay torneos disponibles. Crea el primer torneo.</p>';
+                    return;
+                }
+                
+                // Procesar torneos
+                const torneos = [];
+                torneosSnapshot.forEach(doc => {
+                    torneos.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Ordenar por fecha
+                torneos.sort((a, b) => {
+                    const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date();
+                    const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date();
+                    return dateA - dateB;
+                });
+                
+                // Crear tabla
+                let html = `
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
+                                    <th class="py-3 px-4 text-left">Nombre</th>
+                                    <th class="py-3 px-4 text-left">Fecha</th>
+                                    <th class="py-3 px-4 text-left">Inscritos</th>
+                                    <th class="py-3 px-4 text-left">Estado</th>
+                                    <th class="py-3 px-4 text-left">Visibilidad</th>
+                                    <th class="py-3 px-4 text-left">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600">
+                `;
+                
+                // Añadir filas
+                torneos.forEach(torneo => {
+                    // Formatear fecha
+                    const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
+                    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                    const fechaFormateada = `${fecha.getDate()} de ${meses[fecha.getMonth()]}, ${fecha.getFullYear()}`;
+                    
+                    // Formatear estado
+                    let estadoHTML = '';
+                    switch(torneo.estado) {
+                        case 'Abierto':
+                            estadoHTML = '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Abierto</span>';
+                            break;
+                        case 'Próximo':
+                        case 'Próximamente':
+                            estadoHTML = '<span class="bg-yellow-100 text-yellow-600 py-1 px-2 rounded text-xs">Próximo</span>';
+                            break;
+                        case 'En Progreso':
+                            estadoHTML = '<span class="bg-blue-100 text-blue-600 py-1 px-2 rounded text-xs">En Progreso</span>';
+                            break;
+                        case 'Finalizado':
+                            estadoHTML = '<span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">Finalizado</span>';
+                            break;
+                        case 'Badge Especial':
+                            estadoHTML = '<span class="bg-purple-100 text-purple-600 py-1 px-2 rounded text-xs">Badge Especial</span>';
+                            break;
+                        default:
+                            estadoHTML = `<span class="bg-gray-100 text-gray-600 py-1 px-2 rounded text-xs">${torneo.estado || 'N/A'}</span>`;
+                    }
+                    
+                    // Calcular inscritos
+                    const inscritos = torneo.participants ? torneo.participants.length : 0;
+                    const capacidad = torneo.capacidad || '∞';
+                    
+                    // Visibilidad
+                    const visibilidad = torneo.visible === false ? 
+                        '<span class="text-red-500"><i class="fas fa-eye-slash"></i> Oculto</span>' : 
+                        '<span class="text-green-500"><i class="fas fa-eye"></i> Visible</span>';
+                    
+                    // Añadir fila
+                    html += `
+                        <tr class="border-b hover:bg-gray-50" data-torneo-id="${torneo.id}">
+                            <td class="py-3 px-4">${torneo.nombre || 'Sin nombre'}</td>
+                            <td class="py-3 px-4">${fechaFormateada}</td>
+                            <td class="py-3 px-4">${inscritos} / ${capacidad}</td>
+                            <td class="py-3 px-4">${estadoHTML}</td>
+                            <td class="py-3 px-4">${visibilidad}</td>
+                            <td class="py-3 px-4">
+                                <button class="text-blue-500 hover:text-blue-700 mr-2 toggle-visibility-btn" title="Cambiar visibilidad">
+                                    <i class="fas fa-eye${torneo.visible === false ? '-slash' : ''}"></i>
+                                </button>
+                                <button class="text-orange-500 hover:text-orange-700 mr-2 edit-tournament-btn" title="Editar torneo">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-500 hover:text-red-700 delete-tournament-btn" title="Eliminar torneo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                torneosContainer.innerHTML = html;
+                
+                // Configurar botones de acción
+                configurarBotonesAccion();
+                
+            } catch (error) {
+                console.error("Error al cargar torneos:", error);
+                torneosContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar torneos. Inténtalo de nuevo.</p>';
+            }
+        }
+        
+        // Configurar botones de acción en la tabla
+        function configurarBotonesAccion() {
+            // Botones de visibilidad
+            document.querySelectorAll('.toggle-visibility-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const row = this.closest('[data-torneo-id]');
+                    const tournamentId = row.dataset.torneoId;
+                    
+                    try {
+                        // Obtener datos actuales
+                        const tournamentRef = db.collection("torneos").doc(tournamentId);
+                        const tournamentSnap = await tournamentRef.get();
+                        
+                        if (!tournamentSnap.exists) {
+                            mostrarNotificacion("No se encontró el torneo", "error");
+                            return;
+                        }
+                        
+                        const tournamentData = tournamentSnap.data();
+                        const newVisibility = tournamentData.visible === false ? true : false;
+                        
+                        // Actualizar visibilidad
+                        await tournamentRef.update({
+                            visible: newVisibility,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Actualizar UI
+                        const icon = this.querySelector('i');
+                        if (newVisibility) {
+                            icon.className = 'fas fa-eye';
+                            row.querySelector('td:nth-child(5)').innerHTML = '<span class="text-green-500"><i class="fas fa-eye"></i> Visible</span>';
+                        } else {
+                            icon.className = 'fas fa-eye-slash';
+                            row.querySelector('td:nth-child(5)').innerHTML = '<span class="text-red-500"><i class="fas fa-eye-slash"></i> Oculto</span>';
+                        }
+                        
+                        mostrarNotificacion(`Torneo ${newVisibility ? 'visible' : 'oculto'} correctamente`, "success");
+                        
+                    } catch (error) {
+                        console.error("Error al cambiar visibilidad:", error);
+                        mostrarNotificacion("Error al cambiar visibilidad del torneo", "error");
+                    }
+                });
+            });
+            
+            // Botones de editar
+            document.querySelectorAll('.edit-tournament-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const tournamentId = this.closest('[data-torneo-id]').dataset.torneoId;
+                    
+                    try {
+                        await cargarTorneoParaEditar(tournamentId);
+                    } catch (error) {
+                        console.error("Error al cargar torneo para editar:", error);
+                        mostrarNotificacion("Error al cargar torneo para editar", "error");
+                    }
+                });
+            });
+            
+            // Botones de eliminar
+            document.querySelectorAll('.delete-tournament-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const row = this.closest('[data-torneo-id]');
+                    const tournamentId = row.dataset.torneoId;
+                    const tournamentName = row.querySelector('td:first-child').textContent;
+                    
+                    if (confirm(`¿Estás seguro que deseas eliminar el torneo "${tournamentName}"?`)) {
+                        try {
+                            // Mostrar carga
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            this.disabled = true;
+                            
+                            await eliminarTorneo(tournamentId);
+                            
+                            // Eliminar fila
+                            row.remove();
+                            
+                            mostrarNotificacion("Torneo eliminado correctamente", "success");
+                            
+                            // Si no quedan torneos, mostrar mensaje
+                            if (document.querySelectorAll('[data-torneo-id]').length === 0) {
+                                torneosContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay torneos disponibles. Crea el primer torneo.</p>';
+                            }
+                            
+                        } catch (error) {
+                            console.error("Error al eliminar torneo:", error);
+                            mostrarNotificacion(error.message || "Error al eliminar torneo", "error");
+                            
+                            // Restaurar botón
+                            this.innerHTML = '<i class="fas fa-trash"></i>';
+                            this.disabled = false;
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Cargar torneo para edición
+        async function cargarTorneoParaEditar(tournamentId) {
+            try {
+                // Obtener datos del torneo
+                const tournamentRef = db.collection("torneos").doc(tournamentId);
+                const tournamentSnap = await tournamentRef.get();
+                
+                if (!tournamentSnap.exists) {
+                    throw new Error("No se encontró el torneo para editar");
+                }
+                
+                const torneo = tournamentSnap.data();
+                
+                // Llenar formulario
+                document.getElementById('nombre').value = torneo.nombre || '';
+                document.getElementById('descripcion').value = torneo.descripcion || '';
+                
+                // Formatear fecha
+                if (torneo.fecha) {
+                    const fecha = new Date(torneo.fecha.seconds * 1000);
+                    const year = fecha.getFullYear();
+                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const day = String(fecha.getDate()).padStart(2, '0');
+                    document.getElementById('fecha').value = `${year}-${month}-${day}`;
+                }
+                
+                // Formatear hora
+                if (torneo.hora) {
+                    document.getElementById('hora').value = torneo.hora;
+                }
+                
+                // Capacidad
+                document.getElementById('capacidad').value = torneo.capacidad || '';
+                
+                // Estado
+                const estadoSelect = document.getElementById('estado');
+                for (let i = 0; i < estadoSelect.options.length; i++) {
+                    if (estadoSelect.options[i].value === torneo.estado) {
+                        estadoSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                
+                // Puntos por posición
+                if (torneo.puntosPosicion) {
+                    document.getElementById('puntos1').value = torneo.puntosPosicion[1] || 0;
+                    document.getElementById('puntos2').value = torneo.puntosPosicion[2] || 0;
+                    document.getElementById('puntos3').value = torneo.puntosPosicion[3] || 0;
+                }
+                
+                // Mostrar imagen actual
+                if (torneo.imageUrl) {
+                    const container = document.getElementById('imagen').parentElement;
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview mt-2';
+                    previewDiv.innerHTML = `
+                        <p class="text-sm text-gray-600">Imagen actual:</p>
+                        <img src="${torneo.imageUrl}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
+                    `;
+                    container.appendChild(previewDiv);
+                }
+                
+                // Cargar badges del torneo
+                await cargarBadgesTorneo(tournamentId);
+                
+                // Configurar formulario para edición
+                formTitle.textContent = 'Editar Torneo';
+                submitButton.textContent = 'Actualizar Torneo';
+                submitButton.dataset.editMode = 'true';
+                submitButton.dataset.tournamentId = tournamentId;
+                
+                // Mostrar formulario
+                mostrarFormulario();
+                
+            } catch (error) {
+                console.error("Error al cargar torneo para editar:", error);
+                throw error;
+            }
+        }
+        
+        // Cargar badges asignados al torneo
+        async function cargarBadgesTorneo(tournamentId) {
+            try {
+                const badgesContainer = document.querySelector('.badges-container');
+                if (!badgesContainer) return;
+                
+                // Limpiar contenedor
+                badgesContainer.innerHTML = '';
+                
+                // Obtener badges asignados
+                const badgesSnapshot = await db.collection("tournament_badges")
+                    .where("tournamentId", "==", tournamentId)
+                    .get();
+                
+                if (badgesSnapshot.empty) {
+                    badgesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
+                    return;
+                }
+                
+                // Procesar cada asignación
+                const badgeAssignments = [];
+                for (const doc of badgesSnapshot.docs) {
+                    const assignment = doc.data();
+                    const badgeRef = await db.collection("badges").doc(assignment.badgeId).get();
+                    
+                    if (badgeRef.exists) {
+                        badgeAssignments.push({
+                            id: doc.id,
+                            position: assignment.position,
+                            badge: {
+                                id: badgeRef.id,
+                                ...badgeRef.data()
+                            }
+                        });
+                    }
+                }
+                
+                // Crear elementos para cada badge
+                badgeAssignments.forEach(assignment => {
+                    const badge = assignment.badge;
+                    const position = assignment.position;
+                    
+                    const badgeElement = document.createElement('div');
+                    badgeElement.className = 'bg-gray-100 p-2 rounded-lg flex items-center mb-2';
+                    
+                    // Mapear posiciones a texto
+                    const positionText = {
+                        'first': '1° Lugar',
+                        'second': '2° Lugar',
+                        'third': '3° Lugar',
+                        'top3': 'Top 3',
+                        'all': 'Todos'
+                    };
+                    
+                    badgeElement.innerHTML = `
+                        <div class="h-8 w-8 rounded-full mr-2 overflow-hidden flex items-center justify-center bg-gray-50">
+                            ${badge.imageUrl ? 
+                                `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
+                                `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color}">
+                                    <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+                                </div>`
+                            }
+                        </div>
+                        <span class="mr-4">${badge.nombre}</span>
+                        <select class="text-sm border rounded px-2 py-1 position-select" data-assignment-id="${assignment.id}">
+                            <option value="first" ${position === 'first' ? 'selected' : ''}>1° Lugar</option>
+                            <option value="second" ${position === 'second' ? 'selected' : ''}>2° Lugar</option>
+                            <option value="third" ${position === 'third' ? 'selected' : ''}>3° Lugar</option>
+                            <option value="top3" ${position === 'top3' ? 'selected' : ''}>Top 3</option>
+                            <option value="all" ${position === 'all' ? 'selected' : ''}>Todos</option>
+                        </select>
+                        <button class="text-red-500 hover:text-red-700 ml-2 remove-badge-btn" data-assignment-id="${assignment.id}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    
+                    badgesContainer.appendChild(badgeElement);
+                });
+                
+                // Configurar eventos de selección de posición
+                document.querySelectorAll('.position-select').forEach(select => {
+                    select.addEventListener('change', async function() {
+                        const assignmentId = this.dataset.assignmentId;
+                        const newPosition = this.value;
+                        
+                        try {
+                            // Guardar valor original para posible rollback
+                            const originalPosition = this.getAttribute('data-original-position');
+                            if (!originalPosition) {
+                                this.setAttribute('data-original-position', this.options[this.selectedIndex].value);
+                            }
+                            
+                            // Actualizar posición
+                            await db.collection("tournament_badges").doc(assignmentId).update({
+                                position: newPosition,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            mostrarNotificacion("Posición actualizada correctamente", "success");
+                            
+                        } catch (error) {
+                            console.error("Error al actualizar posición:", error);
+                            mostrarNotificacion("Error al actualizar posición", "error");
+                            
+                            // Revertir cambio si hay error
+                            const originalPosition = this.getAttribute('data-original-position');
+                            if (originalPosition) {
+                                this.value = originalPosition;
+                            }
+                        }
+                    });
+                });
+                
+                // Configurar eventos de eliminación
+                document.querySelectorAll('.remove-badge-btn').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const assignmentId = this.dataset.assignmentId;
+                        
+                        try {
+                            // Mostrar carga
+                            const originalHTML = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                            this.disabled = true;
+                            
+                            // Eliminar asignación
+                            await db.collection("tournament_badges").doc(assignmentId).delete();
+                            
+                            // Eliminar elemento
+                            this.closest('.bg-gray-100').remove();
+                            
+                            mostrarNotificacion("Badge removido correctamente", "success");
+                            
+                            // Si no quedan badges, mostrar mensaje
+                            if (!document.querySelector('.badges-container .bg-gray-100')) {
+                                document.querySelector('.badges-container').innerHTML = 
+                                    '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
+                            }
+                            
+                        } catch (error) {
+                            console.error("Error al eliminar badge del torneo:", error);
+                            mostrarNotificacion("Error al eliminar badge del torneo", "error");
+                            
+                            // Restaurar botón
+                            this.innerHTML = originalHTML;
+                            this.disabled = false;
+                        }
+                    });
+                });
+                
+            } catch (error) {
+                console.error("Error al cargar badges del torneo:", error);
+                const badgesContainer = document.querySelector('.badges-container');
+                if (badgesContainer) {
+                    badgesContainer.innerHTML = '<p class="text-sm text-red-500">Error al cargar badges. Inténtalo de nuevo.</p>';
+                }
+            }
+        }
+        
+        // Eliminar un torneo
+        async function eliminarTorneo(tournamentId) {
+            try {
+                // Obtener datos del torneo
+                const tournamentRef = db.collection("torneos").doc(tournamentId);
+                const tournamentSnap = await tournamentRef.get();
+                
+                if (!tournamentSnap.exists) {
+                    throw new Error("El torneo no existe");
+                }
+                
+                const tournamentData = tournamentSnap.data();
+                
+                // Eliminar imagen si existe
+                if (tournamentData.imageUrl) {
+                    try {
+                        const urlPath = tournamentData.imageUrl.split('?')[0];
+                        const fileName = urlPath.split('/').pop();
+                        const storagePath = `torneos/${fileName}`;
+                        await storage.ref(storagePath).delete();
+                    } catch (e) {
+                        console.warn("Error al eliminar imagen:", e);
+                        // Continuar de todos modos
+                    }
+                }
+                
+                // Eliminar badges asociados
+                const badgesSnapshot = await db.collection("tournament_badges")
+                    .where("tournamentId", "==", tournamentId)
+                    .get();
+                
+                const badgeDeletePromises = [];
+                badgesSnapshot.forEach(doc => {
+                    badgeDeletePromises.push(db.collection("tournament_badges").doc(doc.id).delete());
+                });
+                
+                await Promise.all(badgeDeletePromises);
+                
+                // Eliminar resultados asociados
+                try {
+                    const resultsSnapshot = await db.collection("resultados")
+                        .where("tournamentId", "==", tournamentId)
+                        .get();
+                    
+                    const resultDeletePromises = [];
+                    resultsSnapshot.forEach(doc => {
+                        resultDeletePromises.push(db.collection("resultados").doc(doc.id).delete());
+                    });
+                    
+                    await Promise.all(resultDeletePromises);
+                } catch (e) {
+                    console.warn("Error o no hay resultados:", e);
+                }
+                
+                // Eliminar torneo
+                await tournamentRef.delete();
+                
+                return { success: true };
+                
+            } catch (error) {
+                console.error("Error al eliminar torneo:", error);
+                throw error;
+            }
+        }
+    });
+    </script>
 </body>
 </html>
