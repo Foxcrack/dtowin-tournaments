@@ -776,5 +776,44 @@
         }
     });
     </script>
+    <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Obtener referencias directas a los elementos
+    const createBadgeBtn = document.getElementById('headerCreateBadgeBtn');
+    const createBadgeForm = document.getElementById('createBadgeForm');
+    const formSection = createBadgeForm ? createBadgeForm.closest('.bg-gray-50') : null;
+    
+    console.log("Botón encontrado:", !!createBadgeBtn);
+    console.log("Formulario encontrado:", !!createBadgeForm);
+    console.log("Sección del formulario encontrada:", !!formSection);
+    
+    // Asegurarse de que el formulario esté oculto inicialmente
+    if (formSection) {
+      formSection.classList.add('hidden');
+      console.log("Formulario ocultado inicialmente");
+    }
+    
+    // Añadir event listener al botón de crear badge
+    if (createBadgeBtn) {
+      createBadgeBtn.addEventListener('click', function() {
+        console.log("Botón de crear badge clickeado");
+        
+        // Mostrar el formulario si está oculto
+        if (formSection) {
+          console.log("Estado del formulario antes:", formSection.classList.contains('hidden') ? "oculto" : "visible");
+          formSection.classList.remove('hidden');
+          console.log("Formulario mostrado");
+          
+          // Hacer scroll al formulario
+          createBadgeForm.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          console.error("No se pudo encontrar la sección del formulario");
+        }
+      });
+      
+      console.log("Event listener añadido al botón");
+    }
+  });
+</script>
 </body>
 </html>
