@@ -1,6 +1,6 @@
 // admin-panel-banners.js - Script para la gestión de banners
 import { auth, isUserHost, db, storage } from './firebase.js';
-import { showNotification } from './admin-panel.js';
+import { showNotification } from './utils.js';
 import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
