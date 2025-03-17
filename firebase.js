@@ -19,7 +19,8 @@ import {
   doc, 
   getDoc,
   updateDoc,
-  serverTimestamp 
+  serverTimestamp,
+  orderBy 
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { 
   getStorage, 
@@ -45,6 +46,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
+
+// Colecciones
+const usersCollection = collection(db, "usuarios");
+const torneosCollection = collection(db, "torneos");
+const badgesCollection = collection(db, "badges");
+const resultsCollection = collection(db, "resultados");
+const bannersCollection = collection(db, "banners"); // Añadida nueva colección
 
 // Configurar persistencia de sesión
 setPersistence(auth, browserLocalPersistence)
@@ -233,9 +241,89 @@ export async function isUserHost() {
   }
 }
 
+// Función para obtener usuario por ID
+export async function getUserById(userId) {
+  try {
+    const userQuery = query(usersCollection, where("uid", "==", userId));
+    const querySnapshot = await getDocs(userQuery);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    return {
+      id: querySnapshot.docs[0].id,
+      ...querySnapshot.docs[0].data()
+    };
+  } catch (error) {
+    console.error("Error al obtener usuario:", error);
+    return null;
+  }
+}
+
+// Función para obtener banners activos ordenados por su campo 'orden'
+export async function getActiveBanners() {
+  try {
+    const bannersQuery = query(
+      bannersCollection,
+      where("visible", "==", true),
+      orderBy("orden", "asc")
+    );
+    
+    const querySnapshot = await getDocs(bannersQuery);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error al obtener banners activos:", error);
+    return [];
+  }
+}
+
+// Función para obtener todos los banners
+export async function getAllBanners() {
+  try {
+    const querySnapshot = await getDocs(query(bannersCollection, orderBy("orden", "asc")));
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error al obtener todos los banners:", error);
+    return [];
+  }
+}
+
+// Función para obtener un banner específico por su ID
+export async function getBannerById(bannerId) {
+  try {
+    const bannerDoc = await getDoc(doc(db, "banners", bannerId));
+    
+    if (!bannerDoc.exists()) {
+      return null;
+    }
+    
+    return {
+      id: bannerDoc.id,
+      ...bannerDoc.data()
+    };
+  } catch (error) {
+    console.error("Error al obtener banner:", error);
+    return null;
+  }
+}
+
 // Exporta las funciones y objetos que necesitas
 export {
   auth,
   db,
-  storage
+  storage,
+  usersCollection,
+  torneosCollection,
+  badgesCollection,
+  resultsCollection,
+  bannersCollection
 };
