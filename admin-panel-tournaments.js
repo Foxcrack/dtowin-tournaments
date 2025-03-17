@@ -17,6 +17,8 @@ const submitButton = document.getElementById('submitButton');
 // Initialize tournament management
 export async function initTournamentsManagement() {
     try {
+        console.log("Inicializando gestión de torneos...");
+        
         // Check if user is host/admin
         const userIsHost = await isUserHost();
         
@@ -39,39 +41,87 @@ export async function initTournamentsManagement() {
 
 // Set up event listeners
 function setupEventListeners() {
-    // Create tournament button
+    console.log("Configurando event listeners...");
+    
+    // Create tournament button in header
     if (headerCreateTournamentBtn) {
+        console.log("Configurando botón 'Crear Torneo' en header");
         headerCreateTournamentBtn.addEventListener('click', () => {
+            console.log("Botón headerCreateTournamentBtn clickeado");
             resetForm();
             showForm();
         });
+    } else {
+        console.warn("No se encontró el botón 'Crear Torneo' en header");
     }
     
     // Cancel button
     if (cancelButton) {
+        console.log("Configurando botón Cancelar");
         cancelButton.addEventListener('click', hideForm);
+    } else {
+        console.warn("No se encontró el botón Cancelar");
     }
     
     // Form submission
     if (createTournamentForm) {
+        console.log("Configurando evento submit del formulario");
+        
+        // Eliminar event listeners anteriores para evitar duplicados
+        createTournamentForm.removeEventListener('submit', handleFormSubmit);
+        
+        // Añadir event listener
         createTournamentForm.addEventListener('submit', handleFormSubmit);
+        
+        // Asegurarse de que el botón de submit tiene type="submit"
+        if (submitButton && submitButton.type !== 'submit') {
+            console.log("Corrigiendo tipo de botón submit");
+            submitButton.type = 'submit';
+        }
+    } else {
+        console.warn("No se encontró el formulario createTournamentForm");
+    }
+    
+    // Asegurar que el botón Crear/Actualizar funcione directamente
+    if (submitButton) {
+        console.log("Configurando evento click del botón submit");
+        submitButton.addEventListener('click', function(e) {
+            // Solo evitar default si NO es type="submit"
+            if (this.type !== 'submit') {
+                e.preventDefault();
+                // Disparar submit del formulario manualmente
+                if (createTournamentForm) {
+                    console.log("Disparando submit del formulario desde botón");
+                    createTournamentForm.dispatchEvent(new Event('submit'));
+                }
+            }
+        });
+    } else {
+        console.warn("No se encontró el botón submit");
     }
     
     // Add badge button
-    const addBadgeButton = document.querySelector('.dtowin-blue');
-    if (addBadgeButton) {
-        addBadgeButton.addEventListener('click', showBadgeSelectionModal);
+    const addBadgeBtn = document.getElementById('addBadgeBtn');
+    if (addBadgeBtn) {
+        console.log("Configurando botón Añadir Badge");
+        addBadgeBtn.addEventListener('click', showBadgeSelectionModal);
+    } else {
+        console.warn("No se encontró el botón Añadir Badge");
     }
     
     // Image preview
     const imagenInput = document.getElementById('imagen');
     if (imagenInput) {
+        console.log("Configurando preview de imagen");
         imagenInput.addEventListener('change', handleImagePreview);
+    } else {
+        console.warn("No se encontró el input de imagen");
     }
 }
 
 // Reset the form to its initial state
 function resetForm() {
+    console.log("Reseteando formulario");
     if (createTournamentForm) {
         createTournamentForm.reset();
         
@@ -96,22 +146,30 @@ function resetForm() {
         if (badgesContainer) {
             badgesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
         }
+    } else {
+        console.warn("No se pudo resetear el formulario porque no existe");
     }
 }
 
 // Show the tournament form
 function showForm() {
+    console.log("Mostrando formulario");
     if (tournamentFormSection) {
         tournamentFormSection.classList.remove('hidden');
         // Scroll to form
         tournamentFormSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        console.warn("No se encontró la sección del formulario");
     }
 }
 
 // Hide the tournament form
 function hideForm() {
+    console.log("Ocultando formulario");
     if (tournamentFormSection) {
         tournamentFormSection.classList.add('hidden');
+    } else {
+        console.warn("No se encontró la sección del formulario para ocultar");
     }
 }
 
@@ -119,6 +177,8 @@ function hideForm() {
 function handleImagePreview(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
+    console.log("Procesando vista previa de imagen:", file.name);
     
     // Check if it's an image
     if (!file.type.startsWith('image/')) {
@@ -165,6 +225,8 @@ function handleImagePreview(event) {
 async function handleFormSubmit(event) {
     event.preventDefault();
     
+    console.log("Manejando envío de formulario");
+    
     // Get form data
     const nombre = document.getElementById('nombre').value.trim();
     const descripcion = document.getElementById('descripcion').value.trim();
@@ -173,6 +235,8 @@ async function handleFormSubmit(event) {
     const capacidad = document.getElementById('capacidad').value;
     const estado = document.getElementById('estado').value;
     const imagenInput = document.getElementById('imagen');
+    
+    console.log("Datos del formulario:", { nombre, fecha, capacidad, estado });
     
     // Form validation
     if (!nombre) {
@@ -202,13 +266,17 @@ async function handleFormSubmit(event) {
     });
     
     // Check if we're in edit mode
-    const isEditMode = submitButton.dataset.editMode === 'true';
-    const tournamentId = submitButton.dataset.tournamentId;
+    const isEditMode = submitButton && submitButton.dataset.editMode === 'true';
+    const tournamentId = submitButton ? submitButton.dataset.tournamentId : null;
+    
+    console.log("Modo:", isEditMode ? "Edición" : "Creación", "ID:", tournamentId);
     
     // Show loading state
-    submitButton.disabled = true;
-    const originalButtonText = submitButton.textContent;
-    submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+    if (submitButton) {
+        submitButton.disabled = true;
+        const originalButtonText = submitButton.textContent;
+        submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+    }
     
     try {
         // Prepare tournament data
@@ -231,13 +299,17 @@ async function handleFormSubmit(event) {
         
         if (isEditMode && tournamentId) {
             // Update existing tournament
+            console.log("Actualizando torneo existente:", tournamentId);
             result = await updateTournament(tournamentId, tournamentData, imageFile);
             showNotification("Torneo actualizado correctamente", "success");
         } else {
             // Create new tournament
+            console.log("Creando nuevo torneo");
             result = await createTournament(tournamentData, imageFile);
             showNotification("Torneo creado correctamente", "success");
         }
+        
+        console.log("Operación completada:", result);
         
         // Reset form and hide
         resetForm();
@@ -251,8 +323,10 @@ async function handleFormSubmit(event) {
         showNotification(error.message || "Error al procesar el torneo", "error");
     } finally {
         // Restore button
-        submitButton.disabled = false;
-        submitButton.textContent = originalButtonText;
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = isEditMode ? 'Actualizar Torneo' : 'Crear Torneo';
+        }
     }
 }
 
@@ -264,6 +338,8 @@ export async function loadTournaments() {
             return;
         }
         
+        console.log("Cargando torneos...");
+        
         // Show loading spinner
         torneosContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
@@ -273,9 +349,12 @@ export async function loadTournaments() {
         
         // Check if we have tournaments
         if (tournamentsSnapshot.empty) {
+            console.log("No hay torneos disponibles");
             torneosContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay torneos disponibles. Crea el primer torneo.</p>';
             return;
         }
+        
+        console.log(`Encontrados ${tournamentsSnapshot.size} torneos`);
         
         // Convert to array and sort by date
         const torneos = [];
@@ -381,6 +460,8 @@ export async function loadTournaments() {
         
         // Add event listeners to action buttons
         addTournamentEventListeners();
+        
+        console.log("Torneos cargados correctamente");
         
     } catch (error) {
         console.error("Error al cargar torneos:", error);
@@ -489,6 +570,8 @@ function addTournamentEventListeners() {
 // Load tournament data for editing
 async function loadTournamentForEdit(tournamentId) {
     try {
+        console.log("Cargando torneo para editar:", tournamentId);
+        
         // Get tournament data
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
@@ -498,6 +581,7 @@ async function loadTournamentForEdit(tournamentId) {
         }
         
         const tournament = tournamentSnap.data();
+        console.log("Datos del torneo:", tournament);
         
         // Fill form with tournament data
         document.getElementById('nombre').value = tournament.nombre || '';
@@ -557,13 +641,22 @@ async function loadTournamentForEdit(tournamentId) {
         await loadTournamentBadges(tournamentId);
         
         // Update form title and button
-        formTitle.textContent = 'Editar Torneo';
-        submitButton.textContent = 'Actualizar Torneo';
-        submitButton.dataset.editMode = 'true';
-        submitButton.dataset.tournamentId = tournamentId;
+        if (formTitle) formTitle.textContent = 'Editar Torneo';
+        if (submitButton) {
+            submitButton.textContent = 'Actualizar Torneo';
+            submitButton.dataset.editMode = 'true';
+            submitButton.dataset.tournamentId = tournamentId;
+            
+            // Asegurarse de que el botón sea tipo submit
+            if (submitButton.type !== 'submit') {
+                submitButton.type = 'submit';
+            }
+        }
         
         // Show form
         showForm();
+        
+        console.log("Torneo cargado para edición correctamente");
         
     } catch (error) {
         console.error("Error al cargar torneo para editar:", error);
@@ -580,6 +673,8 @@ async function loadTournamentBadges(tournamentId) {
             return;
         }
         
+        console.log("Cargando badges del torneo:", tournamentId);
+        
         // Clear container
         badgesContainer.innerHTML = '';
         
@@ -591,6 +686,8 @@ async function loadTournamentBadges(tournamentId) {
             badgesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
             return;
         }
+        
+        console.log(`Encontrados ${tournamentBadges.length} badges asignados al torneo`);
         
         // Create elements for each badge
         tournamentBadges.forEach(badgeAssignment => {
@@ -697,6 +794,8 @@ async function loadTournamentBadges(tournamentId) {
 // Show badge selection modal
 async function showBadgeSelectionModal() {
     try {
+        console.log("Mostrando modal de selección de badges");
+        
         // Create modal if it doesn't exist
         let modalContainer = document.getElementById('badgeSelectionModal');
         
@@ -764,6 +863,8 @@ async function showBadgeSelectionModal() {
             return;
         }
         
+        console.log(`Encontrados ${badges.length} badges disponibles`);
+        
         // Show badges
         let badgesHTML = '';
         
@@ -807,7 +908,7 @@ async function showBadgeSelectionModal() {
             if (!selectedBadgeId) return;
             
             const position = document.getElementById('badgePosition').value;
-            const tournamentId = submitButton.dataset.tournamentId;
+            const tournamentId = submitButton ? submitButton.dataset.tournamentId : null;
             
             if (!tournamentId) {
                 showNotification("Debes guardar el torneo primero para asignar badges", "warning");
@@ -851,6 +952,8 @@ async function showBadgeSelectionModal() {
 // Create a new tournament
 async function createTournament(tournamentData, imageFile) {
     try {
+        console.log("Creando torneo con datos:", tournamentData);
+        
         const user = auth.currentUser;
         
         if (!user) {
@@ -873,12 +976,17 @@ async function createTournament(tournamentData, imageFile) {
         tournamentData.imageUrl = null; // Initialize as null explicitly
         
         // Add tournament to Firestore first (without image)
+        console.log("Guardando torneo en Firestore...");
         const tournamentRef = await addDoc(collection(db, "torneos"), tournamentData);
         const tournamentId = tournamentRef.id;
+        
+        console.log("Torneo creado con ID:", tournamentId);
         
         // Upload image if provided
         if (imageFile) {
             try {
+                console.log("Procesando imagen:", imageFile.name);
+                
                 // Verify it's an image
                 if (!imageFile.type.startsWith('image/')) {
                     throw new Error("El archivo debe ser una imagen");
@@ -888,6 +996,8 @@ async function createTournament(tournamentData, imageFile) {
                 const fileName = `torneos_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const storageRef = ref(storage, `torneos/${fileName}`);
                 
+                console.log("Subiendo imagen a Storage...");
+                
                 // Create blob to avoid CORS issues
                 const arrayBuffer = await imageFile.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: imageFile.type });
@@ -896,7 +1006,10 @@ async function createTournament(tournamentData, imageFile) {
                 await uploadBytes(storageRef, blob);
                 const imageUrl = await getDownloadURL(storageRef);
                 
+                console.log("Imagen subida, URL:", imageUrl);
+                
                 // Update the document with the image URL
+                console.log("Actualizando documento con URL de imagen...");
                 await updateDoc(tournamentRef, { imageUrl: imageUrl });
                 
                 return {
@@ -928,6 +1041,8 @@ async function createTournament(tournamentData, imageFile) {
 // Update an existing tournament
 async function updateTournament(tournamentId, tournamentData, imageFile) {
     try {
+        console.log("Actualizando torneo:", tournamentId, "con datos:", tournamentData);
+        
         const user = auth.currentUser;
         
         if (!user) {
@@ -981,6 +1096,8 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
         // Si hay una nueva imagen, procesarla
         if (imageFile) {
             try {
+                console.log("Procesando nueva imagen:", imageFile.name);
+                
                 // Verificar que sea una imagen
                 if (!imageFile.type.startsWith('image/')) {
                     throw new Error("El archivo debe ser una imagen");
@@ -989,6 +1106,7 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
                 // Eliminar imagen anterior si existe
                 if (currentTournament.imageUrl) {
                     try {
+                        console.log("Eliminando imagen anterior...");
                         const urlPath = currentTournament.imageUrl.split('?')[0];
                         const fileName = urlPath.split('/').pop();
                         if (fileName) {
@@ -1005,6 +1123,7 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
                 }
                 
                 // Subir nueva imagen
+                console.log("Subiendo nueva imagen a Storage...");
                 const fileName = `torneos_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                 const storageRef = ref(storage, `torneos/${fileName}`);
                 
@@ -1057,6 +1176,8 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
 // Delete a tournament
 async function deleteTournament(tournamentId) {
     try {
+        console.log("Eliminando torneo:", tournamentId);
+        
         const user = auth.currentUser;
         
         if (!user) {
@@ -1083,6 +1204,7 @@ async function deleteTournament(tournamentId) {
         // Delete image if exists
         if (tournamentData.imageUrl) {
             try {
+                console.log("Eliminando imagen del torneo...");
                 const urlPath = tournamentData.imageUrl.split('?')[0];
                 const fileName = urlPath.split('/').pop();
                 const storagePath = `torneos/${fileName}`;
@@ -1095,6 +1217,7 @@ async function deleteTournament(tournamentId) {
         }
         
         // Delete badges assigned to this tournament
+        console.log("Eliminando badges asociados al torneo...");
         const tournamentBadgesRef = collection(db, "tournament_badges");
         const badgesQuery = query(tournamentBadgesRef, where("tournamentId", "==", tournamentId));
         const badgesSnapshot = await getDocs(badgesQuery);
@@ -1109,6 +1232,7 @@ async function deleteTournament(tournamentId) {
         
         // Delete results related to this tournament
         try {
+            console.log("Eliminando resultados asociados al torneo...");
             const resultsRef = collection(db, "resultados");
             const resultsQuery = query(resultsRef, where("tournamentId", "==", tournamentId));
             const resultsSnapshot = await getDocs(resultsQuery);
@@ -1126,7 +1250,10 @@ async function deleteTournament(tournamentId) {
         }
         
         // Finally delete the tournament
+        console.log("Eliminando documento del torneo...");
         await deleteDoc(tournamentRef);
+        
+        console.log("Torneo eliminado correctamente");
         
         return {
             success: true
