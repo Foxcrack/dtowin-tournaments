@@ -185,6 +185,13 @@ async function handleFormSubmit(event) {
         return;
     }
     
+    // Verificar que la imagen sea válida
+    const imageFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
+    if (imageFile && !imageFile.type.startsWith('image/')) {
+        showNotification("El archivo debe ser una imagen válida", "error");
+        return;
+    }
+    
     // Get points by position
     const puntosPosicion = {};
     const puntosInputs = document.querySelectorAll('input[type="number"][min="0"]');
@@ -204,9 +211,6 @@ async function handleFormSubmit(event) {
     submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
     
     try {
-        // Get image file
-        const imageFile = imagenInput && imagenInput.files.length > 0 ? imagenInput.files[0] : null;
-        
         // Prepare tournament data
         const tournamentData = {
             nombre,
@@ -866,7 +870,7 @@ async function createTournament(tournamentData, imageFile) {
         tournamentData.updatedAt = serverTimestamp();
         tournamentData.participants = [];
         tournamentData.visible = true; // Visible by default
-        tournamentData.imageUrl = null; // Initialize as null
+        tournamentData.imageUrl = null; // Initialize as null explicitly
         
         // Add tournament to Firestore first (without image)
         const tournamentRef = await addDoc(collection(db, "torneos"), tournamentData);
@@ -921,15 +925,7 @@ async function createTournament(tournamentData, imageFile) {
     }
 }
 
-// Verificar que la imagen sea válida
-if (imageFile && !imageFile.type.startsWith('image/')) {
-    showNotification("El archivo debe ser una imagen válida", "error");
-    submitButton.disabled = false;
-    submitButton.textContent = originalButtonText;
-    return;
-}
-
-// Esta función reemplaza a la función updateTournament existente
+// Update an existing tournament
 async function updateTournament(tournamentId, tournamentData, imageFile) {
     try {
         const user = auth.currentUser;
