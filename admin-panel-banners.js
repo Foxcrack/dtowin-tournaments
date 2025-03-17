@@ -1,13 +1,10 @@
-// admin-panel-banners.js - Script para gestión de banners en Dtowin
+// admin-panel-banners.js - Script para la gestión de banners
 import { auth, isUserHost, db, storage } from './firebase.js';
 import { showNotification } from './admin-panel.js';
 import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
-// Variable para controlar si ya se ha inicializado
-let initialized = false;
-
-// Elementos del DOM
+// DOM elements
 const bannersContainer = document.getElementById('bannersContainer');
 const bannerFormSection = document.getElementById('bannerFormSection');
 const createBannerForm = document.getElementById('createBannerForm');
@@ -16,33 +13,23 @@ const bannerFormTitle = document.getElementById('bannerFormTitle');
 const cancelBannerButton = document.getElementById('cancelBannerButton');
 const submitBannerButton = document.getElementById('submitBannerButton');
 
-// Inicializar gestión de banners
+// Initialize banner management
 async function initBannersManagement() {
     try {
         console.log("Inicializando gestión de banners...");
         
-        // Verificar si el usuario está autenticado
-        if (!auth.currentUser) {
-            console.error("No hay usuario autenticado");
-            window.location.href = "index.html";
-            return;
-        }
-        
-        // Verificar si el usuario es host/admin
+        // Check if user is host/admin
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
             showNotification("No tienes permisos para gestionar banners", "error");
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 3000);
             return;
         }
         
-        // Configurar event listeners
+        // Set up event listeners
         setupEventListeners();
         
-        // Cargar banners existentes
+        // Load existing banners
         await loadBanners();
         
     } catch (error) {
@@ -51,13 +38,15 @@ async function initBannersManagement() {
     }
 }
 
-// Configurar event listeners
+// Set up event listeners
 function setupEventListeners() {
     console.log("Configurando event listeners...");
     
-    // Botón de crear banner
+    // Create banner button in header
     if (headerCreateBannerBtn) {
+        console.log("Configurando botón 'Crear Banner'");
         headerCreateBannerBtn.addEventListener('click', () => {
+            console.log("Botón headerCreateBannerBtn clickeado");
             resetBannerForm();
             showBannerForm();
         });
@@ -65,48 +54,56 @@ function setupEventListeners() {
         console.warn("No se encontró el botón 'Crear Banner'");
     }
     
-    // Botón de cancelar
+    // Cancel button
     if (cancelBannerButton) {
+        console.log("Configurando botón Cancelar");
         cancelBannerButton.addEventListener('click', hideBannerForm);
     } else {
         console.warn("No se encontró el botón Cancelar");
     }
     
-    // Envío del formulario - Usando técnica de clonación para prevenir listeners duplicados
+    // Form submission
     if (createBannerForm) {
+        console.log("Configurando evento submit del formulario");
+        
+        // Eliminar event listeners anteriores para evitar duplicados
         const clonedForm = createBannerForm.cloneNode(true);
         createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
         
         // Actualizar referencia al formulario clonado
         const updatedForm = document.getElementById('createBannerForm');
+        
+        // Añadir event listener
         updatedForm.addEventListener('submit', handleBannerFormSubmit);
         
-        // Asegurar que el botón de envío tenga type="submit"
+        // Asegurarse de que el botón de submit tiene type="submit"
         const submitBtn = document.getElementById('submitBannerButton');
         if (submitBtn && submitBtn.type !== 'submit') {
+            console.log("Corrigiendo tipo de botón submit");
             submitBtn.type = 'submit';
         }
     } else {
         console.warn("No se encontró el formulario createBannerForm");
     }
     
-    // Vista previa de imagen
+    // Image preview
     const bannerImagen = document.getElementById('bannerImagen');
     if (bannerImagen) {
+        console.log("Configurando preview de imagen");
         bannerImagen.addEventListener('change', handleBannerImagePreview);
     } else {
         console.warn("No se encontró el input de imagen");
     }
 }
 
-// Resetear el formulario de banner a su estado inicial
+// Reset the banner form to its initial state
 function resetBannerForm() {
     console.log("Reseteando formulario");
     const form = document.getElementById('createBannerForm');
     if (form) {
         form.reset();
         
-        // Resetear texto del botón y modo
+        // Reset button text and mode
         const submitBtn = document.getElementById('submitBannerButton');
         if (submitBtn) {
             submitBtn.textContent = 'Crear Banner';
@@ -114,12 +111,12 @@ function resetBannerForm() {
             delete submitBtn.dataset.bannerId;
         }
         
-        // Resetear título del formulario
+        // Reset form title
         if (bannerFormTitle) {
             bannerFormTitle.textContent = 'Crear Nuevo Banner';
         }
         
-        // Limpiar vista previa de imagen
+        // Clear image preview
         const previews = form.querySelectorAll('.image-preview');
         previews.forEach(preview => preview.remove());
     } else {
@@ -127,19 +124,19 @@ function resetBannerForm() {
     }
 }
 
-// Mostrar el formulario de banner
+// Show the banner form
 function showBannerForm() {
     console.log("Mostrando formulario");
     if (bannerFormSection) {
         bannerFormSection.classList.remove('hidden');
-        // Scroll al formulario
+        // Scroll to form
         bannerFormSection.scrollIntoView({ behavior: 'smooth' });
     } else {
         console.warn("No se encontró la sección del formulario");
     }
 }
 
-// Ocultar el formulario de banner
+// Hide the banner form
 function hideBannerForm() {
     console.log("Ocultando formulario");
     if (bannerFormSection) {
@@ -149,34 +146,34 @@ function hideBannerForm() {
     }
 }
 
-// Manejar vista previa de imagen de banner
+// Handle banner image preview
 function handleBannerImagePreview(event) {
     const file = event.target.files[0];
     if (!file) return;
     
     console.log("Procesando vista previa de imagen:", file.name);
     
-    // Verificar que es una imagen
+    // Check if it's an image
     if (!file.type.startsWith('image/')) {
         showNotification("El archivo debe ser una imagen", "error");
         event.target.value = '';
         return;
     }
     
-    // Verificar tamaño del archivo (max 5MB)
+    // Verificar tamaño de archivo (máximo 5MB)
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
         showNotification("La imagen es demasiado grande. El tamaño máximo es 5MB", "warning");
     }
     
-    // Eliminar vista previa existente
+    // Remove any existing preview
     const container = event.target.parentElement;
     const existingPreview = container.querySelector('.image-preview');
     if (existingPreview) {
         existingPreview.remove();
     }
     
-    // Crear elemento de vista previa
+    // Create preview element
     const reader = new FileReader();
     reader.onload = function(e) {
         const previewDiv = document.createElement('div');
@@ -196,12 +193,12 @@ function handleBannerImagePreview(event) {
     reader.readAsDataURL(file);
 }
 
-// Manejar envío del formulario de banner
+// Handle banner form submission
 async function handleBannerFormSubmit(event) {
     event.preventDefault();
     console.log("Manejando envío de formulario de banner");
     
-    // Obtener datos del formulario
+    // Get form data
     const nombre = document.getElementById('bannerNombre').value.trim();
     const descripcion = document.getElementById('bannerDescripcion').value.trim();
     const url = document.getElementById('bannerUrl').value.trim();
@@ -211,13 +208,13 @@ async function handleBannerFormSubmit(event) {
     
     console.log("Datos del formulario:", { nombre, url, orden, visible });
     
-    // Validación del formulario
+    // Form validation
     if (!nombre) {
         showNotification("El nombre del banner es obligatorio", "error");
         return;
     }
     
-    // Verificar que la imagen es válida
+    // Verificar que la imagen sea válida
     const imageFile = bannerImagen && bannerImagen.files.length > 0 ? bannerImagen.files[0] : null;
     const submitBtn = document.getElementById('submitBannerButton');
     const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
@@ -232,12 +229,12 @@ async function handleBannerFormSubmit(event) {
         return;
     }
     
-    // Verificar si estamos en modo edición
+    // Check if we're in edit mode
     const bannerId = submitBtn ? submitBtn.dataset.bannerId : null;
     
     console.log("Modo:", isEditMode ? "Edición" : "Creación", "ID:", bannerId);
     
-    // Mostrar estado de carga
+    // Show loading state
     if (submitBtn) {
         submitBtn.disabled = true;
         const originalButtonText = submitBtn.textContent;
@@ -245,7 +242,7 @@ async function handleBannerFormSubmit(event) {
     }
     
     try {
-        // Preparar datos del banner
+        // Prepare banner data
         const bannerData = {
             nombre,
             descripcion,
@@ -257,12 +254,12 @@ async function handleBannerFormSubmit(event) {
         let result;
         
         if (isEditMode && bannerId) {
-            // Actualizar banner existente
+            // Update existing banner
             console.log("Actualizando banner existente:", bannerId);
             result = await updateBanner(bannerId, bannerData, imageFile);
             showNotification("Banner actualizado correctamente", "success");
         } else {
-            // Crear nuevo banner
+            // Create new banner
             console.log("Creando nuevo banner");
             result = await createBanner(bannerData, imageFile);
             showNotification("Banner creado correctamente", "success");
@@ -270,18 +267,18 @@ async function handleBannerFormSubmit(event) {
         
         console.log("Operación completada:", result);
         
-        // Resetear formulario y ocultar
+        // Reset form and hide
         resetBannerForm();
         hideBannerForm();
         
-        // Recargar lista de banners
+        // Reload banners list
         await loadBanners();
         
     } catch (error) {
         console.error("Error al procesar banner:", error);
         showNotification(error.message || "Error al procesar el banner", "error");
     } finally {
-        // Restaurar botón
+        // Restore button
         const submitButton = document.getElementById('submitBannerButton');
         if (submitButton) {
             submitButton.disabled = false;
@@ -290,7 +287,7 @@ async function handleBannerFormSubmit(event) {
     }
 }
 
-// Crear un nuevo banner
+// Create a new banner
 async function createBanner(bannerData, imageFile) {
     try {
         console.log("Creando banner con datos:", bannerData);
@@ -301,7 +298,7 @@ async function createBanner(bannerData, imageFile) {
             throw new Error("Debes iniciar sesión para crear un banner");
         }
         
-        // Verificar si el usuario es host
+        // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
@@ -312,22 +309,22 @@ async function createBanner(bannerData, imageFile) {
             throw new Error("La imagen es obligatoria para crear un banner");
         }
         
-        // Subir imagen primero
+        // Upload image first
         console.log("Subiendo imagen a Storage...");
         const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const storageRef = ref(storage, `banners/${fileName}`);
         
-        // Crear blob para evitar problemas de CORS
+        // Create blob to avoid CORS issues
         const arrayBuffer = await imageFile.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: imageFile.type });
         
-        // Subir a Firebase Storage
+        // Upload to Firebase Storage
         await uploadBytes(storageRef, blob);
         const imageUrl = await getDownloadURL(storageRef);
         
         console.log("Imagen subida, URL:", imageUrl);
         
-        // Añadir banner a Firestore
+        // Add banner to Firestore
         const bannerWithMetadata = {
             ...bannerData,
             imageUrl,
@@ -349,7 +346,7 @@ async function createBanner(bannerData, imageFile) {
     }
 }
 
-// Actualizar un banner existente
+// Update an existing banner
 async function updateBanner(bannerId, bannerData, imageFile) {
     try {
         console.log("Actualizando banner:", bannerId, "con datos:", bannerData);
@@ -360,14 +357,14 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             throw new Error("Debes iniciar sesión para actualizar un banner");
         }
         
-        // Verificar si el usuario es host
+        // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
             throw new Error("Solo el host puede actualizar banners");
         }
         
-        // Obtener referencia del banner
+        // Get banner reference
         const bannerRef = doc(db, "banners", bannerId);
         const bannerSnap = await getDoc(bannerRef);
         
@@ -384,7 +381,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             updatedBy: user.uid
         };
         
-        // Mantener URL de imagen actual si no se proporciona una nueva
+        // Mantener la URL de imagen actual si no se proporciona una nueva
         if (!imageFile) {
             updateData.imageUrl = currentBanner.imageUrl;
         } else {
@@ -414,11 +411,11 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
             const storageRef = ref(storage, `banners/${fileName}`);
             
-            // Crear blob para evitar problemas de CORS
+            // Create blob to avoid CORS issues
             const arrayBuffer = await imageFile.arrayBuffer();
             const blob = new Blob([arrayBuffer], { type: imageFile.type });
             
-            // Subir a Firebase Storage
+            // Upload to Firebase Storage
             await uploadBytes(storageRef, blob);
             const imageUrl = await getDownloadURL(storageRef);
             
@@ -426,7 +423,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             console.log("Nueva imagen subida, URL:", imageUrl);
         }
         
-        // Actualizar documento
+        // Update document
         await updateDoc(bannerRef, updateData);
         
         return {
@@ -439,7 +436,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
     }
 }
 
-// Cargar y mostrar banners
+// Load and display banners
 async function loadBanners() {
     try {
         if (!bannersContainer) {
@@ -449,15 +446,15 @@ async function loadBanners() {
         
         console.log("Cargando banners...");
         
-        // Mostrar spinner de carga
+        // Show loading spinner
         bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
-        // Obtener banners de Firestore
+        // Get banners from Firestore
         const bannersCollection = collection(db, "banners");
         const bannersQuery = query(bannersCollection, orderBy("orden", "asc"));
         const bannersSnapshot = await getDocs(bannersQuery);
         
-        // Verificar si tenemos banners
+        // Check if we have banners
         if (bannersSnapshot.empty) {
             console.log("No hay banners disponibles");
             bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
@@ -466,7 +463,7 @@ async function loadBanners() {
         
         console.log(`Encontrados ${bannersSnapshot.size} banners`);
         
-        // Convertir a array
+        // Convert to array
         const banners = [];
         bannersSnapshot.forEach(doc => {
             banners.push({
@@ -475,7 +472,7 @@ async function loadBanners() {
             });
         });
         
-        // Crear cuadrícula de tarjetas de banner
+        // Create grid of banner cards
         let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
         
         banners.forEach(banner => {
@@ -529,7 +526,7 @@ async function loadBanners() {
         
         bannersContainer.innerHTML = html;
         
-        // Añadir event listeners a los botones de acción
+        // Add event listeners to action buttons
         addBannerEventListeners();
         
         console.log("Banners cargados correctamente");
@@ -540,16 +537,16 @@ async function loadBanners() {
     }
 }
 
-// Añadir event listeners a las tarjetas de banner
+// Add event listeners to banner cards
 function addBannerEventListeners() {
-    // Botones de alternar visibilidad
+    // Visibility toggle buttons
     document.querySelectorAll('.toggle-banner-visibility-btn').forEach(button => {
         button.addEventListener('click', async function() {
             const bannerCard = this.closest('[data-banner-id]');
             const bannerId = bannerCard.dataset.bannerId;
             
             try {
-                // Obtener datos actuales
+                // Get current data
                 const bannerRef = doc(db, "banners", bannerId);
                 const bannerSnap = await getDoc(bannerRef);
                 
@@ -561,34 +558,34 @@ function addBannerEventListeners() {
                 const bannerData = bannerSnap.data();
                 const newVisibility = bannerData.visible === false ? true : false;
                 
-                // Mostrar carga
+                // Show loading
                 const originalHtml = this.innerHTML;
                 this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 this.disabled = true;
                 
-                // Actualizar visibilidad
+                // Update visibility
                 await updateDoc(bannerRef, {
                     visible: newVisibility,
                     updatedAt: serverTimestamp()
                 });
                 
-                // Actualizar UI
+                // Update UI
                 const icon = this.querySelector('i');
                 if (newVisibility) {
                     icon.className = 'fas fa-eye';
                     // Actualizar etiqueta de estado
-                    const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
-                    if (statusLabel) {
-                        statusLabel.className = 'bg-green-100 text-green-600 py-1 px-2 rounded text-xs';
-                        statusLabel.textContent = 'Visible';
+                    const estadoLabel = bannerCard.querySelector('.absolute > span:last-child');
+                    if (estadoLabel) {
+                        estadoLabel.className = 'bg-green-100 text-green-600 py-1 px-2 rounded text-xs';
+                        estadoLabel.textContent = 'Visible';
                     }
                 } else {
                     icon.className = 'fas fa-eye-slash';
                     // Actualizar etiqueta de estado
-                    const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
-                    if (statusLabel) {
-                        statusLabel.className = 'bg-red-100 text-red-600 py-1 px-2 rounded text-xs';
-                        statusLabel.textContent = 'Oculto';
+                    const estadoLabel = bannerCard.querySelector('.absolute > span:last-child');
+                    if (estadoLabel) {
+                        estadoLabel.className = 'bg-red-100 text-red-600 py-1 px-2 rounded text-xs';
+                        estadoLabel.textContent = 'Oculto';
                     }
                 }
                 
@@ -608,7 +605,7 @@ function addBannerEventListeners() {
         });
     });
     
-    // Botones de editar
+    // Edit buttons
     document.querySelectorAll('.edit-banner-btn').forEach(button => {
         button.addEventListener('click', async function() {
             const bannerId = this.closest('[data-banner-id]').dataset.bannerId;
@@ -622,7 +619,7 @@ function addBannerEventListeners() {
         });
     });
     
-    // Botones de eliminar
+    // Delete buttons
     document.querySelectorAll('.delete-banner-btn').forEach(button => {
         button.addEventListener('click', async function() {
             const bannerCard = this.closest('[data-banner-id]');
@@ -631,19 +628,19 @@ function addBannerEventListeners() {
             
             if (confirm(`¿Estás seguro que deseas eliminar el banner "${bannerName}"?`)) {
                 try {
-                    // Mostrar carga
+                    // Show loading
                     const originalHtml = this.innerHTML;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     this.disabled = true;
                     
                     await deleteBanner(bannerId);
                     
-                    // Eliminar tarjeta de la UI
+                    // Remove card from UI
                     bannerCard.remove();
                     
                     showNotification("Banner eliminado correctamente", "success");
                     
-                    // Si no quedan banners, mostrar mensaje
+                    // If no banners left, show message
                     if (document.querySelectorAll('[data-banner-id]').length === 0) {
                         bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
                     }
@@ -652,7 +649,7 @@ function addBannerEventListeners() {
                     console.error("Error al eliminar banner:", error);
                     showNotification(error.message || "Error al eliminar banner", "error");
                     
-                    // Restaurar botón
+                    // Restore button
                     this.innerHTML = originalHtml;
                     this.disabled = false;
                 }
@@ -661,12 +658,12 @@ function addBannerEventListeners() {
     });
 }
 
-// Cargar datos de banner para edición
+// Load banner data for editing
 async function loadBannerForEdit(bannerId) {
     try {
         console.log("Cargando banner para editar:", bannerId);
         
-        // Obtener datos del banner
+        // Get banner data
         const bannerRef = doc(db, "banners", bannerId);
         const bannerSnap = await getDoc(bannerRef);
         
@@ -677,14 +674,14 @@ async function loadBannerForEdit(bannerId) {
         const banner = bannerSnap.data();
         console.log("Datos del banner:", banner);
         
-        // Llenar formulario con datos del banner
+        // Fill form with banner data
         document.getElementById('bannerNombre').value = banner.nombre || '';
         document.getElementById('bannerDescripcion').value = banner.descripcion || '';
         document.getElementById('bannerUrl').value = banner.url || '';
         document.getElementById('bannerOrden').value = banner.orden || 1;
         document.getElementById('bannerVisible').checked = banner.visible !== false;
         
-        // Mostrar imagen actual
+        // Show current image
         if (banner.imageUrl) {
             const container = document.getElementById('bannerImagen').parentElement;
             const previewDiv = document.createElement('div');
@@ -697,7 +694,7 @@ async function loadBannerForEdit(bannerId) {
             container.appendChild(previewDiv);
         }
         
-        // Actualizar título del formulario y botón
+        // Update form title and button
         const formTitleEl = document.getElementById('bannerFormTitle');
         if (formTitleEl) formTitleEl.textContent = 'Editar Banner';
         
@@ -708,7 +705,7 @@ async function loadBannerForEdit(bannerId) {
             submitBtn.dataset.bannerId = bannerId;
         }
         
-        // Mostrar formulario
+        // Show form
         showBannerForm();
         
         console.log("Banner cargado para edición correctamente");
@@ -719,7 +716,7 @@ async function loadBannerForEdit(bannerId) {
     }
 }
 
-// Eliminar un banner
+// Delete a banner
 async function deleteBanner(bannerId) {
     try {
         console.log("Eliminando banner:", bannerId);
@@ -730,14 +727,14 @@ async function deleteBanner(bannerId) {
             throw new Error("Debes iniciar sesión para eliminar un banner");
         }
         
-        // Verificar si el usuario es host
+        // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
             throw new Error("Solo el host puede eliminar banners");
         }
         
-        // Obtener datos del banner para eliminación de imagen
+        // Get banner data for image deletion
         const bannerRef = doc(db, "banners", bannerId);
         const bannerSnap = await getDoc(bannerRef);
         
@@ -747,7 +744,7 @@ async function deleteBanner(bannerId) {
         
         const bannerData = bannerSnap.data();
         
-        // Eliminar imagen de storage si existe
+        // Delete image from storage if exists
         if (bannerData.imageUrl) {
             try {
                 console.log("Eliminando imagen del banner...");
@@ -762,11 +759,11 @@ async function deleteBanner(bannerId) {
                 }
             } catch (error) {
                 console.warn("Error al eliminar imagen:", error);
-                // Continuar con la eliminación de todos modos
+                // Continue with deletion anyway
             }
         }
         
-        // Eliminar documento del banner
+        // Delete banner document
         await deleteDoc(bannerRef);
         
         console.log("Banner eliminado correctamente");
@@ -779,3 +776,12 @@ async function deleteBanner(bannerId) {
         throw error;
     }
 }
+
+// Exportar funciones
+export {
+    initBannersManagement,
+    loadBanners
+};
+
+// Inicializar cuando DOM esté listo
+document.addEventListener('DOMContentLoaded', initBannersManagement);
