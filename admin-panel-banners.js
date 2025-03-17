@@ -67,15 +67,20 @@ function setupEventListeners() {
         console.log("Configurando evento submit del formulario");
         
         // Eliminar event listeners anteriores para evitar duplicados
-        createBannerForm.removeEventListener('submit', handleBannerFormSubmit);
+        const clonedForm = createBannerForm.cloneNode(true);
+        createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
+        
+        // Actualizar referencia al formulario clonado
+        const updatedForm = document.getElementById('createBannerForm');
         
         // Añadir event listener
-        createBannerForm.addEventListener('submit', handleBannerFormSubmit);
+        updatedForm.addEventListener('submit', handleBannerFormSubmit);
         
         // Asegurarse de que el botón de submit tiene type="submit"
-        if (submitBannerButton && submitBannerButton.type !== 'submit') {
+        const submitBtn = document.getElementById('submitBannerButton');
+        if (submitBtn && submitBtn.type !== 'submit') {
             console.log("Corrigiendo tipo de botón submit");
-            submitBannerButton.type = 'submit';
+            submitBtn.type = 'submit';
         }
     } else {
         console.warn("No se encontró el formulario createBannerForm");
@@ -94,14 +99,16 @@ function setupEventListeners() {
 // Reset the banner form to its initial state
 function resetBannerForm() {
     console.log("Reseteando formulario");
-    if (createBannerForm) {
-        createBannerForm.reset();
+    const form = document.getElementById('createBannerForm');
+    if (form) {
+        form.reset();
         
         // Reset button text and mode
-        if (submitBannerButton) {
-            submitBannerButton.textContent = 'Crear Banner';
-            submitBannerButton.dataset.editMode = 'false';
-            delete submitBannerButton.dataset.bannerId;
+        const submitBtn = document.getElementById('submitBannerButton');
+        if (submitBtn) {
+            submitBtn.textContent = 'Crear Banner';
+            submitBtn.dataset.editMode = 'false';
+            delete submitBtn.dataset.bannerId;
         }
         
         // Reset form title
@@ -110,7 +117,7 @@ function resetBannerForm() {
         }
         
         // Clear image preview
-        const previews = createBannerForm.querySelectorAll('.image-preview');
+        const previews = form.querySelectorAll('.image-preview');
         previews.forEach(preview => preview.remove());
     } else {
         console.warn("No se pudo resetear el formulario porque no existe");
@@ -189,7 +196,6 @@ function handleBannerImagePreview(event) {
 // Handle banner form submission
 async function handleBannerFormSubmit(event) {
     event.preventDefault();
-    
     console.log("Manejando envío de formulario de banner");
     
     // Get form data
@@ -210,7 +216,10 @@ async function handleBannerFormSubmit(event) {
     
     // Verificar que la imagen sea válida
     const imageFile = bannerImagen && bannerImagen.files.length > 0 ? bannerImagen.files[0] : null;
-    if (!imageFile && submitBannerButton.dataset.editMode !== 'true') {
+    const submitBtn = document.getElementById('submitBannerButton');
+    const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
+    
+    if (!imageFile && !isEditMode) {
         showNotification("Debes seleccionar una imagen para el banner", "error");
         return;
     }
@@ -221,15 +230,16 @@ async function handleBannerFormSubmit(event) {
     }
     
     // Check if we're in edit mode
-    const isEditMode = submitBannerButton.dataset.editMode === 'true';
-    const bannerId = submitBannerButton.dataset.bannerId;
+    const bannerId = submitBtn ? submitBtn.dataset.bannerId : null;
     
     console.log("Modo:", isEditMode ? "Edición" : "Creación", "ID:", bannerId);
     
     // Show loading state
-    submitBannerButton.disabled = true;
-    const originalButtonText = submitBannerButton.textContent;
-    submitBannerButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        const originalButtonText = submitBtn.textContent;
+        submitBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+    }
     
     try {
         // Prepare banner data
@@ -269,8 +279,11 @@ async function handleBannerFormSubmit(event) {
         showNotification(error.message || "Error al procesar el banner", "error");
     } finally {
         // Restore button
-        submitBannerButton.disabled = false;
-        submitBannerButton.textContent = isEditMode ? 'Actualizar Banner' : 'Crear Banner';
+        const submitButton = document.getElementById('submitBannerButton');
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = isEditMode ? 'Actualizar Banner' : 'Crear Banner';
+        }
     }
 }
 
@@ -424,7 +437,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
 }
 
 // Load and display banners
-export async function loadBanners() {
+async function loadBanners() {
     try {
         if (!bannersContainer) {
             console.log("No se encontró el contenedor de banners");
@@ -682,11 +695,14 @@ async function loadBannerForEdit(bannerId) {
         }
         
         // Update form title and button
-        if (bannerFormTitle) bannerFormTitle.textContent = 'Editar Banner';
-        if (submitBannerButton) {
-            submitBannerButton.textContent = 'Actualizar Banner';
-            submitBannerButton.dataset.editMode = 'true';
-            submitBannerButton.dataset.bannerId = bannerId;
+        const formTitleEl = document.getElementById('bannerFormTitle');
+        if (formTitleEl) formTitleEl.textContent = 'Editar Banner';
+        
+        const submitBtn = document.getElementById('submitBannerButton');
+        if (submitBtn) {
+            submitBtn.textContent = 'Actualizar Banner';
+            submitBtn.dataset.editMode = 'true';
+            submitBtn.dataset.bannerId = bannerId;
         }
         
         // Show form
@@ -761,11 +777,10 @@ async function deleteBanner(bannerId) {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initBannersManagement);
-
-// Export functions
+// Exportar solo una vez
 export {
-    loadBanners,
-    initBannersManagement
+    loadBanners
 };
+
+// Inicializar cuando DOM esté listo
+document.addEventListener('DOMContentLoaded', initBannersManagement);
