@@ -32,24 +32,58 @@ export async function createTournament(tournamentData, imageFile) {
       throw new Error("Solo el host puede crear torneos");
     }
     
-    // Si hay una imagen, subirla a Storage
-    let imageUrl = null;
-    if (imageFile) {
-      const storageRef = ref(storage, `events/${Date.now()}_${imageFile.name}`);
-      await uploadBytes(storageRef, imageFile);
-      imageUrl = await getDownloadURL(storageRef);
-    }
-    
-    // Añadir torneo a Firestore
-    const tournamentRef = await addDoc(collection(db, "torneos"), {
+    // Preparar datos del torneo
+    const tournamentInfo = {
       ...tournamentData,
-      imageUrl: imageUrl,
       createdBy: user.uid,
       createdAt: new Date(),
-      participants: []
-    });
+      participants: [],
+      imageUrl: null
+    };
     
-    return { id: tournamentRef.id };
+    // Añadir torneo a Firestore primero sin imagen
+    const tournamentRef = await addDoc(collection(db, "torneos"), tournamentInfo);
+    
+    // Si hay una imagen, subirla a Storage
+    if (imageFile) {
+      try {
+        // Sanitizar nombre de archivo
+        const fileName = `events/${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const storageRef = ref(storage, fileName);
+        
+        // Crear blob para evitar problemas de CORS
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: imageFile.type });
+        
+        // Subir a Storage
+        await uploadBytes(storageRef, blob);
+        const imageUrl = await getDownloadURL(storageRef);
+        
+        // Actualizar documento con URL de imagen
+        await updateDoc(doc(db, "torneos", tournamentRef.id), {
+          imageUrl: imageUrl
+        });
+        
+        return { 
+          id: tournamentRef.id,
+          imageUrl: imageUrl,
+          success: true
+        };
+      } catch (imgError) {
+        console.error("Error al subir imagen:", imgError);
+        // Devolver éxito aunque falle la imagen
+        return { 
+          id: tournamentRef.id,
+          success: true,
+          imageWarning: true
+        };
+      }
+    }
+    
+    return { 
+      id: tournamentRef.id,
+      success: true
+    };
   } catch (error) {
     console.error("Error al crear torneo:", error);
     throw error;
