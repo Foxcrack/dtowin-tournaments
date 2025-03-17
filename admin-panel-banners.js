@@ -1,4 +1,4 @@
-// admin-panel-banners.js - Script para la gestión de banners
+// admin-panel-banners.js - Script for banner management in Dtowin admin panel
 import { auth, isUserHost, db, storage } from './firebase.js';
 import { showNotification } from './admin-panel.js';
 import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
@@ -16,13 +16,23 @@ const submitBannerButton = document.getElementById('submitBannerButton');
 // Initialize banner management
 export async function initBannersManagement() {
     try {
-        console.log("Inicializando gestión de banners...");
+        console.log("Initializing banner management...");
+        
+        // Check if user is authenticated
+        if (!auth.currentUser) {
+            console.error("No authenticated user");
+            window.location.href = "index.html";
+            return;
+        }
         
         // Check if user is host/admin
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
-            showNotification("No tienes permisos para gestionar banners", "error");
+            showNotification("You don't have permissions to manage banners", "error");
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 3000);
             return;
         }
         
@@ -33,72 +43,62 @@ export async function initBannersManagement() {
         await loadBanners();
         
     } catch (error) {
-        console.error("Error al inicializar gestión de banners:", error);
-        showNotification("Error al cargar la gestión de banners. Inténtalo de nuevo.", "error");
+        console.error("Error initializing banner management:", error);
+        showNotification("Error loading banner management. Please try again.", "error");
     }
 }
 
 // Set up event listeners
 function setupEventListeners() {
-    console.log("Configurando event listeners...");
+    console.log("Setting up event listeners...");
     
-    // Create banner button in header
+    // Create banner button
     if (headerCreateBannerBtn) {
-        console.log("Configurando botón 'Crear Banner'");
         headerCreateBannerBtn.addEventListener('click', () => {
-            console.log("Botón headerCreateBannerBtn clickeado");
             resetBannerForm();
             showBannerForm();
         });
     } else {
-        console.warn("No se encontró el botón 'Crear Banner'");
+        console.warn("Create Banner button not found");
     }
     
     // Cancel button
     if (cancelBannerButton) {
-        console.log("Configurando botón Cancelar");
         cancelBannerButton.addEventListener('click', hideBannerForm);
     } else {
-        console.warn("No se encontró el botón Cancelar");
+        console.warn("Cancel button not found");
     }
     
-    // Form submission
+    // Form submission - Using the clean clone technique to prevent duplicate event listeners
     if (createBannerForm) {
-        console.log("Configurando evento submit del formulario");
-        
-        // Eliminar event listeners anteriores para evitar duplicados
         const clonedForm = createBannerForm.cloneNode(true);
         createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
         
-        // Actualizar referencia al formulario clonado
+        // Update reference to the cloned form
         const updatedForm = document.getElementById('createBannerForm');
-        
-        // Añadir event listener
         updatedForm.addEventListener('submit', handleBannerFormSubmit);
         
-        // Asegurarse de que el botón de submit tiene type="submit"
+        // Ensure submit button has type="submit"
         const submitBtn = document.getElementById('submitBannerButton');
         if (submitBtn && submitBtn.type !== 'submit') {
-            console.log("Corrigiendo tipo de botón submit");
             submitBtn.type = 'submit';
         }
     } else {
-        console.warn("No se encontró el formulario createBannerForm");
+        console.warn("Banner form not found");
     }
     
     // Image preview
     const bannerImagen = document.getElementById('bannerImagen');
     if (bannerImagen) {
-        console.log("Configurando preview de imagen");
         bannerImagen.addEventListener('change', handleBannerImagePreview);
     } else {
-        console.warn("No se encontró el input de imagen");
+        console.warn("Banner image input not found");
     }
 }
 
 // Reset the banner form to its initial state
 function resetBannerForm() {
-    console.log("Reseteando formulario");
+    console.log("Resetting form");
     const form = document.getElementById('createBannerForm');
     if (form) {
         form.reset();
@@ -106,43 +106,43 @@ function resetBannerForm() {
         // Reset button text and mode
         const submitBtn = document.getElementById('submitBannerButton');
         if (submitBtn) {
-            submitBtn.textContent = 'Crear Banner';
+            submitBtn.textContent = 'Create Banner';
             submitBtn.dataset.editMode = 'false';
             delete submitBtn.dataset.bannerId;
         }
         
         // Reset form title
         if (bannerFormTitle) {
-            bannerFormTitle.textContent = 'Crear Nuevo Banner';
+            bannerFormTitle.textContent = 'Create New Banner';
         }
         
         // Clear image preview
         const previews = form.querySelectorAll('.image-preview');
         previews.forEach(preview => preview.remove());
     } else {
-        console.warn("No se pudo resetear el formulario porque no existe");
+        console.warn("Could not reset form because it doesn't exist");
     }
 }
 
 // Show the banner form
 function showBannerForm() {
-    console.log("Mostrando formulario");
+    console.log("Showing form");
     if (bannerFormSection) {
         bannerFormSection.classList.remove('hidden');
         // Scroll to form
         bannerFormSection.scrollIntoView({ behavior: 'smooth' });
     } else {
-        console.warn("No se encontró la sección del formulario");
+        console.warn("Form section not found");
     }
 }
 
 // Hide the banner form
 function hideBannerForm() {
-    console.log("Ocultando formulario");
+    console.log("Hiding form");
     if (bannerFormSection) {
         bannerFormSection.classList.add('hidden');
     } else {
-        console.warn("No se encontró la sección del formulario para ocultar");
+        console.warn("Form section not found");
     }
 }
 
@@ -151,19 +151,19 @@ function handleBannerImagePreview(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    console.log("Procesando vista previa de imagen:", file.name);
+    console.log("Processing image preview:", file.name);
     
     // Check if it's an image
     if (!file.type.startsWith('image/')) {
-        showNotification("El archivo debe ser una imagen", "error");
+        showNotification("File must be an image", "error");
         event.target.value = '';
         return;
     }
     
-    // Verificar tamaño de archivo (máximo 5MB)
+    // Check file size (max 5MB)
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_SIZE) {
-        showNotification("La imagen es demasiado grande. El tamaño máximo es 5MB", "warning");
+        showNotification("Image is too large. Maximum size is 5MB", "warning");
     }
     
     // Remove any existing preview
@@ -179,15 +179,15 @@ function handleBannerImagePreview(event) {
         const previewDiv = document.createElement('div');
         previewDiv.className = 'image-preview mt-2';
         previewDiv.innerHTML = `
-            <p class="text-sm text-gray-600">Vista previa:</p>
-            <img src="${e.target.result}" alt="Vista previa" class="h-32 object-cover rounded mt-1">
+            <p class="text-sm text-gray-600">Preview:</p>
+            <img src="${e.target.result}" alt="Preview" class="h-32 object-cover rounded mt-1">
             <p class="text-xs text-gray-500">${file.name} (${(file.size / 1024).toFixed(1)} KB)</p>
         `;
         container.appendChild(previewDiv);
     };
     
     reader.onerror = function() {
-        showNotification("Error al generar la vista previa", "error");
+        showNotification("Error generating preview", "error");
     };
     
     reader.readAsDataURL(file);
@@ -196,7 +196,7 @@ function handleBannerImagePreview(event) {
 // Handle banner form submission
 async function handleBannerFormSubmit(event) {
     event.preventDefault();
-    console.log("Manejando envío de formulario de banner");
+    console.log("Handling banner form submission");
     
     // Get form data
     const nombre = document.getElementById('bannerNombre').value.trim();
@@ -206,39 +206,39 @@ async function handleBannerFormSubmit(event) {
     const visible = document.getElementById('bannerVisible').checked;
     const bannerImagen = document.getElementById('bannerImagen');
     
-    console.log("Datos del formulario:", { nombre, url, orden, visible });
+    console.log("Form data:", { nombre, url, orden, visible });
     
     // Form validation
     if (!nombre) {
-        showNotification("El nombre del banner es obligatorio", "error");
+        showNotification("Banner name is required", "error");
         return;
     }
     
-    // Verificar que la imagen sea válida
+    // Verify the image is valid
     const imageFile = bannerImagen && bannerImagen.files.length > 0 ? bannerImagen.files[0] : null;
     const submitBtn = document.getElementById('submitBannerButton');
     const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
     
     if (!imageFile && !isEditMode) {
-        showNotification("Debes seleccionar una imagen para el banner", "error");
+        showNotification("You must select an image for the banner", "error");
         return;
     }
     
     if (imageFile && !imageFile.type.startsWith('image/')) {
-        showNotification("El archivo debe ser una imagen válida", "error");
+        showNotification("File must be a valid image", "error");
         return;
     }
     
     // Check if we're in edit mode
     const bannerId = submitBtn ? submitBtn.dataset.bannerId : null;
     
-    console.log("Modo:", isEditMode ? "Edición" : "Creación", "ID:", bannerId);
+    console.log("Mode:", isEditMode ? "Edit" : "Create", "ID:", bannerId);
     
     // Show loading state
     if (submitBtn) {
         submitBtn.disabled = true;
         const originalButtonText = submitBtn.textContent;
-        submitBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+        submitBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Processing...';
     }
     
     try {
@@ -255,17 +255,17 @@ async function handleBannerFormSubmit(event) {
         
         if (isEditMode && bannerId) {
             // Update existing banner
-            console.log("Actualizando banner existente:", bannerId);
+            console.log("Updating existing banner:", bannerId);
             result = await updateBanner(bannerId, bannerData, imageFile);
-            showNotification("Banner actualizado correctamente", "success");
+            showNotification("Banner updated successfully", "success");
         } else {
             // Create new banner
-            console.log("Creando nuevo banner");
+            console.log("Creating new banner");
             result = await createBanner(bannerData, imageFile);
-            showNotification("Banner creado correctamente", "success");
+            showNotification("Banner created successfully", "success");
         }
         
-        console.log("Operación completada:", result);
+        console.log("Operation completed:", result);
         
         // Reset form and hide
         resetBannerForm();
@@ -275,14 +275,14 @@ async function handleBannerFormSubmit(event) {
         await loadBanners();
         
     } catch (error) {
-        console.error("Error al procesar banner:", error);
-        showNotification(error.message || "Error al procesar el banner", "error");
+        console.error("Error processing banner:", error);
+        showNotification(error.message || "Error processing banner", "error");
     } finally {
         // Restore button
         const submitButton = document.getElementById('submitBannerButton');
         if (submitButton) {
             submitButton.disabled = false;
-            submitButton.textContent = isEditMode ? 'Actualizar Banner' : 'Crear Banner';
+            submitButton.textContent = isEditMode ? 'Update Banner' : 'Create Banner';
         }
     }
 }
@@ -290,27 +290,27 @@ async function handleBannerFormSubmit(event) {
 // Create a new banner
 async function createBanner(bannerData, imageFile) {
     try {
-        console.log("Creando banner con datos:", bannerData);
+        console.log("Creating banner with data:", bannerData);
         
         const user = auth.currentUser;
         
         if (!user) {
-            throw new Error("Debes iniciar sesión para crear un banner");
+            throw new Error("You must be logged in to create a banner");
         }
         
         // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
-            throw new Error("Solo el host puede crear banners");
+            throw new Error("Only the host can create banners");
         }
         
         if (!imageFile) {
-            throw new Error("La imagen es obligatoria para crear un banner");
+            throw new Error("Image is required to create a banner");
         }
         
         // Upload image first
-        console.log("Subiendo imagen a Storage...");
+        console.log("Uploading image to Storage...");
         const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const storageRef = ref(storage, `banners/${fileName}`);
         
@@ -322,7 +322,7 @@ async function createBanner(bannerData, imageFile) {
         await uploadBytes(storageRef, blob);
         const imageUrl = await getDownloadURL(storageRef);
         
-        console.log("Imagen subida, URL:", imageUrl);
+        console.log("Image uploaded, URL:", imageUrl);
         
         // Add banner to Firestore
         const bannerWithMetadata = {
@@ -333,7 +333,7 @@ async function createBanner(bannerData, imageFile) {
             updatedAt: serverTimestamp()
         };
         
-        console.log("Guardando banner en Firestore...");
+        console.log("Saving banner to Firestore...");
         const bannerRef = await addDoc(collection(db, "banners"), bannerWithMetadata);
         
         return {
@@ -341,7 +341,7 @@ async function createBanner(bannerData, imageFile) {
             success: true
         };
     } catch (error) {
-        console.error("Error al crear banner:", error);
+        console.error("Error creating banner:", error);
         throw error;
     }
 }
@@ -349,19 +349,19 @@ async function createBanner(bannerData, imageFile) {
 // Update an existing banner
 async function updateBanner(bannerId, bannerData, imageFile) {
     try {
-        console.log("Actualizando banner:", bannerId, "con datos:", bannerData);
+        console.log("Updating banner:", bannerId, "with data:", bannerData);
         
         const user = auth.currentUser;
         
         if (!user) {
-            throw new Error("Debes iniciar sesión para actualizar un banner");
+            throw new Error("You must be logged in to update a banner");
         }
         
         // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
-            throw new Error("Solo el host puede actualizar banners");
+            throw new Error("Only the host can update banners");
         }
         
         // Get banner reference
@@ -369,45 +369,45 @@ async function updateBanner(bannerId, bannerData, imageFile) {
         const bannerSnap = await getDoc(bannerRef);
         
         if (!bannerSnap.exists()) {
-            throw new Error("El banner no existe");
+            throw new Error("Banner doesn't exist");
         }
         
         const currentBanner = bannerSnap.data();
         
-        // Preparar datos para actualización
+        // Prepare data for update
         const updateData = {
             ...bannerData,
             updatedAt: serverTimestamp(),
             updatedBy: user.uid
         };
         
-        // Mantener la URL de imagen actual si no se proporciona una nueva
+        // Keep current image URL if no new image is provided
         if (!imageFile) {
             updateData.imageUrl = currentBanner.imageUrl;
         } else {
-            // Subir nueva imagen
-            console.log("Subiendo nueva imagen...");
+            // Upload new image
+            console.log("Uploading new image...");
             
-            // Eliminar imagen anterior si existe
+            // Delete previous image if exists
             if (currentBanner.imageUrl) {
                 try {
-                    console.log("Eliminando imagen anterior...");
+                    console.log("Deleting previous image...");
                     const urlPath = currentBanner.imageUrl.split('?')[0];
                     const fileName = urlPath.split('/').pop();
                     if (fileName) {
                         const storagePath = `banners/${fileName}`;
                         const oldImageRef = ref(storage, storagePath);
                         await deleteObject(oldImageRef).catch(error => {
-                            console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
+                            console.warn("Error deleting previous image, it may not exist anymore:", error);
                         });
                     }
                 } catch (error) {
-                    console.warn("Error al procesar la URL de la imagen anterior:", error);
-                    // Continuar con la actualización aunque falle la eliminación
+                    console.warn("Error processing previous image URL:", error);
+                    // Continue with update even if deletion fails
                 }
             }
             
-            // Subir nueva imagen
+            // Upload new image
             const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
             const storageRef = ref(storage, `banners/${fileName}`);
             
@@ -420,7 +420,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             const imageUrl = await getDownloadURL(storageRef);
             
             updateData.imageUrl = imageUrl;
-            console.log("Nueva imagen subida, URL:", imageUrl);
+            console.log("New image uploaded, URL:", imageUrl);
         }
         
         // Update document
@@ -431,7 +431,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             success: true
         };
     } catch (error) {
-        console.error("Error al actualizar banner:", error);
+        console.error("Error updating banner:", error);
         throw error;
     }
 }
@@ -440,11 +440,11 @@ async function updateBanner(bannerId, bannerData, imageFile) {
 async function loadBanners() {
     try {
         if (!bannersContainer) {
-            console.log("No se encontró el contenedor de banners");
+            console.log("Banners container not found");
             return;
         }
         
-        console.log("Cargando banners...");
+        console.log("Loading banners...");
         
         // Show loading spinner
         bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
@@ -456,12 +456,12 @@ async function loadBanners() {
         
         // Check if we have banners
         if (bannersSnapshot.empty) {
-            console.log("No hay banners disponibles");
-            bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
+            console.log("No banners available");
+            bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No banners available. Create your first banner.</p>';
             return;
         }
         
-        console.log(`Encontrados ${bannersSnapshot.size} banners`);
+        console.log(`Found ${bannersSnapshot.size} banners`);
         
         // Convert to array
         const banners = [];
@@ -476,44 +476,44 @@ async function loadBanners() {
         let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
         
         banners.forEach(banner => {
-            // Calcular fecha
+            // Calculate date
             const fecha = banner.createdAt ? new Date(banner.createdAt.seconds * 1000) : new Date();
-            const fechaFormateada = fecha.toLocaleDateString('es-ES');
+            const fechaFormateada = fecha.toLocaleDateString();
             
-            // Estado (visible/oculto)
+            // Status (visible/hidden)
             const estado = banner.visible !== false ? 
                 '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
-                '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
+                '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Hidden</span>';
             
             html += `
                 <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
                     <div class="relative">
                         <img src="${banner.imageUrl}" alt="${banner.nombre}" class="w-full h-48 object-cover">
                         <div class="absolute top-2 right-2 flex space-x-1">
-                            <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
+                            <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Order: ${banner.orden}</span>
                             ${estado}
                         </div>
                     </div>
                     <div class="p-4">
                         <h3 class="font-bold text-lg mb-1">${banner.nombre}</h3>
-                        <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'Sin descripción'}</p>
+                        <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'No description'}</p>
                         
                         <div class="flex justify-between items-center text-sm text-gray-500 mt-3">
                             <div class="truncate mr-2">
                                 <span class="text-blue-500 font-medium">URL:</span> 
                                 <a href="${banner.url}" target="_blank" class="hover:underline truncate">${banner.url || '#'}</a>
                             </div>
-                            <span>Creado: ${fechaFormateada}</span>
+                            <span>Created: ${fechaFormateada}</span>
                         </div>
                         
                         <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
-                            <button class="text-blue-500 hover:text-blue-700 toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
+                            <button class="text-blue-500 hover:text-blue-700 toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Hide banner' : 'Show banner'}">
                                 <i class="fas fa-eye${banner.visible !== false ? '' : '-slash'}"></i>
                             </button>
-                            <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Editar banner">
+                            <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Edit banner">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Eliminar banner">
+                            <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Delete banner">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -529,11 +529,11 @@ async function loadBanners() {
         // Add event listeners to action buttons
         addBannerEventListeners();
         
-        console.log("Banners cargados correctamente");
+        console.log("Banners loaded successfully");
         
     } catch (error) {
-        console.error("Error al cargar banners:", error);
-        bannersContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar banners. Inténtalo de nuevo.</p>';
+        console.error("Error loading banners:", error);
+        bannersContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error loading banners. Please try again.</p>';
     }
 }
 
@@ -551,7 +551,7 @@ function addBannerEventListeners() {
                 const bannerSnap = await getDoc(bannerRef);
                 
                 if (!bannerSnap.exists()) {
-                    showNotification("No se encontró el banner", "error");
+                    showNotification("Banner not found", "error");
                     return;
                 }
                 
@@ -573,32 +573,32 @@ function addBannerEventListeners() {
                 const icon = this.querySelector('i');
                 if (newVisibility) {
                     icon.className = 'fas fa-eye';
-                    // Actualizar etiqueta de estado
-                    const estadoLabel = bannerCard.querySelector('.absolute > span:last-child');
-                    if (estadoLabel) {
-                        estadoLabel.className = 'bg-green-100 text-green-600 py-1 px-2 rounded text-xs';
-                        estadoLabel.textContent = 'Visible';
+                    // Update status label
+                    const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
+                    if (statusLabel) {
+                        statusLabel.className = 'bg-green-100 text-green-600 py-1 px-2 rounded text-xs';
+                        statusLabel.textContent = 'Visible';
                     }
                 } else {
                     icon.className = 'fas fa-eye-slash';
-                    // Actualizar etiqueta de estado
-                    const estadoLabel = bannerCard.querySelector('.absolute > span:last-child');
-                    if (estadoLabel) {
-                        estadoLabel.className = 'bg-red-100 text-red-600 py-1 px-2 rounded text-xs';
-                        estadoLabel.textContent = 'Oculto';
+                    // Update status label
+                    const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
+                    if (statusLabel) {
+                        statusLabel.className = 'bg-red-100 text-red-600 py-1 px-2 rounded text-xs';
+                        statusLabel.textContent = 'Hidden';
                     }
                 }
                 
-                this.title = newVisibility ? 'Ocultar banner' : 'Mostrar banner';
+                this.title = newVisibility ? 'Hide banner' : 'Show banner';
                 this.disabled = false;
                 
-                showNotification(`Banner ${newVisibility ? 'visible' : 'oculto'} correctamente`, "success");
+                showNotification(`Banner ${newVisibility ? 'shown' : 'hidden'} successfully`, "success");
                 
             } catch (error) {
-                console.error("Error al cambiar visibilidad:", error);
-                showNotification("Error al cambiar visibilidad del banner", "error");
+                console.error("Error changing visibility:", error);
+                showNotification("Error changing banner visibility", "error");
                 
-                // Restaurar botón
+                // Restore button
                 this.innerHTML = originalHtml;
                 this.disabled = false;
             }
@@ -613,8 +613,8 @@ function addBannerEventListeners() {
             try {
                 await loadBannerForEdit(bannerId);
             } catch (error) {
-                console.error("Error al cargar banner para editar:", error);
-                showNotification("Error al cargar banner para editar", "error");
+                console.error("Error loading banner for edit:", error);
+                showNotification("Error loading banner for edit", "error");
             }
         });
     });
@@ -626,7 +626,7 @@ function addBannerEventListeners() {
             const bannerId = bannerCard.dataset.bannerId;
             const bannerName = bannerCard.querySelector('h3').textContent;
             
-            if (confirm(`¿Estás seguro que deseas eliminar el banner "${bannerName}"?`)) {
+            if (confirm(`Are you sure you want to delete the banner "${bannerName}"?`)) {
                 try {
                     // Show loading
                     const originalHtml = this.innerHTML;
@@ -638,16 +638,16 @@ function addBannerEventListeners() {
                     // Remove card from UI
                     bannerCard.remove();
                     
-                    showNotification("Banner eliminado correctamente", "success");
+                    showNotification("Banner deleted successfully", "success");
                     
                     // If no banners left, show message
                     if (document.querySelectorAll('[data-banner-id]').length === 0) {
-                        bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
+                        bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No banners available. Create your first banner.</p>';
                     }
                     
                 } catch (error) {
-                    console.error("Error al eliminar banner:", error);
-                    showNotification(error.message || "Error al eliminar banner", "error");
+                    console.error("Error deleting banner:", error);
+                    showNotification(error.message || "Error deleting banner", "error");
                     
                     // Restore button
                     this.innerHTML = originalHtml;
@@ -661,18 +661,18 @@ function addBannerEventListeners() {
 // Load banner data for editing
 async function loadBannerForEdit(bannerId) {
     try {
-        console.log("Cargando banner para editar:", bannerId);
+        console.log("Loading banner for edit:", bannerId);
         
         // Get banner data
         const bannerRef = doc(db, "banners", bannerId);
         const bannerSnap = await getDoc(bannerRef);
         
         if (!bannerSnap.exists()) {
-            throw new Error("No se encontró el banner para editar");
+            throw new Error("Banner not found for editing");
         }
         
         const banner = bannerSnap.data();
-        console.log("Datos del banner:", banner);
+        console.log("Banner data:", banner);
         
         // Fill form with banner data
         document.getElementById('bannerNombre').value = banner.nombre || '';
@@ -687,20 +687,20 @@ async function loadBannerForEdit(bannerId) {
             const previewDiv = document.createElement('div');
             previewDiv.className = 'image-preview mt-2';
             previewDiv.innerHTML = `
-                <p class="text-sm text-gray-600">Imagen actual:</p>
-                <img src="${banner.imageUrl}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
-                <p class="text-xs text-gray-500">Cargar nueva imagen para reemplazar (opcional)</p>
+                <p class="text-sm text-gray-600">Current image:</p>
+                <img src="${banner.imageUrl}" alt="Current image" class="h-32 object-cover rounded mt-1">
+                <p class="text-xs text-gray-500">Upload new image to replace (optional)</p>
             `;
             container.appendChild(previewDiv);
         }
         
         // Update form title and button
         const formTitleEl = document.getElementById('bannerFormTitle');
-        if (formTitleEl) formTitleEl.textContent = 'Editar Banner';
+        if (formTitleEl) formTitleEl.textContent = 'Edit Banner';
         
         const submitBtn = document.getElementById('submitBannerButton');
         if (submitBtn) {
-            submitBtn.textContent = 'Actualizar Banner';
+            submitBtn.textContent = 'Update Banner';
             submitBtn.dataset.editMode = 'true';
             submitBtn.dataset.bannerId = bannerId;
         }
@@ -708,10 +708,10 @@ async function loadBannerForEdit(bannerId) {
         // Show form
         showBannerForm();
         
-        console.log("Banner cargado para edición correctamente");
+        console.log("Banner loaded for editing successfully");
         
     } catch (error) {
-        console.error("Error al cargar banner para editar:", error);
+        console.error("Error loading banner for edit:", error);
         throw error;
     }
 }
@@ -719,19 +719,19 @@ async function loadBannerForEdit(bannerId) {
 // Delete a banner
 async function deleteBanner(bannerId) {
     try {
-        console.log("Eliminando banner:", bannerId);
+        console.log("Deleting banner:", bannerId);
         
         const user = auth.currentUser;
         
         if (!user) {
-            throw new Error("Debes iniciar sesión para eliminar un banner");
+            throw new Error("You must be logged in to delete a banner");
         }
         
         // Check if user is host
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
-            throw new Error("Solo el host puede eliminar banners");
+            throw new Error("Only the host can delete banners");
         }
         
         // Get banner data for image deletion
@@ -739,7 +739,7 @@ async function deleteBanner(bannerId) {
         const bannerSnap = await getDoc(bannerRef);
         
         if (!bannerSnap.exists()) {
-            throw new Error("El banner no existe");
+            throw new Error("Banner doesn't exist");
         }
         
         const bannerData = bannerSnap.data();
@@ -747,18 +747,18 @@ async function deleteBanner(bannerId) {
         // Delete image from storage if exists
         if (bannerData.imageUrl) {
             try {
-                console.log("Eliminando imagen del banner...");
+                console.log("Deleting banner image...");
                 const urlPath = bannerData.imageUrl.split('?')[0];
                 const fileName = urlPath.split('/').pop();
                 if (fileName) {
                     const storagePath = `banners/${fileName}`;
                     const imageRef = ref(storage, storagePath);
                     await deleteObject(imageRef).catch(error => {
-                        console.warn("Error al eliminar imagen, posiblemente ya no existe:", error);
+                        console.warn("Error deleting image, it may not exist anymore:", error);
                     });
                 }
             } catch (error) {
-                console.warn("Error al eliminar imagen:", error);
+                console.warn("Error deleting image:", error);
                 // Continue with deletion anyway
             }
         }
@@ -766,21 +766,22 @@ async function deleteBanner(bannerId) {
         // Delete banner document
         await deleteDoc(bannerRef);
         
-        console.log("Banner eliminado correctamente");
+        console.log("Banner deleted successfully");
         
         return {
             success: true
         };
     } catch (error) {
-        console.error("Error al eliminar banner:", error);
+        console.error("Error deleting banner:", error);
         throw error;
     }
 }
 
-// Exportar solo una vez
-export {
-    loadBanners
-};
-
-// Inicializar cuando DOM esté listo
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', initBannersManagement);
+
+// Export functions
+export {
+    loadBanners,
+    initBannersManagement
+};
