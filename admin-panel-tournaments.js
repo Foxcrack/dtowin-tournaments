@@ -921,6 +921,14 @@ async function createTournament(tournamentData, imageFile) {
     }
 }
 
+// Verificar que la imagen sea válida
+if (imageFile && !imageFile.type.startsWith('image/')) {
+    showNotification("El archivo debe ser una imagen válida", "error");
+    submitButton.disabled = false;
+    submitButton.textContent = originalButtonText;
+    return;
+}
+
 // Esta función reemplaza a la función updateTournament existente
 async function updateTournament(tournamentId, tournamentData, imageFile) {
     try {
