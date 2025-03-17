@@ -921,7 +921,7 @@ async function createTournament(tournamentData, imageFile) {
     }
 }
 
-// Update an existing tournament
+// Esta función reemplaza a la función updateTournament existente
 async function updateTournament(tournamentId, tournamentData, imageFile) {
     try {
         const user = auth.currentUser;
@@ -947,31 +947,41 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
         
         const currentTournament = tournamentSnap.data();
         
-        // Preparar los datos iniciales para la actualización
-        // Mantener campos existentes importantes
+        // IMPORTANTE: Preparar objeto de datos sin la propiedad imageUrl inicialmente
         const updateData = {
-            ...tournamentData,
+            nombre: tournamentData.nombre,
+            descripcion: tournamentData.descripcion,
+            capacidad: tournamentData.capacidad,
+            estado: tournamentData.estado,
+            puntosPosicion: tournamentData.puntosPosicion,
             createdBy: currentTournament.createdBy,
             createdAt: currentTournament.createdAt,
             participants: currentTournament.participants || [],
             visible: currentTournament.visible !== false,
             updatedAt: serverTimestamp(),
-            updatedBy: user.uid,
+            updatedBy: user.uid
         };
         
-        // Mantener la URL de la imagen existente si no se proporciona una nueva
-        if (!imageFile) {
-            updateData.imageUrl = currentTournament.imageUrl || null;
+        // Añadir fecha y hora si existen
+        if (tournamentData.fecha) {
+            updateData.fecha = tournamentData.fecha;
+        }
+        if (tournamentData.hora) {
+            updateData.hora = tournamentData.hora;
         }
         
-        // Si hay una nueva imagen, procesarla primero antes de actualizar el documento
+        // Definir explícitamente la URL de la imagen (nunca debe ser undefined)
+        // IMPORTANTE: Si no hay nueva imagen, mantener la URL existente o null
+        updateData.imageUrl = currentTournament.imageUrl || null;
+        
+        // Si hay una nueva imagen, procesarla
         if (imageFile) {
-            // Verificar que sea una imagen
-            if (!imageFile.type.startsWith('image/')) {
-                throw new Error("El archivo debe ser una imagen");
-            }
-            
             try {
+                // Verificar que sea una imagen
+                if (!imageFile.type.startsWith('image/')) {
+                    throw new Error("El archivo debe ser una imagen");
+                }
+                
                 // Eliminar imagen anterior si existe
                 if (currentTournament.imageUrl) {
                     try {
@@ -1002,19 +1012,32 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
                 await uploadBytes(storageRef, blob);
                 const imageUrl = await getDownloadURL(storageRef);
                 
-                // Añadir URL de imagen a los datos de actualización
+                // Actualizar URL de imagen en los datos
                 updateData.imageUrl = imageUrl;
                 
+                console.log("Nueva imagen subida exitosamente:", imageUrl);
             } catch (imgError) {
                 console.error("Error al procesar la imagen:", imgError);
-                // Si hay un error al subir la imagen, mantener la URL original
-                updateData.imageUrl = currentTournament.imageUrl || null;
-                throw new Error("Error al subir la imagen: " + imgError.message);
+                // NO CAMBIAR la URL de imagen si hay error (mantener la original)
+                // updateData.imageUrl ya está establecido correctamente arriba
+                console.log("Manteniendo URL de imagen original:", updateData.imageUrl);
             }
+        } else {
+            console.log("No hay nueva imagen, manteniendo URL existente:", updateData.imageUrl);
         }
         
-        // Actualizar documento con todos los datos, incluida la URL de la imagen (nueva o existente)
+        // Verificar que imageUrl no sea undefined antes de actualizar
+        if (updateData.imageUrl === undefined) {
+            console.warn("imageUrl es undefined, estableciendo a null");
+            updateData.imageUrl = null;
+        }
+        
+        console.log("Actualizando documento con datos:", JSON.stringify(updateData));
+        
+        // Actualizar documento con todos los datos
         await updateDoc(tournamentRef, updateData);
+        
+        console.log("Torneo actualizado correctamente");
         
         return {
             id: tournamentId,
