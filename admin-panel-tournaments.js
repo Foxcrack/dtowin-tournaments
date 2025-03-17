@@ -127,6 +127,13 @@ function handleImagePreview(event) {
         return;
     }
     
+    // Verificar tamaño de archivo (opcional, máximo 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+        showNotification("La imagen es demasiado grande. El tamaño máximo es 2MB", "warning");
+        // Continuar de todos modos, pero advertir al usuario
+    }
+    
     // Remove any existing preview
     const container = event.target.parentElement;
     const existingPreview = container.querySelector('.image-preview');
@@ -142,9 +149,15 @@ function handleImagePreview(event) {
         previewDiv.innerHTML = `
             <p class="text-sm text-gray-600">Vista previa:</p>
             <img src="${e.target.result}" alt="Vista previa" class="h-32 object-cover rounded mt-1">
+            <p class="text-xs text-gray-500">${file.name} (${(file.size / 1024).toFixed(1)} KB)</p>
         `;
         container.appendChild(previewDiv);
     };
+    
+    reader.onerror = function() {
+        showNotification("Error al generar la vista previa", "error");
+    };
+    
     reader.readAsDataURL(file);
 }
 
@@ -531,6 +544,7 @@ async function loadTournamentForEdit(tournamentId) {
             previewDiv.innerHTML = `
                 <p class="text-sm text-gray-600">Imagen actual:</p>
                 <img src="${tournament.imageUrl}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
+                <p class="text-xs text-gray-500">Cargar nueva imagen para reemplazar</p>
             `;
             container.appendChild(previewDiv);
         }
@@ -846,33 +860,59 @@ async function createTournament(tournamentData, imageFile) {
             throw new Error("Solo el host puede crear torneos");
         }
         
-        // Upload image if provided
-        let imageUrl = null;
-        if (imageFile) {
-            // Verify it's an image
-            if (!imageFile.type.startsWith('image/')) {
-                throw new Error("El archivo debe ser una imagen");
-            }
-            
-            // Upload to Firebase Storage
-            const storageRef = ref(storage, `torneos/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(storageRef, imageFile);
-            imageUrl = await getDownloadURL(storageRef);
-        }
-        
         // Add additional fields
-        tournamentData.imageUrl = imageUrl;
         tournamentData.createdBy = user.uid;
         tournamentData.createdAt = serverTimestamp();
         tournamentData.updatedAt = serverTimestamp();
         tournamentData.participants = [];
         tournamentData.visible = true; // Visible by default
+        tournamentData.imageUrl = null; // Initialize as null
         
-        // Add tournament to Firestore
+        // Add tournament to Firestore first (without image)
         const tournamentRef = await addDoc(collection(db, "torneos"), tournamentData);
+        const tournamentId = tournamentRef.id;
+        
+        // Upload image if provided
+        if (imageFile) {
+            try {
+                // Verify it's an image
+                if (!imageFile.type.startsWith('image/')) {
+                    throw new Error("El archivo debe ser una imagen");
+                }
+                
+                // Sanitize filename and create a unique name
+                const fileName = `torneos_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                const storageRef = ref(storage, `torneos/${fileName}`);
+                
+                // Create blob to avoid CORS issues
+                const arrayBuffer = await imageFile.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: imageFile.type });
+                
+                // Upload to Firebase Storage
+                await uploadBytes(storageRef, blob);
+                const imageUrl = await getDownloadURL(storageRef);
+                
+                // Update the document with the image URL
+                await updateDoc(tournamentRef, { imageUrl: imageUrl });
+                
+                return {
+                    id: tournamentId,
+                    success: true,
+                    imageUrl: imageUrl
+                };
+            } catch (imgError) {
+                console.error("Error al subir imagen:", imgError);
+                // Return success even if image upload fails
+                return {
+                    id: tournamentId,
+                    success: true,
+                    imageWarning: true
+                };
+            }
+        }
         
         return {
-            id: tournamentRef.id,
+            id: tournamentId,
             success: true
         };
     } catch (error) {
@@ -907,50 +947,79 @@ async function updateTournament(tournamentId, tournamentData, imageFile) {
         
         const currentTournament = tournamentSnap.data();
         
-        // Upload new image if provided
+        // Preparar los datos iniciales para la actualización
+        // Mantener campos existentes importantes
+        const updateData = {
+            ...tournamentData,
+            createdBy: currentTournament.createdBy,
+            createdAt: currentTournament.createdAt,
+            participants: currentTournament.participants || [],
+            visible: currentTournament.visible !== false,
+            updatedAt: serverTimestamp(),
+            updatedBy: user.uid,
+        };
+        
+        // Mantener la URL de la imagen existente si no se proporciona una nueva
+        if (!imageFile) {
+            updateData.imageUrl = currentTournament.imageUrl || null;
+        }
+        
+        // Si hay una nueva imagen, procesarla primero antes de actualizar el documento
         if (imageFile) {
-            // Verify it's an image
+            // Verificar que sea una imagen
             if (!imageFile.type.startsWith('image/')) {
                 throw new Error("El archivo debe ser una imagen");
             }
             
-            // Delete old image if exists
-            if (currentTournament.imageUrl) {
-                try {
-                    const urlPath = currentTournament.imageUrl.split('?')[0];
-                    const fileName = urlPath.split('/').pop();
-                    const storagePath = `torneos/${fileName}`;
-                    const oldImageRef = ref(storage, storagePath);
-                    await deleteObject(oldImageRef);
-                } catch (error) {
-                    console.warn("Error al eliminar imagen anterior:", error);
-                    // Continue anyway
+            try {
+                // Eliminar imagen anterior si existe
+                if (currentTournament.imageUrl) {
+                    try {
+                        const urlPath = currentTournament.imageUrl.split('?')[0];
+                        const fileName = urlPath.split('/').pop();
+                        if (fileName) {
+                            const storagePath = `torneos/${fileName}`;
+                            const oldImageRef = ref(storage, storagePath);
+                            await deleteObject(oldImageRef).catch(error => {
+                                console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
+                            });
+                        }
+                    } catch (error) {
+                        console.warn("Error al procesar la URL de la imagen anterior:", error);
+                        // Continuar con la actualización aunque falle la eliminación
+                    }
                 }
+                
+                // Subir nueva imagen
+                const fileName = `torneos_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                const storageRef = ref(storage, `torneos/${fileName}`);
+                
+                // Crear un blob para evitar problemas CORS
+                const arrayBuffer = await imageFile.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: imageFile.type });
+                
+                // Subir imagen
+                await uploadBytes(storageRef, blob);
+                const imageUrl = await getDownloadURL(storageRef);
+                
+                // Añadir URL de imagen a los datos de actualización
+                updateData.imageUrl = imageUrl;
+                
+            } catch (imgError) {
+                console.error("Error al procesar la imagen:", imgError);
+                // Si hay un error al subir la imagen, mantener la URL original
+                updateData.imageUrl = currentTournament.imageUrl || null;
+                throw new Error("Error al subir la imagen: " + imgError.message);
             }
-            
-            // Upload new image
-            const storageRef = ref(storage, `torneos/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(storageRef, imageFile);
-            tournamentData.imageUrl = await getDownloadURL(storageRef);
-        } else {
-            // Keep existing image URL
-            tournamentData.imageUrl = currentTournament.imageUrl;
         }
         
-        // Keep some existing fields
-        tournamentData.createdBy = currentTournament.createdBy;
-        tournamentData.createdAt = currentTournament.createdAt;
-        tournamentData.participants = currentTournament.participants || [];
-        tournamentData.visible = currentTournament.visible !== false; // Keep current visibility
-        tournamentData.updatedAt = serverTimestamp();
-        tournamentData.updatedBy = user.uid;
-        
-        // Update document
-        await updateDoc(tournamentRef, tournamentData);
+        // Actualizar documento con todos los datos, incluida la URL de la imagen (nueva o existente)
+        await updateDoc(tournamentRef, updateData);
         
         return {
             id: tournamentId,
-            success: true
+            success: true,
+            imageUrl: updateData.imageUrl
         };
     } catch (error) {
         console.error("Error al actualizar torneo:", error);
