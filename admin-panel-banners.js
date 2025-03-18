@@ -485,47 +485,91 @@ async function updateBanner(bannerId, bannerData, imageFile) {
         // Mantener la URL de imagen actual si no se proporciona una nueva
         if (!imageFile) {
             updateData.imageUrl = currentBanner.imageUrl;
+            
+            // Update document usando API de compatibilidad
+            await bannerRef.update(updateData);
+            
+            return {
+                id: bannerId,
+                success: true
+            };
         } else {
-            // Subir nueva imagen
-            console.log("Subiendo nueva imagen...");
-            
-            // Eliminar imagen anterior si existe
-            if (currentBanner.imageUrl) {
-                try {
-                    console.log("Eliminando imagen anterior...");
-                    const urlPath = currentBanner.imageUrl.split('?')[0];
-                    const fileName = urlPath.split('/').pop();
-                    if (fileName) {
-                        const oldImageRef = firebase.storage().ref(`banners/${fileName}`);
-                        await oldImageRef.delete().catch(error => {
-                            console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
+            // Si hay una nueva imagen, procederemos a subirla usando base64
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = async (event) => {
+                    try {
+                        // Eliminar imagen anterior si existe
+                        if (currentBanner.imageUrl) {
+                            try {
+                                console.log("Intentando eliminar imagen anterior...");
+                                const urlPath = currentBanner.imageUrl.split('?')[0];
+                                const fileName = urlPath.split('/').pop();
+                                if (fileName) {
+                                    const oldImageRef = firebase.storage().ref(`banners/${fileName}`);
+                                    await oldImageRef.delete().catch(error => {
+                                        console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
+                                    });
+                                }
+                            } catch (error) {
+                                console.warn("Error al procesar la URL de la imagen anterior:", error);
+                                // Continuar con la actualización aunque falle la eliminación
+                            }
+                        }
+                        
+                        // Obtener el resultado como DataURL (base64)
+                        const base64Image = event.target.result;
+                        
+                        // Crear un nombre único para el archivo
+                        const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                        
+                        // Crear una referencia en Firebase Storage
+                        const storageRef = firebase.storage().ref(`banners/${fileName}`);
+                        
+                        // Extraer la parte base64 del dataURL (quitar el prefijo)
+                        const base64Content = base64Image.split(',')[1];
+                        
+                        // Crear metadatos para el archivo
+                        const metadata = {
+                            contentType: imageFile.type
+                        };
+                        
+                        console.log("Subiendo nueva imagen como base64...");
+                        
+                        // Subir imagen codificada en base64
+                        const uploadTask = await storageRef.putString(base64Content, 'base64', metadata);
+                        console.log("Imagen subida correctamente");
+                        
+                        // Obtener URL de la imagen
+                        const imageUrl = await storageRef.getDownloadURL();
+                        console.log("URL de la nueva imagen:", imageUrl);
+                        
+                        // Actualizar con la nueva URL
+                        updateData.imageUrl = imageUrl;
+                        
+                        // Update document
+                        await bannerRef.update(updateData);
+                        
+                        resolve({
+                            id: bannerId,
+                            success: true
                         });
+                    } catch (error) {
+                        console.error("Error en el proceso de actualización:", error);
+                        reject(error);
                     }
-                } catch (error) {
-                    console.warn("Error al procesar la URL de la imagen anterior:", error);
-                    // Continuar con la actualización aunque falle la eliminación
-                }
-            }
-            
-            // Subir nueva imagen
-            const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const storageRef = firebase.storage().ref(`banners/${fileName}`);
-            
-            // Subir usando la API de compatibilidad
-            await storageRef.put(imageFile);
-            const imageUrl = await storageRef.getDownloadURL();
-            
-            updateData.imageUrl = imageUrl;
-            console.log("Nueva imagen subida, URL:", imageUrl);
+                };
+                
+                reader.onerror = (error) => {
+                    console.error("Error al leer el archivo:", error);
+                    reject(new Error("Error al leer el archivo"));
+                };
+                
+                // Leer como DataURL (base64)
+                reader.readAsDataURL(imageFile);
+            });
         }
-        
-        // Update document usando API de compatibilidad
-        await bannerRef.update(updateData);
-        
-        return {
-            id: bannerId,
-            success: true
-        };
     } catch (error) {
         console.error("Error al actualizar banner:", error);
         throw error;
