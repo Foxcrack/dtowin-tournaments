@@ -260,6 +260,16 @@ function handleBannerImagePreview(event) {
     reader.readAsDataURL(file);
 }
 
+// Función para leer archivo como Base64
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
 // Handle banner form submission
 async function handleBannerFormSubmit(event) {
     event.preventDefault();
@@ -317,17 +327,50 @@ async function handleBannerFormSubmit(event) {
             visible
         };
         
+        // Convertir imagen a base64 para guardarla directamente
+        if (imageFile) {
+            // Leer la imagen como base64
+            const base64Image = await readFileAsBase64(imageFile);
+            bannerData.imageData = base64Image;
+        }
+        
         let result;
         
         if (isEditMode && bannerId) {
             // Update existing banner
             console.log("Actualizando banner existente:", bannerId);
-            result = await updateBanner(bannerId, bannerData, imageFile);
+            
+            const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
+            
+            // Actualizar datos
+            const updateData = {
+                ...bannerData,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedBy: firebase.auth().currentUser.uid
+            };
+            
+            // Si no hay nueva imagen, mantener la imageData existente
+            if (!imageFile) {
+                delete updateData.imageData;
+            }
+            
+            await bannerRef.update(updateData);
+            
+            result = { id: bannerId, success: true };
             showNotification("Banner actualizado correctamente", "success");
         } else {
             // Create new banner
             console.log("Creando nuevo banner");
-            result = await createBanner(bannerData, imageFile);
+            
+            // Añadir metadatos
+            bannerData.createdBy = firebase.auth().currentUser.uid;
+            bannerData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            bannerData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            
+            // Guardar en Firestore
+            const bannerRef = await firebase.firestore().collection("banners").add(bannerData);
+            
+            result = { id: bannerRef.id, success: true };
             showNotification("Banner creado correctamente", "success");
         }
         
@@ -353,229 +396,6 @@ async function handleBannerFormSubmit(event) {
     }
 }
 
-// Create a new banner
-async function createBanner(bannerData, imageFile) {
-    try {
-        console.log("Creando banner con datos:", bannerData);
-        
-        // Verificar autenticación
-        if (!firebase.auth().currentUser) {
-            throw new Error("Debes iniciar sesión para crear un banner");
-        }
-        
-        const user = firebase.auth().currentUser;
-        
-        // Check if user is host
-        console.log("Verificando si el usuario es host:", user.uid);
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            throw new Error("Solo el host puede crear banners");
-        }
-        
-        if (!imageFile) {
-            throw new Error("La imagen es obligatoria para crear un banner");
-        }
-        
-        // Convertir imagen a base64 y luego subirla
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            
-            reader.onload = async (event) => {
-                try {
-                    // Obtener el resultado como DataURL (base64)
-                    const base64Image = event.target.result;
-                    
-                    // Crear un nombre único para el archivo
-                    const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-                    
-                    // Crear una referencia en Firebase Storage
-                    const storageRef = firebase.storage().ref(`banners/${fileName}`);
-                    
-                    // Extraer la parte base64 del dataURL (quitar el prefijo)
-                    const base64Content = base64Image.split(',')[1];
-                    
-                    // Crear metadatos para el archivo
-                    const metadata = {
-                        contentType: imageFile.type
-                    };
-                    
-                    console.log("Subiendo imagen como base64...");
-                    
-                    // Subir imagen codificada en base64
-                    const uploadTask = await storageRef.putString(base64Content, 'base64', metadata);
-                    console.log("Imagen subida correctamente");
-                    
-                    // Obtener URL de la imagen
-                    const imageUrl = await storageRef.getDownloadURL();
-                    console.log("URL de la imagen:", imageUrl);
-                    
-                    // Añadir banner a Firestore
-                    const bannerWithMetadata = {
-                        ...bannerData,
-                        imageUrl,
-                        createdBy: user.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    console.log("Guardando banner en Firestore...");
-                    const bannerRef = await firebase.firestore().collection("banners").add(bannerWithMetadata);
-                    
-                    console.log("Banner guardado con ID:", bannerRef.id);
-                    resolve({
-                        id: bannerRef.id,
-                        success: true
-                    });
-                } catch (error) {
-                    console.error("Error en el proceso de creación:", error);
-                    reject(error);
-                }
-            };
-            
-            reader.onerror = (error) => {
-                console.error("Error al leer el archivo:", error);
-                reject(new Error("Error al leer el archivo"));
-            };
-            
-            // Leer como DataURL (base64)
-            reader.readAsDataURL(imageFile);
-        });
-    } catch (error) {
-        console.error("Error al crear banner:", error);
-        throw error;
-    }
-}
-
-// Update an existing banner
-async function updateBanner(bannerId, bannerData, imageFile) {
-    try {
-        console.log("Actualizando banner:", bannerId, "con datos:", bannerData);
-        
-        const user = firebase.auth().currentUser;
-        
-        if (!user) {
-            throw new Error("Debes iniciar sesión para actualizar un banner");
-        }
-        
-        // Check if user is host
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            throw new Error("Solo el host puede actualizar banners");
-        }
-        
-        // Get banner reference usando API de compatibilidad
-        const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
-        const bannerSnap = await bannerRef.get();
-        
-        if (!bannerSnap.exists) {
-            throw new Error("El banner no existe");
-        }
-        
-        const currentBanner = bannerSnap.data();
-        
-        // Preparar datos para actualización
-        const updateData = {
-            ...bannerData,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedBy: user.uid
-        };
-        
-        // Mantener la URL de imagen actual si no se proporciona una nueva
-        if (!imageFile) {
-            updateData.imageUrl = currentBanner.imageUrl;
-            
-            // Update document usando API de compatibilidad
-            await bannerRef.update(updateData);
-            
-            return {
-                id: bannerId,
-                success: true
-            };
-        } else {
-            // Si hay una nueva imagen, procederemos a subirla usando base64
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = async (event) => {
-                    try {
-                        // Eliminar imagen anterior si existe
-                        if (currentBanner.imageUrl) {
-                            try {
-                                console.log("Intentando eliminar imagen anterior...");
-                                const urlPath = currentBanner.imageUrl.split('?')[0];
-                                const fileName = urlPath.split('/').pop();
-                                if (fileName) {
-                                    const oldImageRef = firebase.storage().ref(`banners/${fileName}`);
-                                    await oldImageRef.delete().catch(error => {
-                                        console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
-                                    });
-                                }
-                            } catch (error) {
-                                console.warn("Error al procesar la URL de la imagen anterior:", error);
-                                // Continuar con la actualización aunque falle la eliminación
-                            }
-                        }
-                        
-                        // Obtener el resultado como DataURL (base64)
-                        const base64Image = event.target.result;
-                        
-                        // Crear un nombre único para el archivo
-                        const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-                        
-                        // Crear una referencia en Firebase Storage
-                        const storageRef = firebase.storage().ref(`banners/${fileName}`);
-                        
-                        // Extraer la parte base64 del dataURL (quitar el prefijo)
-                        const base64Content = base64Image.split(',')[1];
-                        
-                        // Crear metadatos para el archivo
-                        const metadata = {
-                            contentType: imageFile.type
-                        };
-                        
-                        console.log("Subiendo nueva imagen como base64...");
-                        
-                        // Subir imagen codificada en base64
-                        const uploadTask = await storageRef.putString(base64Content, 'base64', metadata);
-                        console.log("Imagen subida correctamente");
-                        
-                        // Obtener URL de la imagen
-                        const imageUrl = await storageRef.getDownloadURL();
-                        console.log("URL de la nueva imagen:", imageUrl);
-                        
-                        // Actualizar con la nueva URL
-                        updateData.imageUrl = imageUrl;
-                        
-                        // Update document
-                        await bannerRef.update(updateData);
-                        
-                        resolve({
-                            id: bannerId,
-                            success: true
-                        });
-                    } catch (error) {
-                        console.error("Error en el proceso de actualización:", error);
-                        reject(error);
-                    }
-                };
-                
-                reader.onerror = (error) => {
-                    console.error("Error al leer el archivo:", error);
-                    reject(new Error("Error al leer el archivo"));
-                };
-                
-                // Leer como DataURL (base64)
-                reader.readAsDataURL(imageFile);
-            });
-        }
-    } catch (error) {
-        console.error("Error al actualizar banner:", error);
-        throw error;
-    }
-}
-
 // Load and display banners
 async function loadBanners() {
     try {
@@ -589,7 +409,7 @@ async function loadBanners() {
         // Show loading spinner
         bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
-        // Get banners from Firestore usando la API de compatibilidad
+        // Get banners from Firestore
         const bannersRef = firebase.firestore().collection("banners");
         const bannersSnapshot = await bannersRef.orderBy("orden", "asc").get();
         
@@ -624,10 +444,13 @@ async function loadBanners() {
                 '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
                 '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
             
+            // Determinar fuente de imagen (imageUrl o imageData)
+            const imageSource = banner.imageUrl || banner.imageData || '';
+            
             html += `
                 <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
                     <div class="relative">
-                        <img src="${banner.imageUrl}" alt="${banner.nombre}" class="w-full h-48 object-cover">
+                        <img src="${imageSource}" alt="${banner.nombre}" class="w-full h-48 object-cover">
                         <div class="absolute top-2 right-2 flex space-x-1">
                             <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
                             ${estado}
@@ -772,27 +595,8 @@ function addBannerEventListeners() {
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     this.disabled = true;
                     
-                    // Eliminar banner usando la API de compatibilidad
+                    // Eliminar banner
                     const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
-                    const bannerData = (await bannerRef.get()).data();
-                    
-                    // Eliminar imagen de Storage si existe
-                    if (bannerData && bannerData.imageUrl) {
-                        const urlPath = bannerData.imageUrl.split('?')[0];
-                        const fileName = urlPath.split('/').pop();
-                        if (fileName) {
-                            try {
-                                const imageRef = firebase.storage().ref(`banners/${fileName}`);
-                                await imageRef.delete();
-                                console.log("Imagen eliminada del Storage");
-                            } catch (imgError) {
-                                console.warn("Error al eliminar imagen del Storage:", imgError);
-                                // Continuar con la eliminación del documento
-                            }
-                        }
-                    }
-                    
-                    // Eliminar documento de Firestore
                     await bannerRef.delete();
                     console.log("Banner eliminado correctamente");
                     
@@ -824,7 +628,7 @@ async function loadBannerForEdit(bannerId) {
     try {
         console.log("Cargando banner para editar:", bannerId);
         
-        // Get banner data usando la API de compatibilidad
+        // Get banner data
         const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
         const bannerSnap = await bannerRef.get();
         
@@ -842,8 +646,9 @@ async function loadBannerForEdit(bannerId) {
         document.getElementById('bannerOrden').value = banner.orden || 1;
         document.getElementById('bannerVisible').checked = banner.visible !== false;
         
-        // Show current image
-        if (banner.imageUrl) {
+        // Mostrar la imagen actual (de imageUrl o imageData)
+        const imageSource = banner.imageUrl || banner.imageData;
+        if (imageSource) {
             const container = document.getElementById('bannerImagen').parentElement;
             
             // Eliminar vista previa existente si hay
@@ -856,7 +661,7 @@ async function loadBannerForEdit(bannerId) {
             previewDiv.className = 'image-preview mt-2';
             previewDiv.innerHTML = `
                 <p class="text-sm text-gray-600">Imagen actual:</p>
-                <img src="${banner.imageUrl}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
+                <img src="${imageSource}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
                 <p class="text-xs text-gray-500">Cargar nueva imagen para reemplazar (opcional)</p>
             `;
             container.appendChild(previewDiv);
