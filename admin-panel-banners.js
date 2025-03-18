@@ -1,8 +1,5 @@
 // admin-panel-banners.js - Script para la gestión de banners
-import { auth, isUserHost, db, storage } from './firebase.js';
 import { showNotification } from './utils.js';
-import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
 // DOM elements
 const bannersContainer = document.getElementById('bannersContainer');
@@ -18,14 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Verificando autenticación...");
     
     // Verificar si el usuario ya está autenticado
-    if (auth.currentUser) {
-        console.log("Usuario ya autenticado:", auth.currentUser.uid);
+    if (firebase.auth().currentUser) {
+        console.log("Usuario ya autenticado:", firebase.auth().currentUser.uid);
         initBannersManagement();
     } else {
         console.log("Esperando autenticación...");
         
         // Configurar listener para cambios en el estado de autenticación
-        auth.onAuthStateChanged(user => {
+        firebase.auth().onAuthStateChanged(user => {
             if (user) {
                 console.log("Usuario autenticado:", user.uid);
                 initBannersManagement();
@@ -33,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("No hay usuario autenticado, redirigiendo...");
                 // Esperar un momento antes de redireccionar para dar tiempo a que la autenticación se complete
                 setTimeout(() => {
-                    if (!auth.currentUser) {
+                    if (!firebase.auth().currentUser) {
                         window.location.href = 'index.html';
                     }
                 }, 2000);
@@ -64,6 +61,47 @@ async function initBannersManagement() {
     } catch (error) {
         console.error("Error al inicializar gestión de banners:", error);
         showNotification("Error al cargar la gestión de banners. Inténtalo de nuevo.", "error");
+    }
+}
+
+// Verificar si el usuario es host
+async function isUserHost() {
+    try {
+        const user = firebase.auth().currentUser;
+        
+        if (!user) {
+            console.error("No hay usuario autenticado");
+            return false;
+        }
+        
+        console.log("Verificando si el usuario es host:", user.uid);
+        
+        // Lista de administradores por defecto
+        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // UID del administrador principal
+        
+        // Verificar directamente si está en la lista de administradores
+        if (adminUIDs.includes(user.uid)) {
+            console.log("Usuario es administrador por estar en la lista");
+            return true;
+        }
+        
+        // Verificar en la base de datos
+        const userQuery = await firebase.firestore()
+            .collection("usuarios")
+            .where("uid", "==", user.uid)
+            .where("isHost", "==", true)
+            .get();
+        
+        if (userQuery.empty) {
+            console.error("No se encontró el perfil del usuario como host");
+            return false;
+        }
+        
+        console.log("Usuario verificado como host en la base de datos");
+        return true;
+    } catch (error) {
+        console.error("Error al verificar si el usuario es host:", error);
+        return false;
     }
 }
 
@@ -321,13 +359,15 @@ async function createBanner(bannerData, imageFile) {
     try {
         console.log("Creando banner con datos:", bannerData);
         
-        const user = auth.currentUser;
-        
-        if (!user) {
+        // Verificar autenticación
+        if (!firebase.auth().currentUser) {
             throw new Error("Debes iniciar sesión para crear un banner");
         }
         
+        const user = firebase.auth().currentUser;
+        
         // Check if user is host
+        console.log("Verificando si el usuario es host:", user.uid);
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
@@ -341,29 +381,28 @@ async function createBanner(bannerData, imageFile) {
         // Upload image first
         console.log("Subiendo imagen a Storage...");
         const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const storageRef = ref(storage, `banners/${fileName}`);
+        const storageRef = firebase.storage().ref(`banners/${fileName}`);
         
-        // Create blob to avoid CORS issues
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: imageFile.type });
+        // Subir imagen usando el método de compatibilidad
+        const uploadTask = await storageRef.put(imageFile);
+        console.log("Imagen subida correctamente");
         
-        // Upload to Firebase Storage
-        await uploadBytes(storageRef, blob);
-        const imageUrl = await getDownloadURL(storageRef);
+        // Obtener URL de la imagen
+        const imageUrl = await storageRef.getDownloadURL();
+        console.log("Imagen URL:", imageUrl);
         
-        console.log("Imagen subida, URL:", imageUrl);
-        
-        // Add banner to Firestore
+        // Add banner to Firestore usando API de compatibilidad
         const bannerWithMetadata = {
             ...bannerData,
             imageUrl,
             createdBy: user.uid,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         console.log("Guardando banner en Firestore...");
-        const bannerRef = await addDoc(collection(db, "banners"), bannerWithMetadata);
+        const bannerRef = await firebase.firestore().collection("banners").add(bannerWithMetadata);
+        console.log("Banner guardado con ID:", bannerRef.id);
         
         return {
             id: bannerRef.id,
@@ -380,7 +419,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
     try {
         console.log("Actualizando banner:", bannerId, "con datos:", bannerData);
         
-        const user = auth.currentUser;
+        const user = firebase.auth().currentUser;
         
         if (!user) {
             throw new Error("Debes iniciar sesión para actualizar un banner");
@@ -393,11 +432,11 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             throw new Error("Solo el host puede actualizar banners");
         }
         
-        // Get banner reference
-        const bannerRef = doc(db, "banners", bannerId);
-        const bannerSnap = await getDoc(bannerRef);
+        // Get banner reference usando API de compatibilidad
+        const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
+        const bannerSnap = await bannerRef.get();
         
-        if (!bannerSnap.exists()) {
+        if (!bannerSnap.exists) {
             throw new Error("El banner no existe");
         }
         
@@ -406,7 +445,7 @@ async function updateBanner(bannerId, bannerData, imageFile) {
         // Preparar datos para actualización
         const updateData = {
             ...bannerData,
-            updatedAt: serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: user.uid
         };
         
@@ -424,9 +463,8 @@ async function updateBanner(bannerId, bannerData, imageFile) {
                     const urlPath = currentBanner.imageUrl.split('?')[0];
                     const fileName = urlPath.split('/').pop();
                     if (fileName) {
-                        const storagePath = `banners/${fileName}`;
-                        const oldImageRef = ref(storage, storagePath);
-                        await deleteObject(oldImageRef).catch(error => {
+                        const oldImageRef = firebase.storage().ref(`banners/${fileName}`);
+                        await oldImageRef.delete().catch(error => {
                             console.warn("Error al eliminar imagen anterior, posiblemente ya no existe:", error);
                         });
                     }
@@ -438,22 +476,18 @@ async function updateBanner(bannerId, bannerData, imageFile) {
             
             // Subir nueva imagen
             const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const storageRef = ref(storage, `banners/${fileName}`);
+            const storageRef = firebase.storage().ref(`banners/${fileName}`);
             
-            // Create blob to avoid CORS issues
-            const arrayBuffer = await imageFile.arrayBuffer();
-            const blob = new Blob([arrayBuffer], { type: imageFile.type });
-            
-            // Upload to Firebase Storage
-            await uploadBytes(storageRef, blob);
-            const imageUrl = await getDownloadURL(storageRef);
+            // Subir usando la API de compatibilidad
+            await storageRef.put(imageFile);
+            const imageUrl = await storageRef.getDownloadURL();
             
             updateData.imageUrl = imageUrl;
             console.log("Nueva imagen subida, URL:", imageUrl);
         }
         
-        // Update document
-        await updateDoc(bannerRef, updateData);
+        // Update document usando API de compatibilidad
+        await bannerRef.update(updateData);
         
         return {
             id: bannerId,
@@ -478,10 +512,9 @@ async function loadBanners() {
         // Show loading spinner
         bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
-        // Get banners from Firestore
-        const bannersCollection = collection(db, "banners");
-        const bannersQuery = query(bannersCollection, orderBy("orden", "asc"));
-        const bannersSnapshot = await getDocs(bannersQuery);
+        // Get banners from Firestore usando la API de compatibilidad
+        const bannersRef = firebase.firestore().collection("banners");
+        const bannersSnapshot = await bannersRef.orderBy("orden", "asc").get();
         
         // Check if we have banners
         if (bannersSnapshot.empty) {
@@ -576,10 +609,10 @@ function addBannerEventListeners() {
             
             try {
                 // Get current data
-                const bannerRef = doc(db, "banners", bannerId);
-                const bannerSnap = await getDoc(bannerRef);
+                const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
+                const bannerSnap = await bannerRef.get();
                 
-                if (!bannerSnap.exists()) {
+                if (!bannerSnap.exists) {
                     showNotification("No se encontró el banner", "error");
                     return;
                 }
@@ -593,9 +626,9 @@ function addBannerEventListeners() {
                 this.disabled = true;
                 
                 // Update visibility
-                await updateDoc(bannerRef, {
+                await bannerRef.update({
                     visible: newVisibility,
-                    updatedAt: serverTimestamp()
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
                 // Update UI
@@ -662,7 +695,29 @@ function addBannerEventListeners() {
                     this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                     this.disabled = true;
                     
-                    await deleteBanner(bannerId);
+                    // Eliminar banner usando la API de compatibilidad
+                    const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
+                    const bannerData = (await bannerRef.get()).data();
+                    
+                    // Eliminar imagen de Storage si existe
+                    if (bannerData && bannerData.imageUrl) {
+                        const urlPath = bannerData.imageUrl.split('?')[0];
+                        const fileName = urlPath.split('/').pop();
+                        if (fileName) {
+                            try {
+                                const imageRef = firebase.storage().ref(`banners/${fileName}`);
+                                await imageRef.delete();
+                                console.log("Imagen eliminada del Storage");
+                            } catch (imgError) {
+                                console.warn("Error al eliminar imagen del Storage:", imgError);
+                                // Continuar con la eliminación del documento
+                            }
+                        }
+                    }
+                    
+                    // Eliminar documento de Firestore
+                    await bannerRef.delete();
+                    console.log("Banner eliminado correctamente");
                     
                     // Remove card from UI
                     bannerCard.remove();
@@ -692,11 +747,11 @@ async function loadBannerForEdit(bannerId) {
     try {
         console.log("Cargando banner para editar:", bannerId);
         
-        // Get banner data
-        const bannerRef = doc(db, "banners", bannerId);
-        const bannerSnap = await getDoc(bannerRef);
+        // Get banner data usando la API de compatibilidad
+        const bannerRef = firebase.firestore().collection("banners").doc(bannerId);
+        const bannerSnap = await bannerRef.get();
         
-        if (!bannerSnap.exists()) {
+        if (!bannerSnap.exists) {
             throw new Error("No se encontró el banner para editar");
         }
         
@@ -713,6 +768,13 @@ async function loadBannerForEdit(bannerId) {
         // Show current image
         if (banner.imageUrl) {
             const container = document.getElementById('bannerImagen').parentElement;
+            
+            // Eliminar vista previa existente si hay
+            const existingPreview = container.querySelector('.image-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
             const previewDiv = document.createElement('div');
             previewDiv.className = 'image-preview mt-2';
             previewDiv.innerHTML = `
@@ -745,72 +807,8 @@ async function loadBannerForEdit(bannerId) {
     }
 }
 
-// Delete a banner
-async function deleteBanner(bannerId) {
-    try {
-        console.log("Eliminando banner:", bannerId);
-        
-        const user = auth.currentUser;
-        
-        if (!user) {
-            throw new Error("Debes iniciar sesión para eliminar un banner");
-        }
-        
-        // Check if user is host
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            throw new Error("Solo el host puede eliminar banners");
-        }
-        
-        // Get banner data for image deletion
-        const bannerRef = doc(db, "banners", bannerId);
-        const bannerSnap = await getDoc(bannerRef);
-        
-        if (!bannerSnap.exists()) {
-            throw new Error("El banner no existe");
-        }
-        
-        const bannerData = bannerSnap.data();
-        
-        // Delete image from storage if exists
-        if (bannerData.imageUrl) {
-            try {
-                console.log("Eliminando imagen del banner...");
-                const urlPath = bannerData.imageUrl.split('?')[0];
-                const fileName = urlPath.split('/').pop();
-                if (fileName) {
-                    const storagePath = `banners/${fileName}`;
-                    const imageRef = ref(storage, storagePath);
-                    await deleteObject(imageRef).catch(error => {
-                        console.warn("Error al eliminar imagen, posiblemente ya no existe:", error);
-                    });
-                }
-            } catch (error) {
-                console.warn("Error al eliminar imagen:", error);
-                // Continue with deletion anyway
-            }
-        }
-        
-        // Delete banner document
-        await deleteDoc(bannerRef);
-        
-        console.log("Banner eliminado correctamente");
-        
-        return {
-            success: true
-        };
-    } catch (error) {
-        console.error("Error al eliminar banner:", error);
-        throw error;
-    }
-}
-
 // Exportar funciones
 export {
     initBannersManagement,
     loadBanners
 };
-
-// No es necesario agregar este event listener ya que lo estamos manejando arriba
-// document.addEventListener('DOMContentLoaded', initBannersManagement);
