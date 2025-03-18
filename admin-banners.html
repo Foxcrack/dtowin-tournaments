@@ -196,7 +196,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
-    
+
+    <!-- Utilidades compartidas -->
+    <script type="module" src="utils.js"></script>
+
     <!-- Inicialización de Firebase -->
     <script>
     // Configuración de Firebase
@@ -218,6 +221,19 @@
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.storage = firebase.storage();
+
+    // Configurar persistencia para mantener la sesión
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            console.log("Persistencia de sesión configurada correctamente");
+        })
+        .catch((error) => {
+            console.error("Error al configurar persistencia de sesión:", error);
+        });
+
+    // Verificar inmediatamente si hay usuario autenticado
+    const currentUser = firebase.auth().currentUser;
+    console.log("Estado inicial de autenticación:", currentUser ? `Autenticado como ${currentUser.uid}` : "No autenticado");
     </script>
 
     <!-- Script principal -->
