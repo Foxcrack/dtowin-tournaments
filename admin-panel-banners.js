@@ -379,35 +379,67 @@ async function createBanner(bannerData, imageFile) {
         }
         
         // Upload image first
-        console.log("Subiendo imagen a Storage...");
+        console.log("Preparando para subir imagen a Storage...");
         const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         const storageRef = firebase.storage().ref(`banners/${fileName}`);
         
-        // Subir imagen usando el método de compatibilidad
-        const uploadTask = await storageRef.put(imageFile);
-        console.log("Imagen subida correctamente");
+        // Método alternativo para subir archivos
+        console.log("Subiendo imagen usando método alternativo...");
         
-        // Obtener URL de la imagen
-        const imageUrl = await storageRef.getDownloadURL();
-        console.log("Imagen URL:", imageUrl);
-        
-        // Add banner to Firestore usando API de compatibilidad
-        const bannerWithMetadata = {
-            ...bannerData,
-            imageUrl,
-            createdBy: user.uid,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        console.log("Guardando banner en Firestore...");
-        const bannerRef = await firebase.firestore().collection("banners").add(bannerWithMetadata);
-        console.log("Banner guardado con ID:", bannerRef.id);
-        
-        return {
-            id: bannerRef.id,
-            success: true
-        };
+        // Leer el archivo como ArrayBuffer
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = async (event) => {
+                try {
+                    const arrayBuffer = event.target.result;
+                    
+                    // Crear un Blob del ArrayBuffer
+                    const blob = new Blob([arrayBuffer], { type: imageFile.type });
+                    
+                    // Subir el Blob a Firebase Storage
+                    console.log("Subiendo blob a Firebase Storage...");
+                    const uploadTask = storageRef.put(blob);
+                    
+                    // Esperar a que se complete la carga
+                    await uploadTask;
+                    console.log("Imagen subida correctamente");
+                    
+                    // Obtener URL de la imagen
+                    const imageUrl = await storageRef.getDownloadURL();
+                    console.log("URL de la imagen:", imageUrl);
+                    
+                    // Añadir banner a Firestore
+                    const bannerWithMetadata = {
+                        ...bannerData,
+                        imageUrl,
+                        createdBy: user.uid,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    console.log("Guardando banner en Firestore...");
+                    const bannerRef = await firebase.firestore().collection("banners").add(bannerWithMetadata);
+                    
+                    console.log("Banner guardado con ID:", bannerRef.id);
+                    resolve({
+                        id: bannerRef.id,
+                        success: true
+                    });
+                } catch (error) {
+                    console.error("Error en el proceso de creación:", error);
+                    reject(error);
+                }
+            };
+            
+            reader.onerror = (error) => {
+                console.error("Error al leer el archivo:", error);
+                reject(new Error("Error al leer el archivo"));
+            };
+            
+            // Iniciar la lectura del archivo
+            reader.readAsArrayBuffer(imageFile);
+        });
     } catch (error) {
         console.error("Error al crear banner:", error);
         throw error;
