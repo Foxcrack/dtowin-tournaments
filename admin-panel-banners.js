@@ -352,6 +352,7 @@ async function handleBannerFormSubmit(event) {
         }
     }
 }
+
 // Create a new banner
 async function createBanner(bannerData, imageFile) {
     try {
@@ -376,31 +377,33 @@ async function createBanner(bannerData, imageFile) {
             throw new Error("La imagen es obligatoria para crear un banner");
         }
         
-        // Upload image first
-        console.log("Preparando para subir imagen a Storage...");
-        const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-        const storageRef = firebase.storage().ref(`banners/${fileName}`);
-        
-        // Método alternativo para subir archivos
-        console.log("Subiendo imagen usando método alternativo...");
-        
-        // Leer el archivo como ArrayBuffer
+        // Convertir imagen a base64 y luego subirla
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             
             reader.onload = async (event) => {
                 try {
-                    const arrayBuffer = event.target.result;
+                    // Obtener el resultado como DataURL (base64)
+                    const base64Image = event.target.result;
                     
-                    // Crear un Blob del ArrayBuffer
-                    const blob = new Blob([arrayBuffer], { type: imageFile.type });
+                    // Crear un nombre único para el archivo
+                    const fileName = `banners_${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
                     
-                    // Subir el Blob a Firebase Storage
-                    console.log("Subiendo blob a Firebase Storage...");
-                    const uploadTask = storageRef.put(blob);
+                    // Crear una referencia en Firebase Storage
+                    const storageRef = firebase.storage().ref(`banners/${fileName}`);
                     
-                    // Esperar a que se complete la carga
-                    await uploadTask;
+                    // Extraer la parte base64 del dataURL (quitar el prefijo)
+                    const base64Content = base64Image.split(',')[1];
+                    
+                    // Crear metadatos para el archivo
+                    const metadata = {
+                        contentType: imageFile.type
+                    };
+                    
+                    console.log("Subiendo imagen como base64...");
+                    
+                    // Subir imagen codificada en base64
+                    const uploadTask = await storageRef.putString(base64Content, 'base64', metadata);
                     console.log("Imagen subida correctamente");
                     
                     // Obtener URL de la imagen
@@ -435,8 +438,8 @@ async function createBanner(bannerData, imageFile) {
                 reject(new Error("Error al leer el archivo"));
             };
             
-            // Iniciar la lectura del archivo
-            reader.readAsArrayBuffer(imageFile);
+            // Leer como DataURL (base64)
+            reader.readAsDataURL(imageFile);
         });
     } catch (error) {
         console.error("Error al crear banner:", error);
