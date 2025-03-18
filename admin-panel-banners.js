@@ -304,7 +304,6 @@ async function handleBannerFormSubmit(event) {
     // Show loading state
     if (submitBtn) {
         submitBtn.disabled = true;
-        const originalButtonText = submitBtn.textContent;
         submitBtn.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
     }
     
@@ -353,7 +352,6 @@ async function handleBannerFormSubmit(event) {
         }
     }
 }
-
 // Create a new banner
 async function createBanner(bannerData, imageFile) {
     try {
