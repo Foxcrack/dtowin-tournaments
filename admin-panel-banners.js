@@ -13,6 +13,35 @@ const bannerFormTitle = document.getElementById('bannerFormTitle');
 const cancelBannerButton = document.getElementById('cancelBannerButton');
 const submitBannerButton = document.getElementById('submitBannerButton');
 
+// Verificar autenticación antes de inicializar
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("Verificando autenticación...");
+    
+    // Verificar si el usuario ya está autenticado
+    if (auth.currentUser) {
+        console.log("Usuario ya autenticado:", auth.currentUser.uid);
+        initBannersManagement();
+    } else {
+        console.log("Esperando autenticación...");
+        
+        // Configurar listener para cambios en el estado de autenticación
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                initBannersManagement();
+            } else {
+                console.log("No hay usuario autenticado, redirigiendo...");
+                // Esperar un momento antes de redireccionar para dar tiempo a que la autenticación se complete
+                setTimeout(() => {
+                    if (!auth.currentUser) {
+                        window.location.href = 'index.html';
+                    }
+                }, 2000);
+            }
+        });
+    }
+});
+
 // Initialize banner management
 async function initBannersManagement() {
     try {
@@ -783,5 +812,5 @@ export {
     loadBanners
 };
 
-// Inicializar cuando DOM esté listo
-document.addEventListener('DOMContentLoaded', initBannersManagement);
+// No es necesario agregar este event listener ya que lo estamos manejando arriba
+// document.addEventListener('DOMContentLoaded', initBannersManagement);
