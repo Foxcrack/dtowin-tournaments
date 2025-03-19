@@ -67,44 +67,68 @@ async function initBannersManagement() {
 // Verificar si el usuario es host
 async function isUserHost() {
     try {
+        // Esperar un poco para asegurar que la autenticación esté completa
         const user = firebase.auth().currentUser;
         
         if (!user) {
             console.error("No hay usuario autenticado");
-            return false;
+            // Intentar esperar a que el usuario se autentique (esperar máximo 5 segundos)
+            for (let i = 0; i < 10; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (firebase.auth().currentUser) {
+                    console.log("Usuario autenticado después de espera");
+                    break;
+                }
+            }
+            
+            // Verificar nuevamente si hay un usuario autenticado
+            if (!firebase.auth().currentUser) {
+                return false;
+            }
         }
         
-        console.log("Verificando si el usuario es host:", user.uid);
+        // Usar el usuario actualizado
+        const currentUser = firebase.auth().currentUser;
+        console.log("Verificando si el usuario es host:", currentUser.uid);
         
-        // Lista de administradores por defecto
+        // Lista de administradores por defecto (asegúrate de que coincida con la lista en firebase.js)
         const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // UID del administrador principal
         
         // Verificar directamente si está en la lista de administradores
-        if (adminUIDs.includes(user.uid)) {
+        if (adminUIDs.includes(currentUser.uid)) {
             console.log("Usuario es administrador por estar en la lista");
             return true;
         }
         
-        // Verificar en la base de datos
-        const userQuery = await firebase.firestore()
-            .collection("usuarios")
-            .where("uid", "==", user.uid)
-            .where("isHost", "==", true)
-            .get();
-        
-        if (userQuery.empty) {
-            console.error("No se encontró el perfil del usuario como host");
-            return false;
+        // Intentar varias veces la consulta a Firestore (máximo 3 intentos)
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`Intento ${attempt} de consultar Firestore`);
+                const userQuery = await firebase.firestore()
+                    .collection("usuarios")
+                    .where("uid", "==", currentUser.uid)
+                    .where("isHost", "==", true)
+                    .get();
+                
+                if (!userQuery.empty) {
+                    console.log("Usuario verificado como host en la base de datos");
+                    return true;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } catch (error) {
+                console.error(`Error en intento ${attempt}:`, error);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
         
-        console.log("Usuario verificado como host en la base de datos");
-        return true;
+        console.error("No se encontró el perfil del usuario como host después de múltiples intentos");
+        return false;
     } catch (error) {
         console.error("Error al verificar si el usuario es host:", error);
         return false;
     }
 }
-
 // Set up event listeners
 function setupEventListeners() {
     console.log("Configurando event listeners...");
