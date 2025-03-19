@@ -10,9 +10,23 @@ const bannerFormTitle = document.getElementById('bannerFormTitle');
 const cancelBannerButton = document.getElementById('cancelBannerButton');
 const submitBannerButton = document.getElementById('submitBannerButton');
 
+// Variable para controlar el estado de inicialización
+let isInitialized = false;
+
+// Agregar un temporizador para evitar bucles infinitos
+let loadingTimeout;
+
 // Verificar autenticación antes de inicializar
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Verificando autenticación...");
+    
+    // Establecer un temporizador para evitar espera infinita
+    loadingTimeout = setTimeout(() => {
+        console.error("Tiempo de espera agotado al cargar banners");
+        if (bannersContainer) {
+            bannersContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar banners: Tiempo de espera agotado. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>';
+        }
+    }, 15000); // 15 segundos de tiempo máximo
     
     // Verificar si el usuario ya está autenticado
     if (firebase.auth().currentUser) {
@@ -27,14 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Usuario autenticado:", user.uid);
                 initBannersManagement();
             } else {
-                console.log("No hay usuario autenticado, esperando...");
-                // Esperar un momento más largo antes de redireccionar
+                console.log("No hay usuario autenticado, redirigiendo...");
+                // Esperar un momento antes de redireccionar
                 setTimeout(() => {
                     if (!firebase.auth().currentUser) {
-                        console.log("Redirigiendo a página principal por falta de autenticación");
+                        clearTimeout(loadingTimeout);
                         window.location.href = 'index.html';
                     }
-                }, 5000); // Aumentar a 5 segundos para dar más tiempo
+                }, 5000);
             }
         });
     }
@@ -42,81 +56,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize banner management
 async function initBannersManagement() {
+    // Evitar inicialización múltiple
+    if (isInitialized) {
+        console.log("La gestión de banners ya está inicializada");
+        return;
+    }
+    
     try {
         console.log("Inicializando gestión de banners...");
+        isInitialized = true;
         
         // Check if user is host/admin
         const userIsHost = await isUserHost();
         
         if (!userIsHost) {
+            clearTimeout(loadingTimeout);
             showNotification("No tienes permisos para gestionar banners", "error");
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3000);
             return;
         }
         
         // Set up event listeners
-        function setupEventListeners() {
-    console.log("Configurando event listeners...");
-    
-    // Create banner button in header
-    if (headerCreateBannerBtn) {
-        console.log("Configurando botón 'Crear Banner'");
-        headerCreateBannerBtn.addEventListener('click', () => {
-            console.log("Botón headerCreateBannerBtn clickeado");
-            resetBannerForm();
-            showBannerForm();
-        });
-    } else {
-        console.warn("No se encontró el botón 'Crear Banner'");
-    }
-    
-    // Form submission
-    if (createBannerForm) {
-        console.log("Configurando evento submit del formulario");
+        setupEventListeners();
         
-        // Eliminar event listeners anteriores para evitar duplicados
-        const clonedForm = createBannerForm.cloneNode(true);
-        createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
+        // Load existing banners
+        await loadBanners();
         
-        // Actualizar referencia al formulario clonado
-        const updatedForm = document.getElementById('createBannerForm');
+        // Limpiar el temporizador si todo ha ido bien
+        clearTimeout(loadingTimeout);
         
-        // Añadir event listener
-        updatedForm.addEventListener('submit', handleBannerFormSubmit);
+    } catch (error) {
+        clearTimeout(loadingTimeout);
+        console.error("Error al inicializar gestión de banners:", error);
+        showNotification("Error al cargar la gestión de banners. Inténtalo de nuevo.", "error");
         
-        // Asegurarse de que el botón de submit tiene type="submit"
-        const submitBtn = document.getElementById('submitBannerButton');
-        if (submitBtn && submitBtn.type !== 'submit') {
-            console.log("Corrigiendo tipo de botón submit");
-            submitBtn.type = 'submit';
+        if (bannersContainer) {
+            bannersContainer.innerHTML = `<p class="text-center text-red-500 py-4">
+                Error al cargar banners: ${error.message || "Error desconocido"}. 
+                <button class="text-blue-500 underline" onclick="window.location.reload()">
+                    Reintentar
+                </button>
+            </p>`;
         }
-    } else {
-        console.warn("No se encontró el formulario createBannerForm");
-    }
-    
-    // IMPORTANTE: Configurar el botón de cancelar DESPUÉS de clonar el formulario
-    const cancelBtn = document.getElementById('cancelBannerButton');
-    if (cancelBtn) {
-        console.log("Configurando botón Cancelar");
-        // Eliminar cualquier event listener anterior
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        
-        // Agregar event listener al nuevo botón
-        document.getElementById('cancelBannerButton').addEventListener('click', function() {
-            console.log("Botón cancelar clickeado");
-            hideBannerForm();
-        });
-    } else {
-        console.warn("No se encontró el botón Cancelar");
-    }
-    
-    // Image preview
-    const bannerImagen = document.getElementById('bannerImagen');
-    if (bannerImagen) {
-        console.log("Configurando preview de imagen");
-        bannerImagen.addEventListener('change', handleBannerImagePreview);
-    } else {
-        console.warn("No se encontró el input de imagen");
     }
 }
 
