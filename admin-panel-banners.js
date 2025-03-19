@@ -1,5 +1,6 @@
 // admin-panel-banners.js - Script para la gestión de banners
 import { showNotification } from './utils.js';
+import { isUserHost } from './firebase.js';  // Importar la función en lugar de redefinirla
 
 // DOM elements
 const bannersContainer = document.getElementById('bannersContainer');
