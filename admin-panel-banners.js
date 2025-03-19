@@ -162,27 +162,21 @@ function setupEventListeners() {
         console.warn("No se encontró el botón 'Crear Banner'");
     }
     
-    // Cancel button
+    // Cancel button - configuración simple y directa
     if (cancelBannerButton) {
         console.log("Configurando botón Cancelar");
-        cancelBannerButton.addEventListener('click', hideBannerForm);
+        cancelBannerButton.addEventListener('click', () => {
+            console.log("Botón cancelar clickeado");
+            hideBannerForm();
+        });
     } else {
         console.warn("No se encontró el botón Cancelar");
     }
     
-    // Form submission
+    // Form submission - sin clonar para evitar problemas
     if (createBannerForm) {
         console.log("Configurando evento submit del formulario");
-        
-        // Eliminar event listeners anteriores para evitar duplicados
-        const clonedForm = createBannerForm.cloneNode(true);
-        createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
-        
-        // Actualizar referencia al formulario clonado
-        const updatedForm = document.getElementById('createBannerForm');
-        
-        // Añadir event listener
-        updatedForm.addEventListener('submit', handleBannerFormSubmit);
+        createBannerForm.addEventListener('submit', handleBannerFormSubmit);
         
         // Asegurarse de que el botón de submit tiene type="submit"
         const submitBtn = document.getElementById('submitBannerButton');
