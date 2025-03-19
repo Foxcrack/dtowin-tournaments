@@ -1,6 +1,6 @@
 // admin-panel-banners.js - Script para la gestión de banners
 import { showNotification } from './utils.js';
-import { isUserHost } from './firebase.js';  // Importar la función en lugar de redefinirla
+import { isUserHost } from './firebase.js';  // Importar la función desde firebase.js
 
 // DOM elements
 const bannersContainer = document.getElementById('bannersContainer');
@@ -101,49 +101,6 @@ async function initBannersManagement() {
                 </button>
             </p>`;
         }
-    }
-}
-
-// Verificar si el usuario es host
-async function isUserHost() {
-    try {
-        const user = firebase.auth().currentUser;
-        
-        if (!user) {
-            console.error("No hay usuario autenticado");
-            return false;
-        }
-        
-        console.log("Verificando si el usuario es host:", user.uid);
-        
-        // Lista de administradores por defecto
-        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // UID del administrador principal
-        
-        // Verificar directamente si está en la lista de administradores
-        if (adminUIDs.includes(user.uid)) {
-            console.log("Usuario es administrador por estar en la lista");
-            return true;
-        }
-        
-        // Verificar en la base de datos con un solo intento
-        try {
-            const userQuery = await firebase.firestore()
-                .collection("usuarios")
-                .where("uid", "==", user.uid)
-                .where("isHost", "==", true)
-                .get();
-            
-            const isHost = !userQuery.empty;
-            console.log("¿Usuario es host según la base de datos?", isHost);
-            return isHost;
-        } catch (dbError) {
-            console.error("Error al consultar la base de datos:", dbError);
-            // Si falla la consulta pero el usuario está en la lista de administradores, permitir acceso
-            return adminUIDs.includes(user.uid);
-        }
-    } catch (error) {
-        console.error("Error al verificar si el usuario es host:", error);
-        return false;
     }
 }
 
@@ -445,89 +402,117 @@ async function loadBanners() {
         // Show loading spinner
         bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
-        // Get banners from Firestore
-        const bannersRef = firebase.firestore().collection("banners");
-        const bannersSnapshot = await bannersRef.orderBy("orden", "asc").get();
-        
-        // Check if we have banners
-        if (bannersSnapshot.empty) {
-            console.log("No hay banners disponibles");
-            bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
-            return;
-        }
-        
-        console.log(`Encontrados ${bannersSnapshot.size} banners`);
-        
-        // Convert to array
-        const banners = [];
-        bannersSnapshot.forEach(doc => {
-            banners.push({
-                id: doc.id,
-                ...doc.data()
+        try {
+            // Get banners from Firestore
+            const bannersRef = firebase.firestore().collection("banners");
+            const bannersSnapshot = await bannersRef.orderBy("orden", "asc").get();
+            
+            // Check if we have banners
+            if (bannersSnapshot.empty) {
+                console.log("No hay banners disponibles");
+                bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
+                return;
+            }
+            
+            console.log(`Encontrados ${bannersSnapshot.size} banners`);
+            
+            // Convert to array
+            const banners = [];
+            bannersSnapshot.forEach(doc => {
+                banners.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
             });
-        });
-        
-        // Create grid of banner cards
-        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
-        
-        banners.forEach(banner => {
-            // Calcular fecha
-            const fecha = banner.createdAt ? new Date(banner.createdAt.seconds * 1000) : new Date();
-            const fechaFormateada = fecha.toLocaleDateString('es-ES');
             
-            // Estado (visible/oculto)
-            const estado = banner.visible !== false ? 
-                '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
-                '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
+            // Create grid of banner cards
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
             
-            // Determinar fuente de imagen (imageUrl o imageData)
-            const imageSource = banner.imageUrl || banner.imageData || '';
-            
-            html += `
-                <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
-                    <div class="relative">
-                        <img src="${imageSource}" alt="${banner.nombre}" class="w-full h-48 object-cover">
-                        <div class="absolute top-2 right-2 flex space-x-1">
-                            <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
-                            ${estado}
+            banners.forEach(banner => {
+                // Calcular fecha
+                const fecha = banner.createdAt ? new Date(banner.createdAt.seconds * 1000) : new Date();
+                const fechaFormateada = fecha.toLocaleDateString('es-ES');
+                
+                // Estado (visible/oculto)
+                const estado = banner.visible !== false ? 
+                    '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
+                    '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
+                
+                // Determinar fuente de imagen (imageUrl o imageData)
+                const imageSource = banner.imageUrl || banner.imageData || '';
+                
+                html += `
+                    <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
+                        <div class="relative">
+                            <img src="${imageSource}" alt="${banner.nombre}" class="w-full h-48 object-cover">
+                            <div class="absolute top-2 right-2 flex space-x-1">
+                                <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
+                                ${estado}
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-lg mb-1">${banner.nombre}</h3>
+                            <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'Sin descripción'}</p>
+                            
+                            <div class="flex justify-between items-center text-sm text-gray-500 mt-3">
+                                <div class="truncate mr-2">
+                                    <span class="text-blue-500 font-medium">URL:</span> 
+                                    <a href="${banner.url}" target="_blank" class="hover:underline truncate">${banner.url || '#'}</a>
+                                </div>
+                                <span>Creado: ${fechaFormateada}</span>
+                            </div>
+                            
+                            <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
+                                <button class="text-blue-500 hover:text-blue-700 toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
+                                    <i class="fas fa-eye${banner.visible !== false ? '' : '-slash'}"></i>
+                                </button>
+                                <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Editar banner">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Eliminar banner">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="p-4">
-                        <h3 class="font-bold text-lg mb-1">${banner.nombre}</h3>
-                        <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'Sin descripción'}</p>
-                        
-                        <div class="flex justify-between items-center text-sm text-gray-500 mt-3">
-                            <div class="truncate mr-2">
-                                <span class="text-blue-500 font-medium">URL:</span> 
-                                <a href="${banner.url}" target="_blank" class="hover:underline truncate">${banner.url || '#'}</a>
-                            </div>
-                            <span>Creado: ${fechaFormateada}</span>
-                        </div>
-                        
-                        <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
-                            <button class="text-blue-500 hover:text-blue-700 toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
-                                <i class="fas fa-eye${banner.visible !== false ? '' : '-slash'}"></i>
-                            </button>
-                            <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Editar banner">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Eliminar banner">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            bannersContainer.innerHTML = html;
+            
+            // Add event listeners to action buttons
+            addBannerEventListeners();
+            
+            console.log("Banners cargados correctamente");
+            
+        } catch (permissionError) {
+            console.error("Error de permisos:", permissionError);
+            
+            // Mostrar mensaje amigable y botón para crear banner de prueba
+            bannersContainer.innerHTML = `
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h3 class="text-yellow-800 font-bold mb-2">Problema de permisos</h3>
+                    <p class="text-yellow-700 mb-3">No se pudieron cargar los banners debido a un problema de permisos en la base de datos.</p>
+                    <p class="text-sm text-yellow-600 mb-4">Esto puede suceder si las reglas de seguridad de Firestore no están correctamente configuradas para la colección "banners".</p>
+                    
+                    <div class="flex justify-end">
+                        <button id="createDummyBannerBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            <i class="fas fa-plus mr-2"></i>Crear Banner de Prueba
+                        </button>
                     </div>
                 </div>
             `;
-        });
-        
-        html += '</div>';
-        
-        bannersContainer.innerHTML = html;
-        
-        // Add event listeners to action buttons
-        addBannerEventListeners();
-        
-        console.log("Banners cargados correctamente");
+            
+            // Agregar listener para crear un banner de prueba (que probablemente también fallará, pero es una forma de probar)
+            const createDummyBtn = document.getElementById('createDummyBannerBtn');
+            if (createDummyBtn) {
+                createDummyBtn.addEventListener('click', () => {
+                    headerCreateBannerBtn.click();
+                });
+            }
+        }
         
     } catch (error) {
         console.error("Error al cargar banners:", error);
