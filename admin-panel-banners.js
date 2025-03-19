@@ -27,13 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Usuario autenticado:", user.uid);
                 initBannersManagement();
             } else {
-                console.log("No hay usuario autenticado, redirigiendo...");
-                // Esperar un momento antes de redireccionar para dar tiempo a que la autenticación se complete
+                console.log("No hay usuario autenticado, esperando...");
+                // Esperar un momento más largo antes de redireccionar
                 setTimeout(() => {
                     if (!firebase.auth().currentUser) {
+                        console.log("Redirigiendo a página principal por falta de autenticación");
                         window.location.href = 'index.html';
                     }
-                }, 2000);
+                }, 5000); // Aumentar a 5 segundos para dar más tiempo
             }
         });
     }
