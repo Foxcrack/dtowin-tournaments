@@ -53,14 +53,69 @@ async function initBannersManagement() {
         }
         
         // Set up event listeners
-        setupEventListeners();
+        function setupEventListeners() {
+    console.log("Configurando event listeners...");
+    
+    // Create banner button in header
+    if (headerCreateBannerBtn) {
+        console.log("Configurando botón 'Crear Banner'");
+        headerCreateBannerBtn.addEventListener('click', () => {
+            console.log("Botón headerCreateBannerBtn clickeado");
+            resetBannerForm();
+            showBannerForm();
+        });
+    } else {
+        console.warn("No se encontró el botón 'Crear Banner'");
+    }
+    
+    // Form submission
+    if (createBannerForm) {
+        console.log("Configurando evento submit del formulario");
         
-        // Load existing banners
-        await loadBanners();
+        // Eliminar event listeners anteriores para evitar duplicados
+        const clonedForm = createBannerForm.cloneNode(true);
+        createBannerForm.parentNode.replaceChild(clonedForm, createBannerForm);
         
-    } catch (error) {
-        console.error("Error al inicializar gestión de banners:", error);
-        showNotification("Error al cargar la gestión de banners. Inténtalo de nuevo.", "error");
+        // Actualizar referencia al formulario clonado
+        const updatedForm = document.getElementById('createBannerForm');
+        
+        // Añadir event listener
+        updatedForm.addEventListener('submit', handleBannerFormSubmit);
+        
+        // Asegurarse de que el botón de submit tiene type="submit"
+        const submitBtn = document.getElementById('submitBannerButton');
+        if (submitBtn && submitBtn.type !== 'submit') {
+            console.log("Corrigiendo tipo de botón submit");
+            submitBtn.type = 'submit';
+        }
+    } else {
+        console.warn("No se encontró el formulario createBannerForm");
+    }
+    
+    // IMPORTANTE: Configurar el botón de cancelar DESPUÉS de clonar el formulario
+    const cancelBtn = document.getElementById('cancelBannerButton');
+    if (cancelBtn) {
+        console.log("Configurando botón Cancelar");
+        // Eliminar cualquier event listener anterior
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        
+        // Agregar event listener al nuevo botón
+        document.getElementById('cancelBannerButton').addEventListener('click', function() {
+            console.log("Botón cancelar clickeado");
+            hideBannerForm();
+        });
+    } else {
+        console.warn("No se encontró el botón Cancelar");
+    }
+    
+    // Image preview
+    const bannerImagen = document.getElementById('bannerImagen');
+    if (bannerImagen) {
+        console.log("Configurando preview de imagen");
+        bannerImagen.addEventListener('change', handleBannerImagePreview);
+    } else {
+        console.warn("No se encontró el input de imagen");
     }
 }
 
