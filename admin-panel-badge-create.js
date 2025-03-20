@@ -87,28 +87,7 @@ async function handleCreateBadge(event) {
     // Verificar si estamos en modo edición
     const isEditMode = submitButton.dataset.editMode === 'true';
     const badgeId = isEditMode ? submitButton.dataset.badgeId : null;
-    
-    try {
-        // Verificar si el usuario está autenticado
-        if (!auth.currentUser) {
-            showNotification("Debes iniciar sesión para crear un badge", "error");
-            return;
-        }
-        
-        // Verificar si el usuario es host
-        const userIsHost = await isUserHost();
-        if (!userIsHost) {
-            showNotification("No tienes permisos para crear badges", "error");
-            return;
-        }
-        
-        // Validar nombre del badge
-        const nombre = nombreBadgeInput.value.trim();
-        if (!nombre) {
-            showNotification("El nombre del badge es obligatorio", "error");
-            return;
-        }
-        
+     
         // Preparar datos del badge
         const badgeData = {
             nombre: nombre,
