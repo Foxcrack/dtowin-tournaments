@@ -230,20 +230,26 @@
         .catch((error) => {
             console.error("Error al configurar persistencia de sesión:", error);
         });
-
-        // Verificar autenticación
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                // Cargar badges
-                loadBadges();
+    
+    // Verificar autenticación
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            // Cargar banners (no badges)
+            if (typeof loadBanners === 'function') {
+                loadBanners();
+            } else if (typeof initBannersManagement === 'function') {
+                initBannersManagement();
             } else {
-                console.log("No hay usuario autenticado");
-                window.location.href = "index.html";
+                console.error("Las funciones de gestión de banners no están disponibles");
             }
-        });
+        } else {
+            console.log("No hay usuario autenticado");
+            window.location.href = "index.html";
+        }
+    });
 
     <!-- Script principal -->
-    <script type="module" src="admin-panel-banners.js"></script>
+    <script type="module" src="admin-panel-banners.js?v=1"></script>
 </body>
 </html>
