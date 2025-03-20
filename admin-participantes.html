@@ -197,9 +197,14 @@
                             <label for="isHostCheckbox" class="ml-2 block text-sm text-gray-700">Permisos de Host</label>
                         </div>
                     </div>
-                    <button id="saveUserRoleBtn" class="dtowin-primary text-white px-4 py-1 rounded text-sm mt-2">
-                        Guardar Cambios
-                    </button>
+                    <div class="flex space-x-2 mt-2">
+                        <button id="cancelUserRoleBtn" class="bg-gray-300 text-gray-700 px-4 py-1 rounded text-sm hover:bg-gray-400">
+                            Cancelar
+                        </button>
+                        <button id="saveUserRoleBtn" class="dtowin-primary text-white px-4 py-1 rounded text-sm hover:opacity-90">
+                            Guardar Cambios
+                        </button>
+                    </div>
                 </div>
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h4 class="font-semibold text-gray-700 mb-2">Ajuste de Puntos</h4>
@@ -333,6 +338,113 @@
     </script>
 
     <!-- Script principal -->
-    <script type="module" src="admin-panel-participants.js"></script>
+    <script>
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Función para verificar si el usuario es administrador
+    async function esUsuarioAdmin(userId) {
+        try {
+            // Lista de IDs de administradores
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+            
+            // Si está en la lista directamente
+            if (adminUIDs.includes(userId)) {
+                return true;
+            }
+            
+            // Verificar en base de datos
+            const snapshot = await db.collection("usuarios")
+                .where("uid", "==", userId)
+                .where("isHost", "==", true)
+                .get();
+            
+            return !snapshot.empty;
+        } catch (error) {
+            console.error("Error al verificar si es administrador:", error);
+            return false;
+        }
+    }
+    
+    // Ejecuta esto cuando la página cargue
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar autenticación
+        firebase.auth().onAuthStateChanged(async function(user) {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                // Verificar si es administrador
+                const isAdmin = await esUsuarioAdmin(user.uid);
+                
+                if (!isAdmin) {
+                    mostrarNotificacion("No tienes permisos para gestionar participantes", "error");
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                    return;
+                }
+                
+                console.log("Usuario validado como administrador");
+                
+                // Cargar módulo principal (solo si el usuario es administrador)
+                try {
+                    // Importar módulo de participantes
+                    const { initParticipantsPanel } = await import('./admin-panel-participants.js');
+                    // Inicializar panel de participantes
+                    initParticipantsPanel();
+                    console.log("Módulo de participantes cargado correctamente");
+                } catch (error) {
+                    console.error("Error al cargar el módulo de participantes:", error);
+                    mostrarNotificacion("Error al cargar la gestión de participantes", "error");
+                }
+            } else {
+                console.log("No hay usuario autenticado");
+                window.location.href = "index.html";
+            }
+        });
+    });
+    </script>
 </body>
 </html>
