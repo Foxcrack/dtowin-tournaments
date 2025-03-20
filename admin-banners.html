@@ -231,10 +231,17 @@
             console.error("Error al configurar persistencia de sesión:", error);
         });
 
-    // Verificar inmediatamente si hay usuario autenticado
-    const currentUser = firebase.auth().currentUser;
-    console.log("Estado inicial de autenticación:", currentUser ? `Autenticado como ${currentUser.uid}` : "No autenticado");
-    </script>
+        // Verificar autenticación
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                // Cargar badges
+                loadBadges();
+            } else {
+                console.log("No hay usuario autenticado");
+                window.location.href = "index.html";
+            }
+        });
 
     <!-- Script principal -->
     <script type="module" src="admin-panel-banners.js?v=1"></script>
