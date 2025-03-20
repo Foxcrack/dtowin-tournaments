@@ -1,5 +1,4 @@
 // admin-panel-participants.js - Módulo para gestión de participantes
-import { auth, isUserHost, getUserById } from './firebase.js';
 
 // Referencias a elementos del DOM
 const participantesContainer = document.getElementById('participantesContainer');
@@ -16,6 +15,7 @@ const userTournamentsContainer = document.getElementById('userTournamentsContain
 const userBadgesContainer = document.getElementById('userBadgesContainer');
 const addBadgeBtn = document.getElementById('addBadgeBtn');
 const saveUserRoleBtn = document.getElementById('saveUserRoleBtn');
+const cancelUserRoleBtn = document.getElementById('cancelUserRoleBtn');
 const isHostCheckbox = document.getElementById('isHostCheckbox');
 const addPointsBtn = document.getElementById('addPointsBtn');
 const subtractPointsBtn = document.getElementById('subtractPointsBtn');
@@ -46,46 +46,8 @@ let isInitialized = false;
 // Temporizador para evitar bucles infinitos
 let loadingTimeout;
 
-// Verificar autenticación antes de inicializar
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("Verificando autenticación para el panel de participantes...");
-    
-    // Establecer un temporizador para evitar espera infinita
-    loadingTimeout = setTimeout(() => {
-        console.error("Tiempo de espera agotado al cargar participantes");
-        if (participantesContainer) {
-            participantesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar participantes: Tiempo de espera agotado. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>';
-        }
-    }, 15000); // 15 segundos de tiempo máximo
-    
-    // Verificar si el usuario ya está autenticado
-    if (firebase.auth().currentUser) {
-        console.log("Usuario ya autenticado:", firebase.auth().currentUser.uid);
-        initParticipantsPanel();
-    } else {
-        console.log("Esperando autenticación...");
-        
-        // Configurar listener para cambios en el estado de autenticación
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                initParticipantsPanel();
-            } else {
-                console.log("No hay usuario autenticado, redirigiendo...");
-                // Esperar un momento antes de redireccionar
-                setTimeout(() => {
-                    if (!firebase.auth().currentUser) {
-                        clearTimeout(loadingTimeout);
-                        window.location.href = 'index.html';
-                    }
-                }, 3000);
-            }
-        });
-    }
-});
-
 // Inicializar panel de participantes
-async function initParticipantsPanel() {
+export async function initParticipantsPanel() {
     // Evitar inicialización múltiple
     if (isInitialized) {
         console.log("El panel de participantes ya está inicializado");
@@ -96,18 +58,7 @@ async function initParticipantsPanel() {
         console.log("Inicializando panel de participantes...");
         isInitialized = true;
         
-        // Verificar si el usuario actual es host/admin
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            clearTimeout(loadingTimeout);
-            mostrarNotificacion("No tienes permisos para gestionar participantes", "error");
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 3000);
-            return;
-        }
-        
+        // Obtener el usuario autenticado actual
         currentUser = firebase.auth().currentUser;
         
         // Configurar event listeners
@@ -122,11 +73,7 @@ async function initParticipantsPanel() {
         // Cargar estadísticas
         loadStatsCounters();
         
-        // Limpiar el temporizador si todo ha ido bien
-        clearTimeout(loadingTimeout);
-        
     } catch (error) {
-        clearTimeout(loadingTimeout);
         console.error("Error al inicializar panel de participantes:", error);
         mostrarNotificacion("Error al inicializar. Inténtalo de nuevo.", "error");
         
@@ -191,6 +138,17 @@ function setupEventListeners() {
     // Botón para guardar cambios de rol
     if (saveUserRoleBtn) {
         saveUserRoleBtn.addEventListener('click', saveUserRole);
+    }
+    
+    // Botón para cancelar cambios de rol
+    if (cancelUserRoleBtn) {
+        cancelUserRoleBtn.addEventListener('click', () => {
+            // Restaurar estado original del checkbox según el participante seleccionado
+            if (selectedParticipant && isHostCheckbox) {
+                isHostCheckbox.checked = selectedParticipant.isHost === true;
+            }
+            mostrarNotificacion("Cambios cancelados", "info");
+        });
     }
     
     // Modal de confirmación para eliminar participante
@@ -841,9 +799,11 @@ async function removeBadgeFromParticipant(badgeId) {
         const participantRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
         
         // Actualizar el documento del participante (eliminar el badge)
-        await participantRef.update({
-            [`badges.${badgeId}`]: firebase.firestore.FieldValue.delete()
-        });
+        const fieldPath = `badges.${badgeId}`;
+        const updateData = {};
+        updateData[fieldPath] = firebase.firestore.FieldValue.delete();
+        
+        await participantRef.update(updateData);
         
         // Actualizar también el objeto local
         if (selectedParticipant.badges && selectedParticipant.badges[badgeId]) {
@@ -1099,48 +1059,56 @@ async function loadStatsCounters() {
 
 // Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
-    // Verificar si ya existe una notificación
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-    
-    // Crear elemento de notificación
-    const notification = document.createElement('div');
-    
-    // Clases según el tipo de notificación
-    let bgColor = 'bg-blue-500';
-    let icon = 'info-circle';
-    
-    if (tipo === 'success') {
-        bgColor = 'bg-green-500';
-        icon = 'check-circle';
-    } else if (tipo === 'error') {
-        bgColor = 'bg-red-500';
-        icon = 'exclamation-circle';
-    } else if (tipo === 'warning') {
-        bgColor = 'bg-yellow-500';
-        icon = 'exclamation-triangle';
-    }
-    
-    // Estilos de la notificación
-    notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-    notification.innerHTML = `
-        <i class="fas fa-${icon} mr-2"></i>
-        <span>${mensaje}</span>
-    `;
-    
-    // Añadir al DOM
-    document.body.appendChild(notification);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-        notification.classList.add('opacity-0');
-        notification.style.transition = 'opacity 0.5s';
+    if (window.mostrarNotificacion) {
+        // Usar la función global si está disponible
+        window.mostrarNotificacion(mensaje, tipo);
+    } else {
+        // Implementación de respaldo por si la función global no está disponible
+        console.log(`Notificación (${tipo}): ${mensaje}`);
+        
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
         setTimeout(() => {
-            notification.remove();
-        }, 500);
-    }, 3000);
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
 }
 
 // Exportar funciones necesarias
