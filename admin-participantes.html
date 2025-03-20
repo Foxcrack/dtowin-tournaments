@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Participantes - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="admin-panel.html" class="flex items-center">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                </a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-2">
+                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
+                    <span class="hidden md:inline">Admin</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto py-8 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Sidebar -->
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <ul>
+                        <li>
+                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-trophy mr-2"></i> Torneos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
+                                <i class="fas fa-users mr-2"></i> Participantes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-certificate mr-2"></i> Badges
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-image mr-2"></i> Banners
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-chart-line mr-2"></i> Resultados
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i> Configuración
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-4">
+                <!-- Participantes Section -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Gestión de Participantes</h2>
+                        <div class="flex space-x-2">
+                            <div class="relative">
+                                <input type="text" id="searchParticipant" placeholder="Buscar participante..." 
+                                       class="border rounded-lg py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                            </div>
+                            <select id="filterTorneo" class="border rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                <option value="">Todos los torneos</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas rápidas -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-semibold text-blue-800">Total Participantes</h3>
+                                <p class="text-2xl font-bold text-blue-600" id="totalParticipantesCounter">--</p>
+                            </div>
+                            <i class="fas fa-users text-3xl text-blue-300"></i>
+                        </div>
+                        <div class="bg-green-50 border border-green-100 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-semibold text-green-800">Participantes Activos</h3>
+                                <p class="text-2xl font-bold text-green-600" id="participantesActivosCounter">--</p>
+                            </div>
+                            <i class="fas fa-user-check text-3xl text-green-300"></i>
+                        </div>
+                        <div class="bg-orange-50 border border-orange-100 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-semibold text-orange-800">Badges Otorgados</h3>
+                                <p class="text-2xl font-bold text-orange-600" id="badgesOtorgadosCounter">--</p>
+                            </div>
+                            <i class="fas fa-medal text-3xl text-orange-300"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de participantes -->
+                    <div id="participantesContainer" class="overflow-x-auto">
+                        <div class="flex justify-center my-8">
+                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles del Participante -->
+    <div id="participantDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl max-w-3xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button id="closeParticipantModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800" id="participantName">Detalles del Participante</h3>
+                <p class="text-gray-600" id="participantEmail">email@example.com</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-700 mb-2">Información General</h4>
+                    <div class="space-y-2 text-sm">
+                        <p><span class="text-gray-500">ID:</span> <span id="participantId" class="font-mono">UID123456</span></p>
+                        <p><span class="text-gray-500">Registro:</span> <span id="participantRegisterDate">01/01/2025</span></p>
+                        <p><span class="text-gray-500">Último login:</span> <span id="participantLastLogin">10/02/2025</span></p>
+                        <p><span class="text-gray-500">Puntos totales:</span> <span id="participantPoints" class="font-semibold">150</span></p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-700 mb-2">Rol de Usuario</h4>
+                    <div class="mb-2">
+                        <div class="flex items-center mb-2">
+                            <div id="userRoleBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Participante
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="isHostCheckbox" class="h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
+                            <label for="isHostCheckbox" class="ml-2 block text-sm text-gray-700">Permisos de Host</label>
+                        </div>
+                    </div>
+                    <button id="saveUserRoleBtn" class="dtowin-primary text-white px-4 py-1 rounded text-sm mt-2">
+                        Guardar Cambios
+                    </button>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-700 mb-2">Ajuste de Puntos</h4>
+                    <div class="flex space-x-2 items-center">
+                        <input type="number" id="pointsAdjustInput" class="border rounded w-full py-1 px-2" placeholder="0">
+                        <button id="addPointsBtn" class="bg-green-500 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button id="subtractPointsBtn" class="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Ingresa la cantidad de puntos a ajustar</p>
+                </div>
+            </div>
+            
+            <!-- Torneos del participante -->
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-700 mb-2">Torneos Participados</h4>
+                <div id="userTournamentsContainer" class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
+                    <div class="flex justify-center">
+                        <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Badges del participante -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-semibold text-gray-700">Badges Obtenidos</h4>
+                    <button id="addBadgeBtn" class="dtowin-blue text-white px-3 py-1 rounded text-sm">
+                        <i class="fas fa-plus mr-1"></i> Asignar Badge
+                    </button>
+                </div>
+                <div id="userBadgesContainer" class="bg-gray-50 p-4 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto">
+                    <div class="flex justify-center">
+                        <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para asignar Badge -->
+    <div id="badgeSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeBadgeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Asignar Badge</h3>
+                <p class="text-gray-600">Selecciona un badge para asignar al participante</p>
+            </div>
+            
+            <div id="badgesList" class="grid grid-cols-2 gap-3 mb-6 max-h-64 overflow-y-auto">
+                <div class="flex justify-center col-span-2">
+                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Motivo (opcional):
+                </label>
+                <input type="text" id="badgeReason" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" placeholder="Motivo de asignación...">
+            </div>
+            
+            <div class="text-center mt-4">
+                <button id="assignBadgeButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition" disabled>
+                    Asignar Badge
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para confirmar eliminación de participante de torneo -->
+    <div id="confirmRemoveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="text-center mb-6">
+                <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+                <h3 class="text-xl font-bold text-gray-800">Confirmar Eliminación</h3>
+                <p class="text-gray-600 mt-2">¿Estás seguro que deseas eliminar a este participante del torneo?</p>
+                <p class="text-gray-600 mt-1" id="removeParticipantTournamentName">Nombre del Torneo</p>
+            </div>
+            
+            <div class="flex justify-center space-x-4">
+                <button id="cancelRemoveBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">
+                    Cancelar
+                </button>
+                <button id="confirmRemoveBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-4 px-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
+        </div>
+    </footer>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Hacer Firebase disponible globalmente
+    window.firebase = firebase;
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.storage = firebase.storage();
+    </script>
+
+    <!-- Script principal -->
+    <script type="module" src="admin-panel-participants.js"></script>
+</body>
+</html>
