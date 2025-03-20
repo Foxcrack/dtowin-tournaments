@@ -47,7 +47,7 @@ let isInitialized = false;
 let loadingTimeout;
 
 // Inicializar panel de participantes
-export async function initParticipantsPanel() {
+async function initParticipantsPanel() {
     // Evitar inicialización múltiple
     if (isInitialized) {
         console.log("El panel de participantes ya está inicializado");
