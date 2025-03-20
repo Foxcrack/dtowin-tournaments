@@ -46,7 +46,7 @@ let isInitialized = false;
 // Temporizador para evitar bucles infinitos
 let loadingTimeout;
 
-// Inicializar panel de participantes
+// Inicializar panel de participantes - SIN EXPORT AQUÍ
 async function initParticipantsPanel() {
     // Evitar inicialización múltiple
     if (isInitialized) {
@@ -1111,9 +1111,7 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }
 }
 
-// Exportar funciones necesarias
+// Un único export al final - esto es la clave para resolver el problema
 export {
-    initParticipantsPanel,
-    loadParticipantes,
-    displayParticipants
+    initParticipantsPanel
 };
