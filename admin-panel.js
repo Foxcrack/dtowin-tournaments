@@ -1,4 +1,4 @@
-// admin-panel-dashboard.js - Script para el dashboard principal
+// admin-panel.js - Script para el dashboard principal
 
 // Referencias a elementos del DOM
 const totalUsuariosCounter = document.getElementById('totalUsuariosCounter');
@@ -240,7 +240,5 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }
 }
 
-// Exportar funciones necesarias
-export {
-    initDashboard
-};
+// Exportar la función de inicialización
+export { initDashboard };
