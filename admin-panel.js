@@ -1,212 +1,246 @@
-// admin-panel.js - Script principal para el panel de administración
-import { auth, isUserHost } from './firebase.js';
-import { showNotification, showSection } from './utils.js';
-import { doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+// admin-panel-dashboard.js - Script para el dashboard principal
 
-// Variable para el usuario actual
-let currentUser = null;
-let userProfile = null;
+// Referencias a elementos del DOM
+const totalUsuariosCounter = document.getElementById('totalUsuariosCounter');
+const torneosActivosCounter = document.getElementById('torneosActivosCounter');
+const badgesOtorgadosCounter = document.getElementById('badgesOtorgadosCounter');
+const proximosTorneosTable = document.getElementById('proximosTorneosTable');
 
-// Función para inicializar el panel de administración
-export async function initAdminPanel() {
+// Variable para controlar el estado de inicialización
+let isInitialized = false;
+
+// Inicializar dashboard
+async function initDashboard() {
+    // Evitar inicialización múltiple
+    if (isInitialized) {
+        console.log("El dashboard ya está inicializado");
+        return;
+    }
+    
     try {
-        console.log("Iniciando panel de administración...");
+        console.log("Inicializando dashboard...");
+        isInitialized = true;
         
-        // Verificar si hay usuario autenticado
-        const user = auth.currentUser;
+        // Obtener el usuario autenticado actual
+        const currentUser = firebase.auth().currentUser;
         
-        if (!user) {
-            console.log("No hay usuario autenticado. Redirigiendo...");
-            // Esperar un momento más por si la autenticación está en proceso
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            if (!auth.currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
+        // Cargar datos para el dashboard
+        await Promise.all([
+            loadEstadisticasGenerales(),
+            loadProximosTorneos()
+        ]);
+        
+        console.log("Dashboard inicializado correctamente");
+        
+    } catch (error) {
+        console.error("Error al inicializar dashboard:", error);
+        mostrarNotificacion("Error al cargar el dashboard. Inténtalo de nuevo.", "error");
+    }
+}
+
+// Cargar estadísticas generales
+async function loadEstadisticasGenerales() {
+    try {
+        console.log("Cargando estadísticas generales...");
+        
+        // Total de usuarios
+        if (totalUsuariosCounter) {
+            const usuariosSnapshot = await firebase.firestore().collection('usuarios').get();
+            totalUsuariosCounter.textContent = usuariosSnapshot.size.toString();
         }
         
-        currentUser = auth.currentUser;
-        console.log("Usuario autenticado:", currentUser.uid);
+        // Torneos activos (estado = 'Abierto' o 'En Progreso')
+        if (torneosActivosCounter) {
+            const torneosActivosSnapshot = await firebase.firestore().collection('torneos')
+                .where('estado', 'in', ['Abierto', 'En Progreso'])
+                .get();
+            torneosActivosCounter.textContent = torneosActivosSnapshot.size.toString();
+        }
         
-        // Verificar si el usuario es host
-        const userIsHost = await isUserHost();
-        console.log("¿Es host?", userIsHost);
+        // Badges otorgados
+        if (badgesOtorgadosCounter) {
+            let totalBadges = 0;
+            
+            // Obtener todos los usuarios
+            const usuariosSnapshot = await firebase.firestore().collection('usuarios').get();
+            
+            // Contar badges para cada usuario
+            usuariosSnapshot.forEach(doc => {
+                const userData = doc.data();
+                if (userData.badges) {
+                    totalBadges += Object.keys(userData.badges).length;
+                }
+            });
+            
+            badgesOtorgadosCounter.textContent = totalBadges.toString();
+        }
         
-        if (!userIsHost) {
-            showAccessDenied();
+        console.log("Estadísticas generales cargadas correctamente");
+        
+    } catch (error) {
+        console.error("Error al cargar estadísticas generales:", error);
+        
+        // Establecer valores por defecto en caso de error
+        if (totalUsuariosCounter) totalUsuariosCounter.textContent = "--";
+        if (torneosActivosCounter) torneosActivosCounter.textContent = "--";
+        if (badgesOtorgadosCounter) badgesOtorgadosCounter.textContent = "--";
+    }
+}
+
+// Cargar próximos torneos
+async function loadProximosTorneos() {
+    try {
+        console.log("Cargando próximos torneos...");
+        
+        if (!proximosTorneosTable) {
+            console.warn("No se encontró la tabla de próximos torneos");
             return;
         }
         
-        // Cargar perfil de usuario
-        await loadUserProfile();
+        // Mostrar spinner mientras carga
+        proximosTorneosTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                    <div class="flex justify-center">
+                        <div class="spinner rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
+                    </div>
+                </td>
+            </tr>
+        `;
         
-        // Inicializar navegación
-        initNavigation();
+        // Obtener la fecha actual
+        const fechaActual = new Date();
+        const timestampActual = firebase.firestore.Timestamp.fromDate(fechaActual);
         
-        // Cargar estadísticas para el dashboard
-        loadDashboardStats();
+        // Obtener torneos que no estén en estado 'Finalizado' o 'Cerrado'
+        const torneosSnapshot = await firebase.firestore().collection('torneos')
+            .where('estado', 'in', ['Abierto', 'Próximamente', 'En Progreso', 'Próximo'])
+            .orderBy('fecha', 'asc')
+            .get();
         
-    } catch (error) {
-        console.error("Error al inicializar panel de administración:", error);
-        showNotification("Error al inicializar panel de administración", "error");
-    }
-}
-
-// Cargar perfil del usuario
-async function loadUserProfile() {
-    try {
-        if (!currentUser) return;
-        
-        // Obtener datos del usuario desde Firestore
-        const db = firebase.firestore();
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", currentUser.uid));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            userProfile = querySnapshot.docs[0].data();
-            
-            // Actualizar UI con información del usuario
-            const userInfoElement = document.getElementById('userProfile');
-            if (userInfoElement) {
-                const photoURL = userProfile.photoURL || currentUser.photoURL || 'https://via.placeholder.com/40';
-                const displayName = userProfile.nombre || currentUser.displayName || 'Administrador';
-                
-                userInfoElement.innerHTML = `
-                    <img src="${photoURL}" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">${displayName}</span>
-                `;
-            }
+        if (torneosSnapshot.empty) {
+            proximosTorneosTable.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                        No hay torneos próximos o abiertos
+                    </td>
+                </tr>
+            `;
+            return;
         }
-    } catch (error) {
-        console.error("Error al cargar perfil de usuario:", error);
-    }
-}
-
-// Función para mostrar mensaje de acceso denegado
-function showAccessDenied() {
-    document.body.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-screen bg-gray-100">
-            <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-                <i class="fas fa-lock text-4xl text-red-500 mb-4"></i>
-                <h1 class="text-2xl font-bold mb-4">Acceso Denegado</h1>
-                <p class="text-gray-600 mb-6">No tienes permisos para acceder al panel de administración.</p>
-                <a href="index.html" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition inline-block">
-                    Volver al inicio
-                </a>
-            </div>
-        </div>
-    `;
-}
-
-// Función para inicializar la navegación
-function initNavigation() {
-    // Añadir event listeners a los enlaces de navegación
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const sectionId = this.getAttribute('href').substring(1);
-            showSection(sectionId);
+        
+        // Generar las filas de la tabla
+        let html = '';
+        
+        torneosSnapshot.forEach(doc => {
+            const torneo = {
+                id: doc.id,
+                ...doc.data()
+            };
+            
+            // Formatear fecha
+            const fechaTorneo = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : null;
+            const fechaFormateada = fechaTorneo ? formatearFecha(fechaTorneo) : 'Sin fecha';
+            
+            // Calcular inscritos/capacidad
+            const inscritos = torneo.participants ? torneo.participants.length : 0;
+            const capacidad = torneo.capacidad || '∞';
+            const inscritosCapacidad = `${inscritos} / ${capacidad}`;
+            
+            // Determinar clase del estado
+            let estadoClase, estadoTexto;
+            switch (torneo.estado) {
+                case 'Abierto':
+                    estadoClase = 'bg-green-100 text-green-800';
+                    estadoTexto = 'Abierto';
+                    break;
+                case 'En Progreso':
+                    estadoClase = 'bg-blue-100 text-blue-800';
+                    estadoTexto = 'En Progreso';
+                    break;
+                case 'Próximo':
+                case 'Próximamente':
+                    estadoClase = 'bg-yellow-100 text-yellow-800';
+                    estadoTexto = 'Próximo';
+                    break;
+                default:
+                    estadoClase = 'bg-gray-100 text-gray-800';
+                    estadoTexto = torneo.estado || 'Desconocido';
+            }
+            
+            html += `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">${torneo.nombre || 'Sin nombre'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${fechaFormateada}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${inscritosCapacidad}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClase}">
+                            ${estadoTexto}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="admin-torneos.html?id=${torneo.id}" class="text-blue-600 hover:text-blue-900">
+                            <i class="fas fa-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+            `;
         });
-    });
-}
-
-// Cargar estadísticas para el dashboard
-async function loadDashboardStats() {
-    try {
-        // Referencias a elementos del dashboard
-        const usuariosCounter = document.querySelector('.bg-blue-500 .text-2xl');
-        const torneosCounter = document.querySelector('.bg-green-500 .text-2xl');
-        const badgesCounter = document.querySelector('.dtowin-primary .text-2xl');
         
-        // Cargar contadores desde Firestore
-        if (usuariosCounter) {
-            usuariosCounter.textContent = "254"; // Valor por defecto
-            
-            try {
-                // Intentar contar usuarios reales
-                const db = firebase.firestore();
-                const usersRef = collection(db, "usuarios");
-                const usersSnapshot = await getDocs(usersRef);
-                if (usersSnapshot.size > 0) {
-                    usuariosCounter.textContent = usersSnapshot.size.toString();
-                }
-            } catch (e) {
-                console.warn("Error al contar usuarios:", e);
-            }
-        }
+        proximosTorneosTable.innerHTML = html;
         
-        if (torneosCounter) {
-            torneosCounter.textContent = "3"; // Valor por defecto
-            
-            try {
-                // Intentar contar torneos activos
-                const db = firebase.firestore();
-                const torneosRef = collection(db, "torneos");
-                const q = query(torneosRef, where("estado", "in", ["Abierto", "En Progreso"]));
-                const torneosSnapshot = await getDocs(q);
-                if (torneosSnapshot.size >= 0) {
-                    torneosCounter.textContent = torneosSnapshot.size.toString();
-                }
-            } catch (e) {
-                console.warn("Error al contar torneos:", e);
-            }
-        }
+        console.log("Próximos torneos cargados correctamente");
         
-        if (badgesCounter) {
-            badgesCounter.textContent = "128"; // Valor por defecto
-            
-            try {
-                // Intentar contar badges otorgados
-                const db = firebase.firestore();
-                const userBadgesRef = collection(db, "user_badges");
-                const userBadgesSnapshot = await getDocs(userBadgesRef);
-                if (userBadgesSnapshot.size >= 0) {
-                    badgesCounter.textContent = userBadgesSnapshot.size.toString();
-                }
-            } catch (e) {
-                console.warn("Error al contar badges:", e);
-            }
-        }
     } catch (error) {
-        console.error("Error al cargar estadísticas del dashboard:", error);
+        console.error("Error al cargar próximos torneos:", error);
+        
+        proximosTorneosTable.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-6 py-4 text-center text-sm text-red-500">
+                    Error al cargar los torneos. <button class="text-blue-500 underline" onclick="location.reload()">Reintentar</button>
+                </td>
+            </tr>
+        `;
     }
 }
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM cargado, inicializando panel de administración");
+// Formatear fecha para mostrar en la tabla
+function formatearFecha(fecha) {
+    const dia = fecha.getDate();
+    const mes = obtenerNombreMes(fecha.getMonth());
+    const anio = fecha.getFullYear();
     
-    // Verificar estado de autenticación
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            console.log("Usuario ya autenticado:", user.uid);
-            initAdminPanel();
-        } else {
-            console.log("No hay usuario autenticado, redirigiendo...");
-            window.location.href = 'index.html';
-        }
-    });
-    
-    // Configurar navegación con clicks en el menú
-    document.querySelectorAll('nav a').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const href = this.getAttribute('href');
-            
-            // Si es un enlace a otra página
-            if (href.endsWith('.html')) {
-                window.location.href = href;
-                return;
-            }
-            
-            // Si es un enlace dentro de la página
-            const sectionId = href.substring(1);
-            showSection(sectionId);
-        });
-    });
-});
+    return `${dia} de ${mes}, ${anio}`;
+}
 
-// Exponer lo que sea necesario para scripts HTML inline
-window.showSection = showSection;
+// Obtener nombre del mes
+function obtenerNombreMes(numeroMes) {
+    const meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    
+    return meses[numeroMes];
+}
+
+// Función para mostrar notificaciones (respaldo por si no está disponible la global)
+function mostrarNotificacion(mensaje, tipo = "info") {
+    if (window.mostrarNotificacion) {
+        // Usar la función global si está disponible
+        window.mostrarNotificacion(mensaje, tipo);
+    } else {
+        // Implementación de respaldo
+        console.log(`Notificación (${tipo}): ${mensaje}`);
+    }
+}
+
+// Exportar funciones necesarias
+export {
+    initDashboard
+};
