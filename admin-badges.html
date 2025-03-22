@@ -167,21 +167,10 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
-                                    Color
+                                    Color de Fondo (para badges sin imagen)
                                 </label>
                                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
-                                    Ícono
-                                </label>
-                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
-                                    <option value="trophy">Trofeo</option>
-                                    <option value="medal">Medalla</option>
-                                    <option value="star">Estrella</option>
-                                    <option value="award">Premio</option>
-                                    <option value="crown">Corona</option>
-                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Este color se usará como fondo si no se selecciona una imagen.</p>
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
@@ -190,7 +179,8 @@
                                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                     id="imagenBadge" 
                                     type="file" 
-                                    accept="image/png, image/jpeg">
+                                    accept="image/png, image/jpeg"
+                                    required>
                                 <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
                             </div>
                             <div class="flex items-center">
@@ -307,15 +297,21 @@
                 const nombre = document.getElementById('nombreBadge').value;
                 const descripcion = document.getElementById('descripcionBadge').value;
                 const color = document.getElementById('colorBadge').value;
-                const icono = document.getElementById('iconoBadge').value;
+                const imageFile = imagenBadgeInput.files[0];
                 
-                // Crear badge sin subir imagen
-                createBadgeWithoutImage(nombre, descripcion, color, icono);
+                // Validar que hay una imagen
+                if (!imageFile) {
+                    mostrarNotificacion("La imagen es obligatoria para el badge", "error");
+                    return;
+                }
+                
+                // Crear badge con imagen
+                createBadgeWithImage(nombre, descripcion, color, imageFile);
             });
         }
         
-        // Función para crear badge sin usar Storage
-        async function createBadgeWithoutImage(nombre, descripcion, color, icono) {
+        // Función para crear badge con imagen
+        async function createBadgeWithImage(nombre, descripcion, color, imageFile) {
             try {
                 // Mostrar indicador de carga
                 if (submitButton) {
@@ -323,12 +319,32 @@
                     submitButton.disabled = true;
                     submitButton.textContent = 'Procesando...';
                     
-                    // Añadir badge a Firestore directamente (sin imagen)
+                    // Validar que hay un nombre
+                    if (!nombre.trim()) {
+                        throw new Error("El nombre del badge es obligatorio");
+                    }
+                    
+                    // Validar que sea una imagen
+                    if (!imageFile.type.startsWith('image/')) {
+                        throw new Error("El archivo debe ser una imagen válida");
+                    }
+                    
+                    // Referencia para el archivo en Storage
+                    const storageRef = firebase.storage().ref(`badges/${Date.now()}_${imageFile.name}`);
+                    
+                    // Subir la imagen
+                    const uploadTask = await storageRef.put(imageFile);
+                    
+                    // Obtener URL de descarga
+                    const imageUrl = await uploadTask.ref.getDownloadURL();
+                    console.log("Imagen subida:", imageUrl);
+                    
+                    // Añadir badge a Firestore con la imagen
                     await firebase.firestore().collection('badges').add({
                         nombre: nombre,
-                        descripcion: descripcion,
-                        color: color,
-                        icono: icono,
+                        descripcion: descripcion || "",
+                        color: color || "#ff6b1a",
+                        imageUrl: imageUrl,
                         createdBy: firebase.auth().currentUser.uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -339,6 +355,7 @@
                     // Ocultar formulario y recargar badges
                     if (formSection) formSection.classList.add('hidden');
                     createBadgeForm.reset();
+                    badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
                     
                     // Recargar lista de badges
                     loadBadges();
@@ -395,8 +412,11 @@
                     const badge = doc.data();
                     html += `
                         <div class="bg-white rounded-lg p-4 shadow-md flex items-center" data-badge-id="${doc.id}">
-                            <div class="h-12 w-12 mr-3 rounded-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
-                                <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+                            <div class="h-12 w-12 mr-3 rounded-full flex items-center justify-center overflow-hidden" style="background-color: ${badge.color || '#ff6b1a'}">
+                                ${badge.imageUrl ? 
+                                    `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
+                                    `<i class="fas fa-certificate text-white"></i>`
+                                }
                             </div>
                             <div class="flex-grow">
                                 <h4 class="font-semibold">${badge.nombre || 'Sin nombre'}</h4>
