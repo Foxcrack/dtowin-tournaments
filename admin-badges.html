@@ -53,6 +53,9 @@
         .badge-preview:hover {
             transform: scale(1.05);
         }
+        .notification {
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -253,12 +256,6 @@
     // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
 
-    // Hacer Firebase disponible globalmente
-    window.firebase = firebase;
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
-    window.storage = firebase.storage();
-
     // Configurar persistencia para mantener la sesión
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
@@ -269,147 +266,7 @@
         });
     </script>
 
-    <!-- Función para mostrar notificaciones -->
-    <script>
-    function mostrarNotificacion(mensaje, tipo = "info") {
-        // Verificar si ya existe una notificación
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
-        
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        
-        // Clases según el tipo de notificación
-        let bgColor = 'bg-blue-500';
-        let icon = 'info-circle';
-        
-        if (tipo === 'success') {
-            bgColor = 'bg-green-500';
-            icon = 'check-circle';
-        } else if (tipo === 'error') {
-            bgColor = 'bg-red-500';
-            icon = 'exclamation-circle';
-        } else if (tipo === 'warning') {
-            bgColor = 'bg-yellow-500';
-            icon = 'exclamation-triangle';
-        }
-        
-        // Estilos de la notificación
-        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-        notification.innerHTML = `
-            <i class="fas fa-${icon} mr-2"></i>
-            <span>${mensaje}</span>
-        `;
-        
-        // Añadir al DOM
-        document.body.appendChild(notification);
-        
-        // Eliminar después de 3 segundos
-        setTimeout(() => {
-            notification.classList.add('opacity-0');
-            notification.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                notification.remove();
-            }, 500);
-        }, 3000);
-    }
-
-    // Hacer la función disponible globalmente
-    window.mostrarNotificacion = mostrarNotificacion;
-    </script>
-
-    <!-- Verificación de usuario -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("Verificando autenticación...");
-        
-        // Establecer un temporizador para evitar espera infinita
-        const loadingTimeout = setTimeout(() => {
-            console.error("Tiempo de espera agotado al verificar usuario");
-            mostrarNotificacion('Error al cargar: Tiempo de espera agotado', 'error');
-        }, 15000); // 15 segundos de tiempo máximo
-        
-        // Verificar autenticación
-        firebase.auth().onAuthStateChanged(async function(user) {
-            clearTimeout(loadingTimeout); // Limpiar temporizador
-            
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                
-                // Actualizar UI del usuario
-                actualizarUIUsuario(user);
-                
-                // Verificar si es host/admin
-                const isHost = await esUsuarioHost(user.uid);
-                
-                if (!isHost) {
-                    console.log("Usuario no tiene permisos de administrador");
-                    mostrarNotificacion("No tienes permisos para acceder a esta sección", "error");
-                    setTimeout(() => {
-                        window.location.href = "index.html";
-                    }, 3000);
-                    return;
-                }
-                
-                console.log("Usuario validado como host/admin");
-                // Si llegamos aquí, el usuario tiene permisos
-            } else {
-                console.log("No hay usuario autenticado");
-                mostrarNotificacion("Debes iniciar sesión para acceder", "warning");
-                setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 2000);
-            }
-        });
-        
-        // Función para verificar si el usuario es host
-        async function esUsuarioHost(userId) {
-            try {
-                // Lista de administradores por defecto
-                const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Añade aquí los UID de administradores
-                
-                // Verificar directamente si está en la lista de administradores
-                if (adminUIDs.includes(userId)) {
-                    console.log("Usuario es administrador por estar en la lista");
-                    return true;
-                }
-                
-                // Verificar en la base de datos
-                const userQuery = await firebase.firestore()
-                    .collection("usuarios")
-                    .where("uid", "==", userId)
-                    .where("isHost", "==", true)
-                    .get();
-                
-                const isHost = !userQuery.empty;
-                console.log("¿Usuario es host según la base de datos?", isHost);
-                return isHost;
-            } catch (error) {
-                console.error("Error al verificar si el usuario es host:", error);
-                // Si falla la consulta pero el usuario está en la lista de administradores, permitir acceso
-                return adminUIDs.includes(userId);
-            }
-        }
-        
-        // Actualizar UI con info del usuario
-        function actualizarUIUsuario(user) {
-            const userNameElement = document.getElementById('userName');
-            const userAvatarElement = document.getElementById('userAvatar');
-            
-            if (userNameElement) {
-                userNameElement.textContent = user.displayName || 'Usuario';
-            }
-            
-            if (userAvatarElement && user.photoURL) {
-                userAvatarElement.src = user.photoURL;
-            }
-        }
-    });
-    </script>
-
-    <!-- Script principal para badges -->
-    <script type="module" src="admin-panel-badges.js"></script>
+    <!-- Script para gestión de badges -->
+    <script src="admin-panel-badges.js"></script>
 </body>
 </html>
