@@ -283,7 +283,7 @@
             
             // Al crear, la imagen es requerida
             imagenBadgeInput.required = true;
-            imageRequiredText.classList.remove('hidden');
+            if (imageRequiredText) imageRequiredText.classList.remove('hidden');
         }
         
         // Vista previa de imagen
@@ -298,6 +298,11 @@
                         mostrarNotificacion("El archivo debe ser una imagen", "error");
                         this.value = '';
                         return;
+                    }
+                    
+                    // Verificar el tamaño máximo (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        mostrarNotificacion("La imagen es demasiado grande. Máximo 5MB", "warning");
                     }
                     
                     const reader = new FileReader();
@@ -334,48 +339,113 @@
                     return;
                 }
                 
-                // Determinar qué función llamar según el modo
-                if (isEditMode) {
-                    updateBadge(badgeId, nombre, descripcion, color, imageFile);
-                } else {
-                    createBadgeWithImage(nombre, descripcion, color, imageFile);
+                // Mostrar estado de carga en el botón
+                if (submitButton) {
+                    const originalText = submitButton.textContent;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
+                    
+                    // Establecer un tiempo máximo para la operación (30 segundos)
+                    const timeout = setTimeout(() => {
+                        console.error("Tiempo de espera agotado al procesar el badge");
+                        mostrarNotificacion("La operación está tardando demasiado. Inténtalo de nuevo.", "error");
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText;
+                    }, 30000);
+                    
+                    // Determinar qué función llamar según el modo
+                    try {
+                        if (isEditMode) {
+                            updateBadge(badgeId, nombre, descripcion, color, imageFile)
+                                .then(() => {
+                                    clearTimeout(timeout);
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalText;
+                                })
+                                .catch(error => {
+                                    clearTimeout(timeout);
+                                    console.error('Error al actualizar badge:', error);
+                                    mostrarNotificacion('Error al actualizar badge: ' + error.message, 'error');
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalText;
+                                });
+                        } else {
+                            createBadgeWithImage(nombre, descripcion, color, imageFile)
+                                .then(() => {
+                                    clearTimeout(timeout);
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalText;
+                                })
+                                .catch(error => {
+                                    clearTimeout(timeout);
+                                    console.error('Error al crear badge:', error);
+                                    mostrarNotificacion('Error al crear badge: ' + error.message, 'error');
+                                    submitButton.disabled = false;
+                                    submitButton.textContent = originalText;
+                                });
+                        }
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        console.error('Error al procesar badge:', error);
+                        mostrarNotificacion('Error al procesar badge: ' + error.message, 'error');
+                        submitButton.disabled = false;
+                        submitButton.textContent = originalText;
+                    }
                 }
             });
         }
         
         // Función para crear badge con imagen
         async function createBadgeWithImage(nombre, descripcion, color, imageFile) {
+            console.log("Creando badge con imagen...");
+            
             try {
-                // Mostrar indicador de carga
-                if (submitButton) {
-                    const originalText = submitButton.textContent;
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Procesando...';
-                    
-                    // Validar que sea una imagen
-                    if (!imageFile.type.startsWith('image/')) {
-                        throw new Error("El archivo debe ser una imagen válida");
+                // Validar que sea una imagen
+                if (!imageFile.type.startsWith('image/')) {
+                    throw new Error("El archivo debe ser una imagen válida");
+                }
+                
+                // Crear un nombre único para el archivo
+                const timestamp = Date.now();
+                const fileName = `${timestamp}_${imageFile.name}`;
+                console.log("Nombre del archivo:", fileName);
+                
+                // Crear referencia para el archivo en Storage
+                const storageRef = firebase.storage().ref(`badges/${fileName}`);
+                console.log("Referencia de storage creada");
+                
+                // Subir la imagen con metadatos
+                const metadata = {
+                    contentType: imageFile.type,
+                    customMetadata: {
+                        'createdBy': firebase.auth().currentUser.uid,
+                        'badgeName': nombre
                     }
-                    
-                    // Referencia para el archivo en Storage
-                    const storageRef = firebase.storage().ref(`badges/${Date.now()}_${imageFile.name}`);
-                    
+                };
+                
+                console.log("Iniciando subida de imagen...");
+                try {
                     // Subir la imagen
-                    const uploadTask = await storageRef.put(imageFile);
+                    const uploadTask = await storageRef.put(imageFile, metadata);
+                    console.log("Imagen subida correctamente");
                     
                     // Obtener URL de descarga
                     const imageUrl = await uploadTask.ref.getDownloadURL();
-                    console.log("Imagen subida:", imageUrl);
+                    console.log("URL de descarga obtenida:", imageUrl);
                     
                     // Añadir badge a Firestore con la imagen
-                    await firebase.firestore().collection('badges').add({
+                    const badgeData = {
                         nombre: nombre,
                         descripcion: descripcion || "",
                         color: color || "#ff6b1a",
                         imageUrl: imageUrl,
                         createdBy: firebase.auth().currentUser.uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    };
+                    
+                    console.log("Guardando en Firestore:", badgeData);
+                    await firebase.firestore().collection('badges').add(badgeData);
+                    console.log("Badge guardado en Firestore");
                     
                     // Mostrar mensaje de éxito
                     mostrarNotificacion('Badge creado correctamente', 'success');
@@ -387,104 +457,147 @@
                     // Recargar lista de badges
                     loadBadges();
                     
-                    // Restaurar botón
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalText;
+                    return true;
+                } catch (uploadError) {
+                    console.error("Error al subir imagen:", uploadError);
+                    throw new Error("Error al subir la imagen: " + (uploadError.message || "Error desconocido"));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                mostrarNotificacion('Error al crear badge: ' + error.message, 'error');
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Crear Badge';
-                }
+                throw error;
             }
         }
         
         // Función para actualizar un badge existente
         async function updateBadge(badgeId, nombre, descripcion, color, imageFile) {
+            console.log("Actualizando badge:", badgeId);
+            
             try {
-                // Mostrar indicador de carga
-                if (submitButton) {
-                    const originalText = submitButton.textContent;
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Procesando...';
+                // Datos de actualización
+                const updateData = {
+                    nombre: nombre,
+                    descripcion: descripcion || "",
+                    color: color || "#ff6b1a",
+                    updatedBy: firebase.auth().currentUser.uid,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                console.log("Datos de actualización:", updateData);
+                
+                // Si hay una nueva imagen, subirla
+                if (imageFile) {
+                    console.log("Hay una nueva imagen para subir");
                     
-                    // Datos de actualización
-                    const updateData = {
-                        nombre: nombre,
-                        descripcion: descripcion || "",
-                        color: color || "#ff6b1a",
-                        updatedBy: firebase.auth().currentUser.uid,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
+                    // Validar que sea una imagen
+                    if (!imageFile.type.startsWith('image/')) {
+                        throw new Error("El archivo debe ser una imagen válida");
+                    }
                     
-                    // Si hay una nueva imagen, subirla
-                    if (imageFile) {
-                        // Validar que sea una imagen
-                        if (!imageFile.type.startsWith('image/')) {
-                            throw new Error("El archivo debe ser una imagen válida");
+                    // Crear un nombre único para el archivo
+                    const timestamp = Date.now();
+                    const fileName = `${timestamp}_${imageFile.name}`;
+                    
+                    // Verificar si hay imagen anterior para eliminarla
+                    try {
+                        console.log("Obteniendo datos del badge actual");
+                        const badgeDoc = await firebase.firestore().collection('badges').doc(badgeId).get();
+                        
+                        if (!badgeDoc.exists) {
+                            throw new Error("No se encontró el badge a actualizar");
                         }
                         
-                        // Obtener la referencia actual del badge
-                        const badgeDoc = await firebase.firestore().collection('badges').doc(badgeId).get();
                         const badgeData = badgeDoc.data();
                         
                         // Si hay una imagen anterior, intentar eliminarla
                         if (badgeData.imageUrl) {
                             try {
-                                // Extraer la ruta del archivo de la URL
-                                const urlPath = badgeData.imageUrl.split('?')[0]; // Eliminar query params
-                                const fileName = urlPath.split('/').pop(); // Obtener el nombre del archivo
-                                const storagePath = `badges/${fileName}`;
+                                console.log("Badge tiene una imagen anterior:", badgeData.imageUrl);
                                 
-                                // Intentar eliminar la imagen anterior
-                                try {
-                                    const oldImageRef = firebase.storage().ref(storagePath);
-                                    await oldImageRef.delete();
-                                    console.log("Imagen anterior eliminada");
-                                } catch (deleteError) {
-                                    console.warn("No se pudo eliminar la imagen anterior:", deleteError);
+                                // Extraer el nombre del archivo de la URL
+                                const urlPath = badgeData.imageUrl;
+                                // La URL puede contener caracteres especiales, necesitamos obtener el nombre del archivo
+                                const fileNameMatch = urlPath.match(/badges%2F([^?]+)/);
+                                
+                                if (fileNameMatch && fileNameMatch[1]) {
+                                    const oldFileName = decodeURIComponent(fileNameMatch[1]);
+                                    console.log("Nombre de archivo extraído:", oldFileName);
+                                    
+                                    try {
+                                        // Eliminar la imagen anterior
+                                        const oldRef = firebase.storage().ref(`badges/${oldFileName}`);
+                                        await oldRef.delete();
+                                        console.log("Imagen anterior eliminada correctamente");
+                                    } catch (deleteError) {
+                                        console.warn("No se pudo eliminar la imagen anterior:", deleteError);
+                                        // Continuamos aunque la eliminación falle
+                                    }
+                                } else {
+                                    console.warn("No se pudo extraer el nombre del archivo de la URL");
                                 }
                             } catch (parseError) {
-                                console.warn("Error al parsear la URL de imagen anterior:", parseError);
+                                console.warn("Error al procesar la URL de la imagen anterior:", parseError);
                             }
                         }
-                        
-                        // Subir la nueva imagen
-                        const storageRef = firebase.storage().ref(`badges/${Date.now()}_${imageFile.name}`);
-                        const uploadTask = await storageRef.put(imageFile);
-                        updateData.imageUrl = await uploadTask.ref.getDownloadURL();
+                    } catch (getError) {
+                        console.error("Error al obtener datos del badge:", getError);
+                        // Continuamos con la actualización aunque no podamos eliminar la imagen anterior
                     }
                     
-                    // Actualizar el documento
-                    await firebase.firestore().collection('badges').doc(badgeId).update(updateData);
+                    // Subir la nueva imagen
+                    console.log("Subiendo nueva imagen...");
                     
-                    // Mostrar mensaje de éxito
-                    mostrarNotificacion('Badge actualizado correctamente', 'success');
-                    
-                    // Ocultar formulario y recargar badges
-                    if (formSection) formSection.classList.add('hidden');
-                    resetForm();
-                    
-                    // Recargar lista de badges
-                    loadBadges();
+                    try {
+                        const storageRef = firebase.storage().ref(`badges/${fileName}`);
+                        const metadata = {
+                            contentType: imageFile.type,
+                            customMetadata: {
+                                'updatedBy': firebase.auth().currentUser.uid,
+                                'badgeName': nombre
+                            }
+                        };
+                        
+                        const uploadTask = await storageRef.put(imageFile, metadata);
+                        console.log("Nueva imagen subida correctamente");
+                        
+                        // Obtener URL de la nueva imagen
+                        const imageUrl = await uploadTask.ref.getDownloadURL();
+                        console.log("URL de la nueva imagen:", imageUrl);
+                        
+                        // Añadir URL a los datos de actualización
+                        updateData.imageUrl = imageUrl;
+                    } catch (uploadError) {
+                        console.error("Error al subir la nueva imagen:", uploadError);
+                        throw new Error("Error al subir la nueva imagen: " + (uploadError.message || "Error desconocido"));
+                    }
                 }
+                
+                // Actualizar el documento en Firestore
+                console.log("Actualizando documento en Firestore...");
+                await firebase.firestore().collection('badges').doc(badgeId).update(updateData);
+                console.log("Badge actualizado correctamente en Firestore");
+                
+                // Mostrar mensaje de éxito
+                mostrarNotificacion('Badge actualizado correctamente', 'success');
+                
+                // Ocultar formulario y recargar badges
+                if (formSection) formSection.classList.add('hidden');
+                resetForm();
+                
+                // Recargar lista de badges
+                loadBadges();
+                
+                return true;
             } catch (error) {
                 console.error('Error al actualizar badge:', error);
-                mostrarNotificacion('Error al actualizar badge: ' + error.message, 'error');
-            } finally {
-                // Restaurar botón
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Crear Badge';
-                }
+                throw error;
             }
         }
         
         // Función para cargar un badge para edición
         async function loadBadgeForEdit(badgeId) {
             try {
+                console.log("Cargando badge para edición:", badgeId);
+                
                 // Obtener datos del badge
                 const badgeDoc = await firebase.firestore().collection('badges').doc(badgeId).get();
                 
@@ -493,6 +606,7 @@
                 }
                 
                 const badgeData = badgeDoc.data();
+                console.log("Datos del badge:", badgeData);
                 
                 // Llenar formulario con datos
                 document.getElementById('nombreBadge').value = badgeData.nombre || '';
@@ -507,7 +621,7 @@
                 
                 // Al editar, la imagen no es requerida (ya existe una)
                 imagenBadgeInput.required = false;
-                imageRequiredText.classList.add('hidden');
+                if (imageRequiredText) imageRequiredText.classList.add('hidden');
                 
                 // Mostrar la imagen actual
                 if (badgeData.imageUrl) {
@@ -529,19 +643,41 @@
         
         // Función para mostrar notificaciones
         function mostrarNotificacion(mensaje, tipo) {
+            console.log(`Notificación (${tipo}):`, mensaje);
+            
             const notificacion = document.createElement('div');
             
             // Definir clases según el tipo
-            const bgColor = tipo === 'success' ? 'bg-green-500' : 'bg-red-500';
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
             
-            notificacion.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50`;
-            notificacion.textContent = mensaje;
+            if (tipo === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (tipo === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (tipo === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Estilos de la notificación
+            notificacion.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notificacion.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${mensaje}</span>
+            `;
             
             document.body.appendChild(notificacion);
             
             // Eliminar después de 3 segundos
             setTimeout(() => {
-                notificacion.remove();
+                notificacion.classList.add('opacity-0');
+                notificacion.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    notificacion.remove();
+                }, 500);
             }, 3000);
         }
         
@@ -550,19 +686,25 @@
             if (!badgesContainer) return;
             
             try {
+                console.log("Cargando badges existentes...");
                 badgesContainer.innerHTML = '<div class="flex justify-center"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
                 
                 const snapshot = await firebase.firestore().collection('badges').get();
                 
                 if (snapshot.empty) {
+                    console.log("No hay badges disponibles");
                     badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
                     return;
                 }
+                
+                console.log(`Se encontraron ${snapshot.size} badges`);
                 
                 let html = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
                 
                 snapshot.forEach(doc => {
                     const badge = doc.data();
+                    console.log(`Badge: ${badge.nombre}`, badge);
+                    
                     html += `
                         <div class="bg-white rounded-lg p-4 shadow-md flex items-center" data-badge-id="${doc.id}">
                             <div class="h-12 w-12 mr-3 rounded-full flex items-center justify-center overflow-hidden" style="background-color: ${badge.color || '#ff6b1a'}">
@@ -589,6 +731,7 @@
                 
                 html += '</div>';
                 badgesContainer.innerHTML = html;
+                console.log("Badges renderizados en el contenedor");
                 
                 // Añadir listeners a botones de eliminar
                 document.querySelectorAll('.delete-badge-btn').forEach(btn => {
@@ -599,6 +742,13 @@
                         
                         if (confirm(`¿Estás seguro de que quieres eliminar el badge "${badgeName}"?`)) {
                             try {
+                                console.log(`Eliminando badge ${id}: ${badgeName}`);
+                                
+                                // Mostrar spinner en el botón
+                                const originalHtml = this.innerHTML;
+                                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                                this.disabled = true;
+                                
                                 // Obtener datos del badge
                                 const badgeDoc = await firebase.firestore().collection('badges').doc(id).get();
                                 const badgeData = badgeDoc.data();
@@ -606,17 +756,25 @@
                                 // Si hay una imagen, intentar eliminarla
                                 if (badgeData.imageUrl) {
                                     try {
-                                        // Extraer la ruta del archivo de la URL
-                                        const urlPath = badgeData.imageUrl.split('?')[0]; // Eliminar query params
-                                        const fileName = urlPath.split('/').pop(); // Obtener el nombre del archivo
-                                        const storagePath = `badges/${fileName}`;
+                                        console.log("Badge tiene imagen:", badgeData.imageUrl);
                                         
-                                        try {
-                                            const imageRef = firebase.storage().ref(storagePath);
-                                            await imageRef.delete();
-                                            console.log("Imagen eliminada");
-                                        } catch (deleteError) {
-                                            console.warn("No se pudo eliminar la imagen:", deleteError);
+                                        // Extraer el nombre del archivo de la URL
+                                        const urlPath = badgeData.imageUrl;
+                                        const fileNameMatch = urlPath.match(/badges%2F([^?]+)/);
+                                        
+                                        if (fileNameMatch && fileNameMatch[1]) {
+                                            const fileName = decodeURIComponent(fileNameMatch[1]);
+                                            console.log("Nombre de archivo extraído:", fileName);
+                                            
+                                            try {
+                                                const imageRef = firebase.storage().ref(`badges/${fileName}`);
+                                                await imageRef.delete();
+                                                console.log("Imagen eliminada correctamente");
+                                            } catch (deleteError) {
+                                                console.warn("No se pudo eliminar la imagen:", deleteError);
+                                            }
+                                        } else {
+                                            console.warn("No se pudo extraer el nombre del archivo de la URL");
                                         }
                                     } catch (parseError) {
                                         console.warn("Error al parsear la URL de imagen:", parseError);
@@ -625,6 +783,7 @@
                                 
                                 // Eliminar el documento
                                 await firebase.firestore().collection('badges').doc(id).delete();
+                                console.log("Badge eliminado de Firestore");
                                 
                                 // Actualizar UI
                                 card.remove();
@@ -635,8 +794,12 @@
                                     badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
                                 }
                             } catch (error) {
-                                console.error('Error:', error);
-                                mostrarNotificacion('Error al eliminar badge', 'error');
+                                console.error('Error al eliminar badge:', error);
+                                mostrarNotificacion('Error al eliminar badge: ' + error.message, 'error');
+                                
+                                // Restaurar botón
+                                this.innerHTML = originalHtml;
+                                this.disabled = false;
                             }
                         }
                     });
@@ -647,6 +810,7 @@
                     btn.addEventListener('click', function() {
                         const card = this.closest('[data-badge-id]');
                         const id = card.dataset.badgeId;
+                        console.log(`Editando badge: ${id}`);
                         loadBadgeForEdit(id);
                     });
                 });
