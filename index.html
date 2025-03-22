@@ -375,97 +375,109 @@
     }
     
     // Función para actualizar la UI cuando el usuario inicia sesión
-    async function updateUIForLoggedInUser(user) {
-        console.log("Actualizando UI para usuario logueado:", user.uid);
-        
-        if (loginBtn) {
-            loginBtn.innerHTML = `
-                <div class="flex items-center bg-white rounded-lg px-3 py-1">
-                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-                    <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
-                </div>
-            `;
-            
-            loginBtn.removeEventListener('click', showLoginModal);
-            loginBtn.addEventListener('click', () => {
-                window.location.href = 'perfil.html';
-            });
-        }
-        
-        if (registerBtn) {
-            registerBtn.style.display = 'none';
-        }
+    function updateUIForLoggedInUser(user) {
+        return new Promise((resolve, reject) => {
+            try {
+                console.log("Actualizando UI para usuario logueado:", user.uid);
+                
+                if (loginBtn) {
+                    loginBtn.innerHTML = `
+                        <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                            <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                            <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
+                        </div>
+                    `;
+                    
+                    loginBtn.removeEventListener('click', showLoginModal);
+                    loginBtn.addEventListener('click', () => {
+                        window.location.href = 'perfil.html';
+                    });
+                }
+                
+                if (registerBtn) {
+                    registerBtn.style.display = 'none';
+                }
+                
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
     
     // Configurar login con Google
     if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleLoginBtn.disabled = true;
-                
-                // Intentar login
-                const user = await loginWithGoogle();
-                console.log("Login exitoso:", user);
-                
-                // Cerrar modal
-                loginModal.classList.add('hidden');
-                loginModal.classList.remove('flex');
-                
-                // Actualizar UI
-                updateUIForLoggedInUser(user);
-                
-                // Mostrar mensaje
-                mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
-                
-                // Recargar torneos para actualizar botones de inscripción
-                loadTournaments();
-                
-            } catch (error) {
-                console.error("Error en inicio de sesión:", error);
-                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleLoginBtn.disabled = false;
-            }
+        googleLoginBtn.addEventListener('click', function() {
+            // Mostrar carga
+            googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+            googleLoginBtn.disabled = true;
+            
+            // Intentar login
+            loginWithGoogle()
+                .then(user => {
+                    console.log("Login exitoso:", user);
+                    
+                    // Cerrar modal
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                    
+                    // Actualizar UI
+                    return updateUIForLoggedInUser(user);
+                })
+                .then(() => {
+                    // Mostrar mensaje
+                    mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                    
+                    // Recargar torneos para actualizar botones de inscripción
+                    return loadTournaments();
+                })
+                .catch(error => {
+                    console.error("Error en inicio de sesión:", error);
+                    mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+                })
+                .finally(() => {
+                    // Restaurar botón
+                    googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleLoginBtn.disabled = false;
+                });
         });
     }
     
     // Lo mismo para registro con Google
     if (googleRegisterBtn) {
-        googleRegisterBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleRegisterBtn.disabled = true;
-                
-                // Usar mismo método que login
-                const user = await loginWithGoogle();
-                console.log("Registro exitoso:", user);
-                
-                // Cerrar modal
-                registroModal.classList.add('hidden');
-                registroModal.classList.remove('flex');
-                
-                // Actualizar UI
-                updateUIForLoggedInUser(user);
-                
-                // Mostrar mensaje
-                mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
-                
-                // Recargar torneos para actualizar botones de inscripción
-                loadTournaments();
-                
-            } catch (error) {
-                console.error("Error en registro:", error);
-                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleRegisterBtn.disabled = false;
-            }
+        googleRegisterBtn.addEventListener('click', function() {
+            // Mostrar carga
+            googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+            googleRegisterBtn.disabled = true;
+            
+            // Usar mismo método que login
+            loginWithGoogle()
+                .then(user => {
+                    console.log("Registro exitoso:", user);
+                    
+                    // Cerrar modal
+                    registroModal.classList.add('hidden');
+                    registroModal.classList.remove('flex');
+                    
+                    // Actualizar UI
+                    return updateUIForLoggedInUser(user);
+                })
+                .then(() => {
+                    // Mostrar mensaje
+                    mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                    
+                    // Recargar torneos para actualizar botones de inscripción
+                    return loadTournaments();
+                })
+                .catch(error => {
+                    console.error("Error en registro:", error);
+                    mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+                })
+                .finally(() => {
+                    // Restaurar botón
+                    googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleRegisterBtn.disabled = false;
+                });
         });
     }
     
@@ -519,61 +531,67 @@
     window.mostrarNotificacion = mostrarNotificacion;
     
     // Función para comprobar si el usuario es admin y mostrar el botón correspondiente
-    async function checkAndShowAdminButton() {
-        try {
-            const user = auth.currentUser;
-            
-            if (!user) {
-                console.log("No hay usuario autenticado");
-                return;
-            }
-            
-            // Verificar si el usuario es administrador
-            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
-            const isAdmin = adminUIDs.includes(user.uid);
-            console.log("¿El usuario actual es admin?", isAdmin);
-            
-            // Si el usuario es admin, mostrar el botón de Admin
-            if (isAdmin) {
-                // Buscar el elemento de navegación donde queremos añadir el botón
-                const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+    function checkAndShowAdminButton() {
+        return new Promise((resolve, reject) => {
+            try {
+                const user = auth.currentUser;
                 
-                if (navLinks) {
-                    // Crear el botón de Admin
-                    const adminButton = document.createElement("a");
-                    adminButton.href = "admin-panel.html";
-                    adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
-                    adminButton.textContent = "Admin";
-                    
-                    // Insertar antes del botón de "Mi Perfil" o al final si no existe
-                    const profileLink = navLinks.querySelector('a[href="perfil.html"]');
-                    if (profileLink) {
-                        navLinks.insertBefore(adminButton, profileLink.nextSibling);
-                    } else {
-                        navLinks.appendChild(adminButton);
-                    }
-                    
-                    // También agregar al menú móvil si existe
-                    const mobileMenu = document.getElementById("mobileMenu");
-                    if (mobileMenu) {
-                        const mobileMenuLinks = mobileMenu.querySelector("div");
-                        if (mobileMenuLinks) {
-                            const mobileAdminLink = document.createElement("a");
-                            mobileAdminLink.href = "admin-panel.html";
-                            mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
-                            mobileAdminLink.textContent = "Admin";
-                            mobileMenuLinks.appendChild(mobileAdminLink);
-                        }
-                    }
-                    
-                    console.log("Botón de Admin añadido correctamente");
-                } else {
-                    console.error("No se pudo encontrar la barra de navegación");
+                if (!user) {
+                    console.log("No hay usuario autenticado");
+                    resolve(false);
+                    return;
                 }
+                
+                // Verificar si el usuario es administrador
+                const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
+                const isAdmin = adminUIDs.includes(user.uid);
+                console.log("¿El usuario actual es admin?", isAdmin);
+                
+                // Si el usuario es admin, mostrar el botón de Admin
+                if (isAdmin) {
+                    // Buscar el elemento de navegación donde queremos añadir el botón
+                    const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+                    
+                    if (navLinks) {
+                        // Crear el botón de Admin
+                        const adminButton = document.createElement("a");
+                        adminButton.href = "admin-panel.html";
+                        adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
+                        adminButton.textContent = "Admin";
+                        
+                        // Insertar antes del botón de "Mi Perfil" o al final si no existe
+                        const profileLink = navLinks.querySelector('a[href="perfil.html"]');
+                        if (profileLink) {
+                            navLinks.insertBefore(adminButton, profileLink.nextSibling);
+                        } else {
+                            navLinks.appendChild(adminButton);
+                        }
+                        
+                        // También agregar al menú móvil si existe
+                        const mobileMenu = document.getElementById("mobileMenu");
+                        if (mobileMenu) {
+                            const mobileMenuLinks = mobileMenu.querySelector("div");
+                            if (mobileMenuLinks) {
+                                const mobileAdminLink = document.createElement("a");
+                                mobileAdminLink.href = "admin-panel.html";
+                                mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
+                                mobileAdminLink.textContent = "Admin";
+                                mobileMenuLinks.appendChild(mobileAdminLink);
+                            }
+                        }
+                        
+                        console.log("Botón de Admin añadido correctamente");
+                    } else {
+                        console.error("No se pudo encontrar la barra de navegación");
+                    }
+                }
+                
+                resolve(isAdmin);
+            } catch (error) {
+                console.error("Error al verificar permisos de admin:", error);
+                reject(error);
             }
-        } catch (error) {
-            console.error("Error al verificar permisos de admin:", error);
-        }
+        });
     }
     
     // Configurar menú móvil
@@ -594,19 +612,18 @@
     
     // Cargar torneos y leaderboard al iniciar la página
     document.addEventListener('DOMContentLoaded', function() {
-    // Cargar torneos sin usar await
-    loadTournaments();
-    
-    // Cargar leaderboard sin usar await
-    loadLeaderboard();
-    
-    // Verificar si hay usuario autenticado
-    auth.onAuthStateChanged(function(user) {
-        if (user) {
-            console.log("Usuario autenticado:", user.uid);
-            
-            // Actualizar UI para usuario logueado sin await
-            try {
+        // Cargar torneos sin usar await
+        loadTournaments();
+        
+        // Cargar leaderboard sin usar await
+        loadLeaderboard();
+        
+        // Verificar si hay usuario autenticado
+        auth.onAuthStateChanged(function(user) {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                
+                // Actualizar UI para usuario logueado sin await
                 updateUIForLoggedInUser(user)
                     .then(function() {
                         // Verificar si es admin
@@ -619,14 +636,11 @@
                     .catch(function(error) {
                         console.error("Error al actualizar UI:", error);
                     });
-            } catch (error) {
-                console.error("Error en manejo de usuario:", error);
+            } else {
+                console.log("No hay usuario autenticado");
             }
-        } else {
-            console.log("No hay usuario autenticado");
-        }
+        });
     });
-});
     </script>
 </body>
 </html>
