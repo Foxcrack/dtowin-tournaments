@@ -189,18 +189,12 @@ export async function loadTournaments() {
         torneosAbiertos.sort(sortByDate);
         torneosProximos.sort(sortByDate);
         
-        // Pre-cargar banners para todos los torneos
-        console.log("Pre-cargando banners de torneos...");
-        torneosEnProceso = await preloadTournamentBanners(torneosEnProceso);
-        torneosAbiertos = await preloadTournamentBanners(torneosAbiertos);
-        torneosProximos = await preloadTournamentBanners(torneosProximos);
+        // Renderizar torneos en sus respectivos contenedores sin pre-carga
+        renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
+        renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
+        renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
         
-        // Renderizar torneos en sus respectivos contenedores
-        await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
-        await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
-        await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
-        
-        // Configurar botones de inscripción/desinscripción
+        // Configurar botones de inscripción/desinscripción después de renderizar
         setupTournamentButtons();
         
         console.log("Torneos cargados correctamente");
@@ -212,7 +206,7 @@ export async function loadTournaments() {
 }
 
 // Renderizar sección de torneos
-async function renderTournamentSection(sectionId, containerId, torneos) {
+function renderTournamentSection(sectionId, containerId, torneos) {
     const container = document.getElementById(containerId);
     const section = document.getElementById(sectionId);
     
@@ -228,12 +222,12 @@ async function renderTournamentSection(sectionId, containerId, torneos) {
         section.classList.add('hidden');
     } else {
         section.classList.remove('hidden');
-        await renderTournaments(containerId, torneos);
+        renderTournaments(containerId, torneos);
     }
 }
 
 // Renderizar torneos en un contenedor
-async function renderTournaments(containerId, torneos) {
+function renderTournaments(containerId, torneos) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
@@ -251,26 +245,8 @@ async function renderTournaments(containerId, torneos) {
             year: 'numeric'
         });
         
-        // Formatear hora ajustada a la zona horaria local del usuario
-        let horaFormateada = '';
-        if (torneo.hora) {
-            // Extraer las horas y minutos de la hora guardada
-            const [horas, minutos] = torneo.hora.split(':').map(num => parseInt(num, 10));
-            
-            // Crear una nueva fecha con la fecha del torneo y la hora específica en UTC
-            const fechaHora = new Date(fecha);
-            fechaHora.setHours(horas);
-            fechaHora.setMinutes(minutos);
-            
-            // Formatear la hora en la zona horaria local del usuario
-            horaFormateada = fechaHora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-        } else {
-            horaFormateada = '00:00';
-        }
+        // Formatear hora simple
+        let horaFormateada = torneo.hora || '00:00';
         
         // Calcular inscripciones y capacidad
         const participants = torneo.participants || [];
@@ -370,12 +346,12 @@ async function renderTournaments(containerId, torneos) {
     
     // Cargar lista de participantes para cada torneo
     for (const torneo of torneos) {
-        await loadParticipants(torneo.id, torneo.participants || []);
+        loadParticipants(torneo.id, torneo.participants || []);
     }
 }
 
 // Cargar participantes de un torneo
-async function loadParticipants(torneoId, participantIds) {
+function loadParticipants(torneoId, participantIds) {
     const container = document.getElementById(`participants-${torneoId}`);
     if (!container) return;
     
@@ -384,43 +360,55 @@ async function loadParticipants(torneoId, participantIds) {
         return;
     }
     
-    try {
-        let html = '<ul class="space-y-1">';
-        const maxToShow = Math.min(5, participantIds.length); // Mostrar máximo 5 participantes
-        
-        for (let i = 0; i < maxToShow; i++) {
-            const uid = participantIds[i];
-            const usersRef = collection(db, "usuarios");
-            const q = query(usersRef, where("uid", "==", uid), limit(1));
-            const querySnapshot = await getDocs(q);
+    // Inicialmente mostrar mensaje de carga
+    container.innerHTML = '<p class="text-center text-gray-500 text-xs">Cargando participantes...</p>';
+    
+    // Usar setTimeout para dar tiempo a la UI de actualizarse
+    setTimeout(async () => {
+        try {
+            let html = '<ul class="space-y-1">';
+            const maxToShow = Math.min(5, participantIds.length); // Mostrar máximo 5 participantes
             
-            if (!querySnapshot.empty) {
-                const userData = querySnapshot.docs[0].data();
+            // Cargar participantes de Firebase
+            for (let i = 0; i < maxToShow; i++) {
+                const uid = participantIds[i];
+                
+                try {
+                    const usersRef = collection(db, "usuarios");
+                    const q = query(usersRef, where("uid", "==", uid), limit(1));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        const userData = querySnapshot.docs[0].data();
+                        html += `
+                            <li class="text-xs truncate">
+                                <i class="fas fa-user text-gray-400 mr-1"></i>
+                                ${userData.nombre || 'Usuario'}
+                            </li>
+                        `;
+                    }
+                } catch (error) {
+                    console.warn("Error al cargar usuario:", uid, error);
+                }
+            }
+            
+            // Si hay más participantes, mostrar cuántos más hay
+            if (participantIds.length > maxToShow) {
                 html += `
-                    <li class="text-xs truncate">
-                        <i class="fas fa-user text-gray-400 mr-1"></i>
-                        ${userData.nombre || 'Usuario'}
+                    <li class="text-xs text-center text-gray-500 mt-1">
+                        Y ${participantIds.length - maxToShow} participantes más...
                     </li>
                 `;
             }
+            
+            html += '</ul>';
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error(`Error al cargar participantes para torneo ${torneoId}:`, error);
+            container.innerHTML = '<p class="text-center text-red-500 text-xs">Error al cargar participantes</p>';
         }
-        
-        // Si hay más participantes, mostrar cuántos más hay
-        if (participantIds.length > maxToShow) {
-            html += `
-                <li class="text-xs text-center text-gray-500 mt-1">
-                    Y ${participantIds.length - maxToShow} participantes más...
-                </li>
-            `;
-        }
-        
-        html += '</ul>';
-        container.innerHTML = html;
-        
-    } catch (error) {
-        console.error(`Error al cargar participantes para torneo ${torneoId}:`, error);
-        container.innerHTML = '<p class="text-center text-red-500 text-xs">Error al cargar participantes</p>';
-    }
+    }, 10); // Pequeño retraso para no bloquear la UI
 }
 
 // Configurar botones de inscripción/desinscripción
