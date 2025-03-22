@@ -1,56 +1,110 @@
-// admin-panel-badges.js - Script para la gestión de badges
-import { 
-    auth, 
-    db, 
-    storage, 
-    isUserHost,
-    badgesCollection
-} from './firebase.js';
+// admin-panel-badges.js - Script para la gestión de badges (versión corregida sin módulos)
 
 // Variables globales
 let currentBadgeId = null;
 let isEditMode = false;
 let isInitialized = false;
-
-// Agregar un temporizador para evitar bucles infinitos
 let loadingTimeout;
 
-// Exportar funciones para que puedan ser usadas por otros módulos
-export function initBadgesManagement() {
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
     console.log("Inicializando sistema de badges...");
     
-    // Establecer un temporizador para evitar espera infinita
+    // Establecer temporizador de seguridad
     loadingTimeout = setTimeout(() => {
         console.error("Tiempo de espera agotado al cargar badges");
         const badgesContainer = document.getElementById('badgesContainer');
         if (badgesContainer) {
             badgesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar badges: Tiempo de espera agotado. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>';
         }
-    }, 15000); // 15 segundos de tiempo máximo
+    }, 15000); // 15 segundos máximo
     
-    // Verificar si el usuario ya está autenticado
-    if (auth.currentUser) {
-        console.log("Usuario ya autenticado:", auth.currentUser.uid);
-        initializeSystem();
-    } else {
-        console.log("Esperando autenticación...");
+    // Verificar autenticación
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            checkUserPermissions(user.uid);
+        } else {
+            console.log("No hay usuario autenticado, redirigiendo...");
+            clearTimeout(loadingTimeout);
+            showLoginMessage();
+        }
+    });
+});
+
+// Verificar permisos del usuario
+async function checkUserPermissions(userId) {
+    try {
+        console.log("Verificando permisos para:", userId);
         
-        // Configurar listener para cambios en el estado de autenticación
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                initializeSystem();
-            } else {
-                console.log("No hay usuario autenticado, redirigiendo...");
-                clearTimeout(loadingTimeout);
+        // Lista de administradores directos
+        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSA4Net2"]; 
+        
+        // Verificar si está en la lista de administradores
+        if (adminUIDs.includes(userId)) {
+            console.log("Usuario es administrador por estar en la lista");
+            initializeSystem();
+            return;
+        }
+        
+        // Verificar en la base de datos
+        const userQuery = await firebase.firestore()
+            .collection("usuarios")
+            .where("uid", "==", userId)
+            .where("isHost", "==", true)
+            .get();
+        
+        if (!userQuery.empty) {
+            console.log("Usuario es host según la base de datos");
+            initializeSystem();
+        } else {
+            console.log("Usuario no tiene permisos de administrador");
+            showNotification("No tienes permisos para acceder a esta sección", "error");
+            setTimeout(() => {
                 window.location.href = 'index.html';
-            }
-        });
+            }, 3000);
+        }
+    } catch (error) {
+        console.error("Error al verificar permisos:", error);
+        showNotification("Error al verificar permisos", "error");
+    }
+}
+
+// Mostrar mensaje de inicio de sesión
+function showLoginMessage() {
+    const main = document.querySelector('.md\\:col-span-4') || document.querySelector('main') || document.body;
+    
+    if (main) {
+        // Limpiar contenido existente
+        const badgesContainer = document.getElementById('badgesContainer');
+        if (badgesContainer) {
+            badgesContainer.innerHTML = '';
+        }
+        
+        // Crear mensaje
+        const loginMsg = document.createElement('div');
+        loginMsg.className = 'bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mx-auto my-8 max-w-2xl text-center';
+        loginMsg.innerHTML = `
+            <p class="font-bold">Sesión expirada o no iniciada</p>
+            <p class="mt-2">Debes iniciar sesión para acceder al panel de administración.</p>
+            <button onclick="window.location.href='index.html'" class="mt-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Ir a inicio de sesión
+            </button>
+        `;
+        
+        // Ocultar elementos de UI que no deberían verse
+        const headerBtn = document.getElementById('headerCreateBadgeBtn');
+        if (headerBtn) {
+            headerBtn.style.display = 'none';
+        }
+        
+        // Insertar mensaje
+        main.prepend(loginMsg);
     }
 }
 
 // Inicializar el sistema
-async function initializeSystem() {
+function initializeSystem() {
     // Evitar inicialización múltiple
     if (isInitialized) {
         console.log("La gestión de badges ya está inicializada");
@@ -61,23 +115,11 @@ async function initializeSystem() {
         console.log("Inicializando gestión de badges...");
         isInitialized = true;
         
-        // Check if user is host/admin
-        const userIsHost = await isUserHost();
-        
-        if (!userIsHost) {
-            clearTimeout(loadingTimeout);
-            showNotification("No tienes permisos para gestionar badges", "error");
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 3000);
-            return;
-        }
-        
         // Set up event listeners
         setupEventListeners();
         
         // Load existing badges
-        await loadBadges();
+        loadBadges();
         
         // Configurar búsqueda
         setupSearch();
@@ -415,13 +457,13 @@ function readFileAsBase64(file) {
 // Crear nuevo badge
 async function createBadge(badgeData, imageFile) {
     console.log("Creando nuevo badge");
-    const user = auth.currentUser;
+    const user = firebase.auth().currentUser;
     
     try {
         // Añadir metadatos
         badgeData.createdBy = user.uid;
-        badgeData.createdAt = new Date();
-        badgeData.updatedAt = new Date();
+        badgeData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        badgeData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
         
         // Si hay imagen, procesarla
         if (imageFile) {
@@ -443,7 +485,7 @@ async function createBadge(badgeData, imageFile) {
         }
         
         // Guardar en Firestore
-        const docRef = await db.collection("badges").add(badgeData);
+        const docRef = await firebase.firestore().collection("badges").add(badgeData);
         return { id: docRef.id, success: true };
     } catch (error) {
         console.error("Error al crear badge:", error);
@@ -454,13 +496,13 @@ async function createBadge(badgeData, imageFile) {
 // Actualizar badge existente
 async function updateBadge(badgeId, badgeData, imageFile) {
     console.log("Actualizando badge:", badgeId);
-    const user = auth.currentUser;
+    const user = firebase.auth().currentUser;
     
     try {
         // Añadir metadatos de actualización
         const updateData = {
             ...badgeData,
-            updatedAt: new Date(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy: user.uid
         };
         
@@ -484,7 +526,7 @@ async function updateBadge(badgeId, badgeData, imageFile) {
         }
         
         // Actualizar en Firestore
-        await db.collection("badges").doc(badgeId).update(updateData);
+        await firebase.firestore().collection("badges").doc(badgeId).update(updateData);
         return { id: badgeId, success: true };
     } catch (error) {
         console.error("Error al actualizar badge:", error);
@@ -498,7 +540,7 @@ async function uploadImageToStorage(imageFile) {
         // Crear referencia con nombre único
         const timestamp = new Date().getTime();
         const filename = `badges/badge_${timestamp}_${imageFile.name}`;
-        const storageRef = storage.ref(filename);
+        const storageRef = firebase.storage().ref(filename);
         
         // Iniciar la subida
         const uploadTask = storageRef.put(imageFile);
@@ -531,12 +573,12 @@ async function uploadImageToStorage(imageFile) {
 }
 
 // Cargar badge para edición
-export async function loadBadgeForEdit(badgeId) {
+async function loadBadgeForEdit(badgeId) {
     try {
         console.log("Cargando badge para editar:", badgeId);
         
         // Obtener datos del badge
-        const badgeDoc = await db.collection("badges").doc(badgeId).get();
+        const badgeDoc = await firebase.firestore().collection("badges").doc(badgeId).get();
         
         if (!badgeDoc.exists) {
             throw new Error("No se encontró el badge para editar");
@@ -613,7 +655,7 @@ async function deleteBadge(badgeId) {
         }
         
         // Obtener datos del badge
-        const badgeDoc = await db.collection("badges").doc(badgeId).get();
+        const badgeDoc = await firebase.firestore().collection("badges").doc(badgeId).get();
         
         if (!badgeDoc.exists) {
             throw new Error("No se encontró el badge para eliminar");
@@ -624,7 +666,7 @@ async function deleteBadge(badgeId) {
         // Si hay imageUrl, intentar eliminar de Storage
         if (badge.imageUrl) {
             try {
-                const storageRef = storage.refFromURL(badge.imageUrl);
+                const storageRef = firebase.storage().refFromURL(badge.imageUrl);
                 await storageRef.delete();
                 console.log("Imagen eliminada de Storage");
             } catch (storageError) {
@@ -634,7 +676,7 @@ async function deleteBadge(badgeId) {
         }
         
         // Eliminar de Firestore
-        await db.collection("badges").doc(badgeId).delete();
+        await firebase.firestore().collection("badges").doc(badgeId).delete();
         console.log("Badge eliminado correctamente");
         
         showNotification("Badge eliminado correctamente", "success");
@@ -648,7 +690,7 @@ async function deleteBadge(badgeId) {
 }
 
 // Cargar y mostrar badges
-export async function loadBadges() {
+async function loadBadges() {
     const badgesContainer = document.getElementById('badgesContainer');
     if (!badgesContainer) {
         console.warn("No se encontró el contenedor de badges");
@@ -662,7 +704,7 @@ export async function loadBadges() {
         badgesContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
         
         // Obtener badges de Firestore
-        const badgesSnapshot = await db.collection("badges").orderBy("createdAt", "desc").get();
+        const badgesSnapshot = await firebase.firestore().collection("badges").orderBy("createdAt", "desc").get();
         
         // Verificar si hay badges
         if (badgesSnapshot.empty) {
@@ -681,8 +723,18 @@ export async function loadBadges() {
             const badgeId = doc.id;
             
             // Calcular fecha
-            const fecha = badge.createdAt ? new Date(badge.createdAt.seconds * 1000) : new Date();
-            const fechaFormateada = fecha.toLocaleDateString('es-ES');
+            let fechaFormateada = "Fecha desconocida";
+            if (badge.createdAt) {
+                if (badge.createdAt.toDate) {
+                    // Si es un timestamp de Firestore
+                    const fecha = badge.createdAt.toDate();
+                    fechaFormateada = fecha.toLocaleDateString('es-ES');
+                } else if (badge.createdAt.seconds) {
+                    // Si es un objeto con seconds
+                    const fecha = new Date(badge.createdAt.seconds * 1000);
+                    fechaFormateada = fecha.toLocaleDateString('es-ES');
+                }
+            }
             
             // Estado (visible/oculto) si existe esa propiedad
             let estadoHtml = '';
@@ -826,7 +878,7 @@ function addBadgeEventListeners() {
 }
 
 // Función para mostrar notificaciones
-export function showNotification(mensaje, tipo = "info") {
+function showNotification(mensaje, tipo = "info") {
     // Verificar si ya existe una notificación
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
@@ -871,5 +923,11 @@ export function showNotification(mensaje, tipo = "info") {
     }, 3000);
 }
 
-// Hacer disponible la función de notificación globalmente
-window.showNotification = showNotification;
+// Exponer algunas funciones globalmente para debugging
+window.badgesFunctions = {
+    loadBadges,
+    showNotification,
+    resetBadgeForm,
+    showBadgeForm,
+    hideBadgeForm
+};
