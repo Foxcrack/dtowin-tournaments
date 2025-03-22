@@ -14,6 +14,38 @@ import {
     FieldValue
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
+// Función para pre-cargar imágenes
+function preloadImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => reject(new Error(`Error al cargar la imagen: ${url}`));
+        img.src = url;
+    });
+}
+
+// Función para validar y pre-cargar los banners de torneos
+async function preloadTournamentBanners(torneos) {
+    const preloadPromises = [];
+    
+    for (const torneo of torneos) {
+        if (torneo.imageUrl) {
+            const promise = preloadImage(torneo.imageUrl)
+                .catch(error => {
+                    console.warn(error);
+                    // Si la imagen no carga, asignar un placeholder
+                    torneo.imageUrl = `https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
+                    return torneo.imageUrl;
+                });
+            preloadPromises.push(promise);
+        }
+    }
+    
+    // Esperar a que todas las imágenes se carguen o fallen
+    await Promise.allSettled(preloadPromises);
+    return torneos;
+}
+
 // Obtener color según el estado del torneo
 function getStatusColor(estado) {
     switch(estado) {
@@ -35,8 +67,8 @@ function renderPuntosPosicion(puntosPosicion) {
     if (!puntosPosicion) return 'No hay información de puntos';
     
     let html = '';
-    // Actualizado: cambiado el color del tercer puesto a bronce
-    const colors = ['yellow-500', 'gray-400', 'amber-600'];
+    // Actualizado: colores más contrastantes para los tres primeros puestos
+    const colors = ['yellow-500', 'gray-400', 'red-500'];
     
     for (let i = 1; i <= 3; i++) {
         if (puntosPosicion[i] !== undefined) {
@@ -184,6 +216,12 @@ export async function loadTournaments() {
         torneosAbiertos.sort(sortByDate);
         torneosProximos.sort(sortByDate);
         
+        // Pre-cargar banners para todos los torneos
+        console.log("Pre-cargando banners de torneos...");
+        torneosEnProceso = await preloadTournamentBanners(torneosEnProceso);
+        torneosAbiertos = await preloadTournamentBanners(torneosAbiertos);
+        torneosProximos = await preloadTournamentBanners(torneosProximos);
+        
         // Renderizar torneos en sus respectivos contenedores
         await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
         await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
@@ -232,7 +270,7 @@ async function renderTournaments(containerId, torneos) {
     const currentUser = auth.currentUser;
     
     for (const torneo of torneos) {
-        // Formatear fecha
+        // Formatear fecha y ajustar a la zona horaria local del usuario
         const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
         const fechaFormateada = fecha.toLocaleDateString('es-ES', {
             day: 'numeric',
@@ -240,9 +278,26 @@ async function renderTournaments(containerId, torneos) {
             year: 'numeric'
         });
         
-        // Formatear hora
-        const hora = torneo.hora || '00:00';
-        const horaFormateada = hora.substring(0, 5);
+        // Formatear hora ajustada a la zona horaria local del usuario
+        let horaFormateada = '';
+        if (torneo.hora) {
+            // Extraer las horas y minutos de la hora guardada
+            const [horas, minutos] = torneo.hora.split(':').map(num => parseInt(num, 10));
+            
+            // Crear una nueva fecha con la fecha del torneo y la hora específica en UTC
+            const fechaHora = new Date(fecha);
+            fechaHora.setHours(horas);
+            fechaHora.setMinutes(minutos);
+            
+            // Formatear la hora en la zona horaria local del usuario
+            horaFormateada = fechaHora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        } else {
+            horaFormateada = '00:00';
+        }
         
         // Calcular inscripciones y capacidad
         const participants = torneo.participants || [];
@@ -295,10 +350,17 @@ async function renderTournaments(containerId, torneos) {
         // HTML del torneo - Asegurarse de que la imagen se muestre correctamente
         const bannerUrl = torneo.imageUrl || `https://via.placeholder.com/800x400/1a75ff/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
         
+        // Verificar si hay una imagen y aplicar una solución más robusta
         html += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
-                <div class="w-full h-48 bg-gray-200">
-                    <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover">
+                <div class="w-full h-48 bg-gray-200 relative">
+                    <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover" 
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}'; this.style.opacity='1';"
+                         style="opacity: 0; transition: opacity 0.3s ease;"
+                         onload="this.style.opacity='1';">
+                    <noscript>
+                        <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover">
+                    </noscript>
                 </div>
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
