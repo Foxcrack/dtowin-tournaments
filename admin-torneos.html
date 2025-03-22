@@ -32,6 +32,16 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        .badge-preview {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 0.5rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -204,18 +214,63 @@
                             
                             <div class="md:col-span-2">
                                 <label class="block text-gray-700 text-sm font-bold mb-2">
-                                    Badges del Torneo
+                                    Badges para Premiación
                                 </label>
                                 <div class="border rounded-lg p-4 bg-white">
-                                    <div class="flex justify-between items-center mb-3">
-                                        <p class="text-sm text-gray-600">Asigna badges para este torneo:</p>
-                                        <button type="button" id="addBadgeBtn" class="text-blue-500 hover:text-blue-700 transition">
-                                            <i class="fas fa-plus"></i> Añadir Badge
-                                        </button>
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <!-- Badge Primer Lugar -->
+                                        <div class="flex items-center">
+                                            <div class="w-24 text-right mr-2">
+                                                <label class="text-gray-700 text-sm font-medium">1er Lugar:</label>
+                                            </div>
+                                            <div class="flex-grow relative">
+                                                <div id="badge1Preview" class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
+                                                    <span class="text-gray-500 text-sm">Seleccionar badge...</span>
+                                                </div>
+                                                <input type="hidden" id="badge1Id">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Badge Segundo Lugar -->
+                                        <div class="flex items-center">
+                                            <div class="w-24 text-right mr-2">
+                                                <label class="text-gray-700 text-sm font-medium">2do Lugar:</label>
+                                            </div>
+                                            <div class="flex-grow relative">
+                                                <div id="badge2Preview" class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
+                                                    <span class="text-gray-500 text-sm">Seleccionar badge...</span>
+                                                </div>
+                                                <input type="hidden" id="badge2Id">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Badge Tercer Lugar -->
+                                        <div class="flex items-center">
+                                            <div class="w-24 text-right mr-2">
+                                                <label class="text-gray-700 text-sm font-medium">3er Lugar:</label>
+                                            </div>
+                                            <div class="flex-grow relative">
+                                                <div id="badge3Preview" class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
+                                                    <span class="text-gray-500 text-sm">Seleccionar badge...</span>
+                                                </div>
+                                                <input type="hidden" id="badge3Id">
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Badge Participación -->
+                                        <div class="flex items-center">
+                                            <div class="w-24 text-right mr-2">
+                                                <label class="text-gray-700 text-sm font-medium">Participación:</label>
+                                            </div>
+                                            <div class="flex-grow relative">
+                                                <div id="badgeParticipationPreview" class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50">
+                                                    <span class="text-gray-500 text-sm">Seleccionar badge...</span>
+                                                </div>
+                                                <input type="hidden" id="badgeParticipationId">
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div id="badgesContainer" class="mt-2">
-                                        <p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>
-                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">Haz clic en cada campo para seleccionar una badge. Los campos no son obligatorios.</p>
                                 </div>
                             </div>
                             
@@ -291,7 +346,8 @@
                 <i class="fas fa-times"></i>
             </button>
             <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Seleccionar Badge</h3>
+                <h3 class="text-2xl font-bold text-gray-800" id="badgeModalTitle">Seleccionar Badge</h3>
+                <p class="text-sm text-gray-600 mt-1" id="badgeModalDescription">Selecciona una badge para asignar</p>
             </div>
             
             <div id="badgesList" class="max-h-80 overflow-y-auto">
@@ -299,6 +355,7 @@
                     <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
                 </div>
             </div>
+            <input type="hidden" id="currentBadgeTarget">
         </div>
     </div>
 
