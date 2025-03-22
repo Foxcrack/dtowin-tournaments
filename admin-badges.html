@@ -40,6 +40,17 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        .progress-bar {
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #ff6b1a;
+            transition: width 0.3s ease;
+        }
     </style>
     
     <!-- Firebase App (la base) siempre es requerida y debe ser la primera -->
@@ -183,16 +194,29 @@
                                     id="imagenBadge" 
                                     type="file" 
                                     accept="image/png, image/jpeg">
+                                <div id="imageOptimizeToggle" class="mt-1">
+                                    <label class="flex items-center text-xs">
+                                        <input type="checkbox" id="optimizeImage" class="mr-1" checked>
+                                        <span class="text-gray-600">Optimizar imagen automáticamente (recomendado)</span>
+                                    </label>
+                                </div>
                                 <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados. <span id="imageRequiredText" class="font-semibold">Campo obligatorio para nuevos badges.</span></p>
                             </div>
-                            <div class="flex items-center">
+                            <div class="flex-col items-start">
                                 <!-- Contenedor de vista previa -->
                                 <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden">
                                     <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
                                 </div>
-                                <div class="ml-4">
+                                <div class="mt-2">
                                     <p class="text-sm text-gray-600">Vista previa</p>
                                     <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
+                                    <!-- Barra de progreso (oculta al inicio) -->
+                                    <div id="uploadProgressContainer" class="hidden mt-2">
+                                        <p class="text-xs text-gray-600 mb-1">Subiendo imagen: <span id="uploadProgressText">0%</span></p>
+                                        <div class="progress-bar">
+                                            <div id="uploadProgressBar" class="progress-bar-fill" style="width: 0%"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="md:col-span-2 flex justify-end">
@@ -241,6 +265,10 @@
         const formTitle = document.getElementById('formTitle');
         const badgeIdInput = document.getElementById('badgeId');
         const imageRequiredText = document.getElementById('imageRequiredText');
+        const optimizeImageCheckbox = document.getElementById('optimizeImage');
+        const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        const uploadProgressText = document.getElementById('uploadProgressText');
         
         // Estado para saber si estamos editando o creando
         let isEditMode = false;
@@ -269,6 +297,8 @@
         if (cancelButton) {
             cancelButton.addEventListener('click', function() {
                 if (formSection) formSection.classList.add('hidden');
+                // Reiniciar barra de progreso
+                resetUploadProgress();
             });
         }
         
@@ -284,6 +314,97 @@
             // Al crear, la imagen es requerida
             imagenBadgeInput.required = true;
             if (imageRequiredText) imageRequiredText.classList.remove('hidden');
+            
+            // Resetear barra de progreso
+            resetUploadProgress();
+        }
+        
+        // Resetear barra de progreso
+        function resetUploadProgress() {
+            if (uploadProgressContainer) uploadProgressContainer.classList.add('hidden');
+            if (uploadProgressBar) uploadProgressBar.style.width = '0%';
+            if (uploadProgressText) uploadProgressText.textContent = '0%';
+        }
+        
+        // Mostrar progreso de carga
+        function updateUploadProgress(progress) {
+            if (!uploadProgressContainer || !uploadProgressBar || !uploadProgressText) return;
+            
+            // Mostrar el contenedor si está oculto
+            uploadProgressContainer.classList.remove('hidden');
+            
+            // Actualizar barra y texto
+            uploadProgressBar.style.width = `${progress}%`;
+            uploadProgressText.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // Comprime la imagen antes de subirla para mejorar el rendimiento
+        function compressImage(file, maxWidth = 400, maxHeight = 400, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                // Si el usuario ha desactivado la optimización, devolver el archivo original
+                if (!optimizeImageCheckbox || !optimizeImageCheckbox.checked) {
+                    console.log("Optimización de imagen desactivada, usando imagen original");
+                    resolve(file);
+                    return;
+                }
+                
+                // Crear un objeto URL para la previsualización
+                const blobURL = URL.createObjectURL(file);
+                
+                // Crear una imagen
+                const img = new Image();
+                img.src = blobURL;
+                
+                img.onload = function() {
+                    // Liberar el objeto URL
+                    URL.revokeObjectURL(blobURL);
+                    
+                    // Si la imagen ya es más pequeña que los límites, usar el archivo original
+                    if (img.width <= maxWidth && img.height <= maxHeight && file.size <= 500 * 1024) {
+                        console.log("La imagen ya está optimizada, usando imagen original");
+                        resolve(file);
+                        return;
+                    }
+                    
+                    console.log(`Comprimiendo imagen: ${img.width}x${img.height} -> ${maxWidth}x${maxHeight}`);
+                    
+                    // Calcular dimensiones manteniendo relación de aspecto
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+                    
+                    // Crear canvas para redimensionar
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Dibujar imagen en el canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convertir canvas a Blob
+                    canvas.toBlob(blob => {
+                        console.log(`Imagen comprimida: ${blob.size} bytes (${(blob.size / file.size * 100).toFixed(1)}% del original)`);
+                        resolve(blob);
+                    }, file.type, quality);
+                };
+                
+                img.onerror = function() {
+                    console.error("Error al cargar la imagen para comprimir");
+                    resolve(file); // Usar el archivo original en caso de error
+                };
+            });
         }
         
         // Vista previa de imagen
@@ -302,7 +423,7 @@
                     
                     // Verificar el tamaño máximo (5MB)
                     if (file.size > 5 * 1024 * 1024) {
-                        mostrarNotificacion("La imagen es demasiado grande. Máximo 5MB", "warning");
+                        mostrarNotificacion("La imagen es demasiado grande. Se optimizará para mejorar la carga.", "warning");
                     }
                     
                     const reader = new FileReader();
@@ -317,7 +438,7 @@
         }
         
         if (createBadgeForm) {
-            createBadgeForm.addEventListener('submit', function(e) {
+            createBadgeForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 // Obtener valores del formulario
@@ -345,49 +466,32 @@
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
                     
-                    // Establecer un tiempo máximo para la operación (30 segundos)
-                    const timeout = setTimeout(() => {
-                        console.error("Tiempo de espera agotado al procesar el badge");
-                        mostrarNotificacion("La operación está tardando demasiado. Inténtalo de nuevo.", "error");
-                        submitButton.disabled = false;
-                        submitButton.textContent = originalText;
-                    }, 30000);
-                    
-                    // Determinar qué función llamar según el modo
                     try {
+                        // Reiniciar y mostrar la barra de progreso
+                        resetUploadProgress();
+                        
                         if (isEditMode) {
-                            updateBadge(badgeId, nombre, descripcion, color, imageFile)
-                                .then(() => {
-                                    clearTimeout(timeout);
-                                    submitButton.disabled = false;
-                                    submitButton.textContent = originalText;
-                                })
-                                .catch(error => {
-                                    clearTimeout(timeout);
-                                    console.error('Error al actualizar badge:', error);
-                                    mostrarNotificacion('Error al actualizar badge: ' + error.message, 'error');
-                                    submitButton.disabled = false;
-                                    submitButton.textContent = originalText;
-                                });
+                            await updateBadge(badgeId, nombre, descripcion, color, imageFile);
                         } else {
-                            createBadgeWithImage(nombre, descripcion, color, imageFile)
-                                .then(() => {
-                                    clearTimeout(timeout);
-                                    submitButton.disabled = false;
-                                    submitButton.textContent = originalText;
-                                })
-                                .catch(error => {
-                                    clearTimeout(timeout);
-                                    console.error('Error al crear badge:', error);
-                                    mostrarNotificacion('Error al crear badge: ' + error.message, 'error');
-                                    submitButton.disabled = false;
-                                    submitButton.textContent = originalText;
-                                });
+                            await createBadgeWithImage(nombre, descripcion, color, imageFile);
                         }
+                        
+                        // Completar la barra de progreso
+                        updateUploadProgress(100);
+                        
+                        // Ocultar barra después de 1 segundo
+                        setTimeout(() => {
+                            resetUploadProgress();
+                        }, 1000);
+                        
                     } catch (error) {
-                        clearTimeout(timeout);
                         console.error('Error al procesar badge:', error);
                         mostrarNotificacion('Error al procesar badge: ' + error.message, 'error');
+                        
+                        // Reiniciar barra de progreso
+                        resetUploadProgress();
+                    } finally {
+                        // Restaurar el botón
                         submitButton.disabled = false;
                         submitButton.textContent = originalText;
                     }
@@ -405,16 +509,22 @@
                     throw new Error("El archivo debe ser una imagen válida");
                 }
                 
+                // Comprimir la imagen si es necesario
+                updateUploadProgress(10); // Iniciamos la barra de progreso
+                console.log("Optimizando imagen...");
+                const optimizedImage = await compressImage(imageFile);
+                updateUploadProgress(30);
+                
                 // Crear un nombre único para el archivo
                 const timestamp = Date.now();
-                const fileName = `${timestamp}_${imageFile.name}`;
+                const fileName = `${timestamp}_${imageFile.name.replace(/\s+/g, '_')}`;
                 console.log("Nombre del archivo:", fileName);
                 
                 // Crear referencia para el archivo en Storage
                 const storageRef = firebase.storage().ref(`badges/${fileName}`);
                 console.log("Referencia de storage creada");
                 
-                // Subir la imagen con metadatos
+                // Subir la imagen con metadatos y seguimiento de progreso
                 const metadata = {
                     contentType: imageFile.type,
                     customMetadata: {
@@ -424,44 +534,63 @@
                 };
                 
                 console.log("Iniciando subida de imagen...");
-                try {
-                    // Subir la imagen
-                    const uploadTask = await storageRef.put(imageFile, metadata);
-                    console.log("Imagen subida correctamente");
-                    
-                    // Obtener URL de descarga
-                    const imageUrl = await uploadTask.ref.getDownloadURL();
-                    console.log("URL de descarga obtenida:", imageUrl);
-                    
-                    // Añadir badge a Firestore con la imagen
-                    const badgeData = {
-                        nombre: nombre,
-                        descripcion: descripcion || "",
-                        color: color || "#ff6b1a",
-                        imageUrl: imageUrl,
-                        createdBy: firebase.auth().currentUser.uid,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    console.log("Guardando en Firestore:", badgeData);
-                    await firebase.firestore().collection('badges').add(badgeData);
-                    console.log("Badge guardado en Firestore");
-                    
-                    // Mostrar mensaje de éxito
-                    mostrarNotificacion('Badge creado correctamente', 'success');
-                    
-                    // Ocultar formulario y recargar badges
-                    if (formSection) formSection.classList.add('hidden');
-                    resetForm();
-                    
-                    // Recargar lista de badges
-                    loadBadges();
-                    
-                    return true;
-                } catch (uploadError) {
-                    console.error("Error al subir imagen:", uploadError);
-                    throw new Error("Error al subir la imagen: " + (uploadError.message || "Error desconocido"));
-                }
+                
+                // Crear la tarea de subida
+                const uploadTask = storageRef.put(optimizedImage, metadata);
+                
+                // Monitorizar el progreso de la subida
+                uploadTask.on('state_changed', 
+                    // Función de progreso
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 70;
+                        updateUploadProgress(30 + progress); // 30% inicial + progreso de subida (hasta 100%)
+                    },
+                    // Función de error
+                    (error) => {
+                        console.error("Error al subir imagen:", error);
+                        throw new Error("Error al subir la imagen: " + (error.message || "Error desconocido"));
+                    }
+                );
+                
+                // Esperar a que la subida termine
+                await uploadTask;
+                console.log("Imagen subida correctamente");
+                
+                // Obtener URL de descarga
+                const imageUrl = await storageRef.getDownloadURL();
+                console.log("URL de descarga obtenida:", imageUrl);
+                
+                // Actualizar barra de progreso
+                updateUploadProgress(90);
+                
+                // Añadir badge a Firestore con la imagen
+                const badgeData = {
+                    nombre: nombre,
+                    descripcion: descripcion || "",
+                    color: color || "#ff6b1a",
+                    imageUrl: imageUrl,
+                    createdBy: firebase.auth().currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                console.log("Guardando en Firestore:", badgeData);
+                await firebase.firestore().collection('badges').add(badgeData);
+                console.log("Badge guardado en Firestore");
+                
+                // Mostrar mensaje de éxito
+                mostrarNotificacion('Badge creado correctamente', 'success');
+                
+                // Ocultar formulario y recargar badges
+                if (formSection) formSection.classList.add('hidden');
+                resetForm();
+                
+                // Recargar lista de badges
+                loadBadges();
+                
+                // Completar barra de progreso
+                updateUploadProgress(100);
+                
+                return true;
             } catch (error) {
                 console.error('Error:', error);
                 throw error;
@@ -473,6 +602,8 @@
             console.log("Actualizando badge:", badgeId);
             
             try {
+                updateUploadProgress(10);
+                
                 // Datos de actualización
                 const updateData = {
                     nombre: nombre,
@@ -484,7 +615,7 @@
                 
                 console.log("Datos de actualización:", updateData);
                 
-                // Si hay una nueva imagen, subirla
+                // Si hay una nueva imagen, procesarla
                 if (imageFile) {
                     console.log("Hay una nueva imagen para subir");
                     
@@ -493,9 +624,10 @@
                         throw new Error("El archivo debe ser una imagen válida");
                     }
                     
-                    // Crear un nombre único para el archivo
-                    const timestamp = Date.now();
-                    const fileName = `${timestamp}_${imageFile.name}`;
+                    // Comprimir imagen
+                    console.log("Optimizando imagen...");
+                    const optimizedImage = await compressImage(imageFile);
+                    updateUploadProgress(30);
                     
                     // Verificar si hay imagen anterior para eliminarla
                     try {
@@ -543,6 +675,10 @@
                         // Continuamos con la actualización aunque no podamos eliminar la imagen anterior
                     }
                     
+                    // Crear un nombre único para el archivo
+                    const timestamp = Date.now();
+                    const fileName = `${timestamp}_${imageFile.name.replace(/\s+/g, '_')}`;
+                    
                     // Subir la nueva imagen
                     console.log("Subiendo nueva imagen...");
                     
@@ -556,11 +692,29 @@
                             }
                         };
                         
-                        const uploadTask = await storageRef.put(imageFile, metadata);
+                        // Crear la tarea de subida
+                        const uploadTask = storageRef.put(optimizedImage, metadata);
+                        
+                        // Monitorizar el progreso de la subida
+                        uploadTask.on('state_changed', 
+                            // Función de progreso
+                            (snapshot) => {
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 70;
+                                updateUploadProgress(30 + progress); // 30% inicial + progreso de subida (hasta 100%)
+                            },
+                            // Función de error
+                            (error) => {
+                                console.error("Error al subir imagen:", error);
+                                throw new Error("Error al subir la imagen: " + (error.message || "Error desconocido"));
+                            }
+                        );
+                        
+                        // Esperar a que la subida termine
+                        await uploadTask;
                         console.log("Nueva imagen subida correctamente");
                         
                         // Obtener URL de la nueva imagen
-                        const imageUrl = await uploadTask.ref.getDownloadURL();
+                        const imageUrl = await storageRef.getDownloadURL();
                         console.log("URL de la nueva imagen:", imageUrl);
                         
                         // Añadir URL a los datos de actualización
@@ -570,6 +724,9 @@
                         throw new Error("Error al subir la nueva imagen: " + (uploadError.message || "Error desconocido"));
                     }
                 }
+                
+                // Actualizar barra de progreso
+                updateUploadProgress(90);
                 
                 // Actualizar el documento en Firestore
                 console.log("Actualizando documento en Firestore...");
@@ -585,6 +742,9 @@
                 
                 // Recargar lista de badges
                 loadBadges();
+                
+                // Completar barra de progreso
+                updateUploadProgress(100);
                 
                 return true;
             } catch (error) {
