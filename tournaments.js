@@ -3,10 +3,10 @@
 // Variables para gestionar el estado
 let isEditMode = false;
 let currentTournamentId = null;
-let selectedBadges = [];
 let selectedBannerId = null;
 let availableBadges = [];
 let availableBanners = [];
+let currentBadgeSelectTarget = null;
 
 // Referencias DOM
 const tournamentFormSection = document.getElementById('tournamentFormSection');
@@ -16,12 +16,25 @@ const formTitle = document.getElementById('formTitle');
 const cancelButton = document.getElementById('cancelButton');
 const submitButton = document.getElementById('submitButton');
 const bannerSelector = document.getElementById('bannerSelector');
-const badgesContainer = document.getElementById('badgesContainer');
 const badgeSelectModal = document.getElementById('badgeSelectModal');
 const badgesList = document.getElementById('badgesList');
-const addBadgeBtn = document.getElementById('addBadgeBtn');
 const closeBadgeModal = document.getElementById('closeBadgeModal');
 const torneosTable = document.getElementById('torneosTable');
+const badgeModalTitle = document.getElementById('badgeModalTitle');
+const badgeModalDescription = document.getElementById('badgeModalDescription');
+const currentBadgeTarget = document.getElementById('currentBadgeTarget');
+
+// Badge preview elements
+const badge1Preview = document.getElementById('badge1Preview');
+const badge2Preview = document.getElementById('badge2Preview');
+const badge3Preview = document.getElementById('badge3Preview');
+const badgeParticipationPreview = document.getElementById('badgeParticipationPreview');
+
+// Badge ID inputs
+const badge1Id = document.getElementById('badge1Id');
+const badge2Id = document.getElementById('badge2Id');
+const badge3Id = document.getElementById('badge3Id');
+const badgeParticipationId = document.getElementById('badgeParticipationId');
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
@@ -119,17 +132,35 @@ function setupEventListeners() {
         createTournamentForm.addEventListener('submit', handleTournamentSubmit);
     }
     
-    // Botón añadir badge
-    if (addBadgeBtn) {
-        addBadgeBtn.addEventListener('click', function() {
-            showBadgeModal();
-        });
-    }
-    
     // Cerrar modal de badges
     if (closeBadgeModal) {
         closeBadgeModal.addEventListener('click', function() {
             hideBadgeModal();
+        });
+    }
+    
+    // Preview de badges (para selección)
+    if (badge1Preview) {
+        badge1Preview.addEventListener('click', function() {
+            showBadgeModal('1', 'Badge para 1er Lugar');
+        });
+    }
+    
+    if (badge2Preview) {
+        badge2Preview.addEventListener('click', function() {
+            showBadgeModal('2', 'Badge para 2do Lugar');
+        });
+    }
+    
+    if (badge3Preview) {
+        badge3Preview.addEventListener('click', function() {
+            showBadgeModal('3', 'Badge para 3er Lugar');
+        });
+    }
+    
+    if (badgeParticipationPreview) {
+        badgeParticipationPreview.addEventListener('click', function() {
+            showBadgeModal('participation', 'Badge para Participación');
         });
     }
 }
@@ -165,9 +196,8 @@ function resetForm() {
         isEditMode = false;
         currentTournamentId = null;
         
-        // Resetear badges seleccionados
-        selectedBadges = [];
-        updateSelectedBadgesUI();
+        // Resetear badges seleccionadas
+        resetBadgeSelections();
         
         // Resetear banner seleccionado
         selectedBannerId = null;
@@ -181,6 +211,32 @@ function resetForm() {
         if (submitButton) {
             submitButton.textContent = 'Crear Torneo';
         }
+    }
+}
+
+// Resetear selecciones de badges
+function resetBadgeSelections() {
+    // Limpiar IDs
+    if (badge1Id) badge1Id.value = '';
+    if (badge2Id) badge2Id.value = '';
+    if (badge3Id) badge3Id.value = '';
+    if (badgeParticipationId) badgeParticipationId.value = '';
+    
+    // Resetear previews
+    if (badge1Preview) {
+        badge1Preview.innerHTML = '<span class="text-gray-500 text-sm">Seleccionar badge...</span>';
+    }
+    
+    if (badge2Preview) {
+        badge2Preview.innerHTML = '<span class="text-gray-500 text-sm">Seleccionar badge...</span>';
+    }
+    
+    if (badge3Preview) {
+        badge3Preview.innerHTML = '<span class="text-gray-500 text-sm">Seleccionar badge...</span>';
+    }
+    
+    if (badgeParticipationPreview) {
+        badgeParticipationPreview.innerHTML = '<span class="text-gray-500 text-sm">Seleccionar badge...</span>';
     }
 }
 
@@ -283,9 +339,22 @@ function updateSelectedBannerUI() {
     });
 }
 
-// Mostrar modal de selección de badges
-function showBadgeModal() {
+// Mostrar modal de selección de badges para una posición específica
+function showBadgeModal(targetType, description) {
     if (badgeSelectModal && badgesList) {
+        // Guardar el tipo de target actual
+        currentBadgeSelectTarget = targetType;
+        if (currentBadgeTarget) currentBadgeTarget.value = targetType;
+        
+        // Actualizar título y descripción
+        if (badgeModalTitle) {
+            badgeModalTitle.textContent = `Seleccionar Badge`;
+        }
+        
+        if (badgeModalDescription) {
+            badgeModalDescription.textContent = description;
+        }
+        
         // Actualizar lista de badges disponibles
         updateBadgesListUI();
         
@@ -312,12 +381,36 @@ function updateBadgesListUI() {
     
     let html = '';
     
+    // Agregar opción para quitar badge
+    html += `
+        <div class="badge-option flex items-center p-3 border-b cursor-pointer hover:bg-gray-50" data-badge-id="none">
+            <div class="h-10 w-10 mr-3 rounded-full flex items-center justify-center bg-gray-200">
+                <i class="fas fa-times text-gray-400"></i>
+            </div>
+            <div class="flex-grow">
+                <h4 class="font-semibold">Sin badge</h4>
+                <p class="text-xs text-gray-600">Quitar badge de esta posición</p>
+            </div>
+        </div>
+    `;
+    
+    // Agregar badges disponibles
     availableBadges.forEach(badge => {
-        // Verificar si ya está seleccionado
-        const isSelected = selectedBadges.some(selected => selected.id === badge.id);
+        // Determinar si esta badge está seleccionada actualmente
+        let isSelected = false;
+        
+        if (currentBadgeSelectTarget === '1' && badge1Id && badge1Id.value === badge.id) {
+            isSelected = true;
+        } else if (currentBadgeSelectTarget === '2' && badge2Id && badge2Id.value === badge.id) {
+            isSelected = true;
+        } else if (currentBadgeSelectTarget === '3' && badge3Id && badge3Id.value === badge.id) {
+            isSelected = true;
+        } else if (currentBadgeSelectTarget === 'participation' && badgeParticipationId && badgeParticipationId.value === badge.id) {
+            isSelected = true;
+        }
         
         html += `
-            <div class="badge-option flex items-center p-2 border-b ${isSelected ? 'bg-blue-50' : ''}" data-badge-id="${badge.id}">
+            <div class="badge-option flex items-center p-3 border-b cursor-pointer hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}" data-badge-id="${badge.id}">
                 <div class="h-10 w-10 mr-3 rounded-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
                     <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
                 </div>
@@ -325,9 +418,7 @@ function updateBadgesListUI() {
                     <h4 class="font-semibold">${badge.nombre}</h4>
                     <p class="text-xs text-gray-600">${badge.descripcion || ''}</p>
                 </div>
-                <button type="button" class="text-blue-500 hover:text-blue-700 select-badge-btn p-2">
-                    ${isSelected ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>'}
-                </button>
+                ${isSelected ? '<i class="fas fa-check text-blue-500 mr-2"></i>' : ''}
             </div>
         `;
     });
@@ -335,73 +426,58 @@ function updateBadgesListUI() {
     badgesList.innerHTML = html;
     
     // Añadir event listeners
-    document.querySelectorAll('.select-badge-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const badgeId = this.closest('.badge-option').dataset.badgeId;
-            toggleBadgeSelection(badgeId);
+    document.querySelectorAll('.badge-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const badgeId = this.dataset.badgeId;
+            selectBadgeForPosition(badgeId);
+            hideBadgeModal();
         });
     });
 }
 
-// Alternar selección de badge
-function toggleBadgeSelection(badgeId) {
-    const isSelected = selectedBadges.some(badge => badge.id === badgeId);
+// Seleccionar badge para una posición específica
+function selectBadgeForPosition(badgeId) {
+    if (!currentBadgeSelectTarget) return;
     
-    if (isSelected) {
-        // Si ya está seleccionado, quitarlo
-        selectedBadges = selectedBadges.filter(badge => badge.id !== badgeId);
-    } else {
-        // Si no está seleccionado, añadirlo
-        const badge = availableBadges.find(b => b.id === badgeId);
-        if (badge) {
-            selectedBadges.push(badge);
-        }
+    const badge = badgeId === 'none' ? null : availableBadges.find(b => b.id === badgeId);
+    
+    switch (currentBadgeSelectTarget) {
+        case '1':
+            if (badge1Id) badge1Id.value = badge ? badge.id : '';
+            updateBadgePreview(badge1Preview, badge);
+            break;
+        case '2':
+            if (badge2Id) badge2Id.value = badge ? badge.id : '';
+            updateBadgePreview(badge2Preview, badge);
+            break;
+        case '3':
+            if (badge3Id) badge3Id.value = badge ? badge.id : '';
+            updateBadgePreview(badge3Preview, badge);
+            break;
+        case 'participation':
+            if (badgeParticipationId) badgeParticipationId.value = badge ? badge.id : '';
+            updateBadgePreview(badgeParticipationPreview, badge);
+            break;
     }
-    
-    // Actualizar UIs
-    updateBadgesListUI();
-    updateSelectedBadgesUI();
 }
 
-// Actualizar badges seleccionados en el formulario
-function updateSelectedBadgesUI() {
-    if (!badgesContainer) return;
+// Actualizar el preview de una badge
+function updateBadgePreview(previewElement, badge) {
+    if (!previewElement) return;
     
-    if (selectedBadges.length === 0) {
-        badgesContainer.innerHTML = '<p class="text-sm text-gray-500">No hay badges asignados a este torneo.</p>';
+    if (!badge) {
+        previewElement.innerHTML = '<span class="text-gray-500 text-sm">Seleccionar badge...</span>';
         return;
     }
     
-    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
-    
-    selectedBadges.forEach(badge => {
-        html += `
-            <div class="badge-item flex items-center bg-gray-50 p-2 rounded">
-                <div class="h-8 w-8 mr-2 rounded-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
-                    <i class="fas fa-${badge.icono || 'trophy'} text-white text-sm"></i>
-                </div>
-                <div class="flex-grow">
-                    <h5 class="font-medium text-sm">${badge.nombre}</h5>
-                </div>
-                <button type="button" class="text-red-500 hover:text-red-700 remove-badge-btn p-1" data-badge-id="${badge.id}">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    badgesContainer.innerHTML = html;
-    
-    // Añadir event listeners para eliminar badges
-    document.querySelectorAll('.remove-badge-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const badgeId = this.dataset.badgeId;
-            selectedBadges = selectedBadges.filter(badge => badge.id !== badgeId);
-            updateSelectedBadgesUI();
-            updateBadgesListUI();
-        });
-    });
+    previewElement.innerHTML = `
+        <div class="badge-preview" style="background-color: ${badge.color || '#ff6b1a'}">
+            <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
+        </div>
+        <div>
+            <span class="text-gray-800 text-sm font-medium">${badge.nombre}</span>
+        </div>
+    `;
 }
 
 // Manejar envío del formulario de torneo
@@ -420,6 +496,14 @@ async function handleTournamentSubmit(event) {
         primero: parseInt(document.getElementById('puntos1').value) || 0,
         segundo: parseInt(document.getElementById('puntos2').value) || 0,
         tercero: parseInt(document.getElementById('puntos3').value) || 0
+    };
+    
+    // Obtener IDs de las badges seleccionadas
+    const badgeData = {
+        primero: badge1Id && badge1Id.value ? badge1Id.value : null,
+        segundo: badge2Id && badge2Id.value ? badge2Id.value : null,
+        tercero: badge3Id && badge3Id.value ? badge3Id.value : null,
+        participacion: badgeParticipationId && badgeParticipationId.value ? badgeParticipationId.value : null
     };
     
     // Validar campos requeridos
@@ -458,7 +542,7 @@ async function handleTournamentSubmit(event) {
             visible,
             puntos,
             bannerId: selectedBannerId,
-            badgesIds: selectedBadges.map(badge => badge.id),
+            badges: badgeData,
             participants: []
         };
         
@@ -569,17 +653,37 @@ async function loadTournamentForEdit(torneoId) {
         updateSelectedBannerUI();
         
         // Cargar badges
-        selectedBadges = [];
-        if (torneo.badgesIds && torneo.badgesIds.length > 0) {
-            // Para cada ID de badge, buscar y añadir el objeto completo
-            for (const badgeId of torneo.badgesIds) {
-                const badge = availableBadges.find(b => b.id === badgeId);
-                if (badge) {
-                    selectedBadges.push(badge);
-                }
+        resetBadgeSelections();
+        
+        if (torneo.badges) {
+            // Badge 1er lugar
+            if (torneo.badges.primero && badge1Id) {
+                badge1Id.value = torneo.badges.primero;
+                const badge = availableBadges.find(b => b.id === torneo.badges.primero);
+                updateBadgePreview(badge1Preview, badge);
+            }
+            
+            // Badge 2do lugar
+            if (torneo.badges.segundo && badge2Id) {
+                badge2Id.value = torneo.badges.segundo;
+                const badge = availableBadges.find(b => b.id === torneo.badges.segundo);
+                updateBadgePreview(badge2Preview, badge);
+            }
+            
+            // Badge 3er lugar
+            if (torneo.badges.tercero && badge3Id) {
+                badge3Id.value = torneo.badges.tercero;
+                const badge = availableBadges.find(b => b.id === torneo.badges.tercero);
+                updateBadgePreview(badge3Preview, badge);
+            }
+            
+            // Badge participación
+            if (torneo.badges.participacion && badgeParticipationId) {
+                badgeParticipationId.value = torneo.badges.participacion;
+                const badge = availableBadges.find(b => b.id === torneo.badges.participacion);
+                updateBadgePreview(badgeParticipationPreview, badge);
             }
         }
-        updateSelectedBadgesUI();
         
         // Actualizar título y botón
         if (formTitle) {
