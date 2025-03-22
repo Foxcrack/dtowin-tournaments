@@ -10,39 +10,12 @@ import {
     where, 
     orderBy, 
     limit,
-    serverTimestamp, 
-    FieldValue
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Función para pre-cargar imágenes
-function preloadImage(url) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(url);
-        img.onerror = () => reject(new Error(`Error al cargar la imagen: ${url}`));
-        img.src = url;
-    });
-}
-
-// Función para validar y pre-cargar los banners de torneos
+// Función simplificada para validar y pre-cargar los banners de torneos
 async function preloadTournamentBanners(torneos) {
-    const preloadPromises = [];
-    
-    for (const torneo of torneos) {
-        if (torneo.imageUrl) {
-            const promise = preloadImage(torneo.imageUrl)
-                .catch(error => {
-                    console.warn(error);
-                    // Si la imagen no carga, asignar un placeholder
-                    torneo.imageUrl = `https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
-                    return torneo.imageUrl;
-                });
-            preloadPromises.push(promise);
-        }
-    }
-    
-    // Esperar a que todas las imágenes se carguen o fallen
-    await Promise.allSettled(preloadPromises);
+    console.log("Iniciando precarga de", torneos.length, "banners");
     return torneos;
 }
 
@@ -185,9 +158,9 @@ export async function loadTournaments() {
         const querySnapshot = await getDocs(q);
         
         // Clasificar torneos por estado
-        const torneosEnProceso = [];
-        const torneosAbiertos = [];
-        const torneosProximos = [];
+        let torneosEnProceso = [];
+        let torneosAbiertos = [];
+        let torneosProximos = [];
         
         querySnapshot.forEach(doc => {
             const torneo = {
@@ -348,19 +321,17 @@ async function renderTournaments(containerId, torneos) {
         const puntosPosicionHTML = renderPuntosPosicion(torneo.puntosPosicion);
         
         // HTML del torneo - Asegurarse de que la imagen se muestre correctamente
-        const bannerUrl = torneo.imageUrl || `https://via.placeholder.com/800x400/1a75ff/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
+        let bannerUrl = torneo.imageUrl;
+        if (!bannerUrl) {
+            bannerUrl = `https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
+        }
         
         // Verificar si hay una imagen y aplicar una solución más robusta
         html += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
                 <div class="w-full h-48 bg-gray-200 relative">
                     <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover" 
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}'; this.style.opacity='1';"
-                         style="opacity: 0; transition: opacity 0.3s ease;"
-                         onload="this.style.opacity='1';">
-                    <noscript>
-                        <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover">
-                    </noscript>
+                         onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400/ff6b1a/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo').replace(/'/g, '')}'" />
                 </div>
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
