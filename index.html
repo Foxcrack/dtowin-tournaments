@@ -32,9 +32,6 @@
         .dtowin-cream {
             background-color: #fff3e6;
         }
-        .tournament-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
         .tournament-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
@@ -46,35 +43,8 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 120px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .participant-avatar {
-            transition: transform 0.2s ease;
-        }
-        .participant-avatar:hover {
-            transform: scale(1.1);
+        .notification {
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -87,12 +57,11 @@
                 <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
             </div>
             <div class="hidden md:flex items-center space-x-6">
-                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
                 <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
-                <!-- Admin button will be inserted here for admins -->
             </div>
             <button class="md:hidden text-xl" id="mobileMenuBtn">
                 <i class="fas fa-bars"></i>
@@ -102,11 +71,10 @@
         <!-- Mobile Menu -->
         <div id="mobileMenu" class="md:hidden hidden">
             <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
-                <!-- Admin link will be inserted here for admins -->
             </div>
         </div>
     </nav>
@@ -126,35 +94,35 @@
         <div class="container mx-auto">
             <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Torneos y Eventos</h2>
             
-            <!-- Torneos en Proceso -->
-            <div id="torneosEnProceso" class="mb-12">
-                <h3 class="text-2xl font-semibold mb-6 text-gray-700">En Proceso</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="torneosEnProcesoGrid">
-                    <!-- Los torneos en proceso se cargarán aquí dinámicamente -->
-                    <div class="flex justify-center items-center py-8">
-                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <!-- Torneos En Progreso -->
+            <div id="en-proceso-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">En Progreso</h3>
+                <div id="torneos-en-proceso" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos en progreso se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
                     </div>
                 </div>
             </div>
             
-            <!-- Torneos Abiertos para Inscripción -->
-            <div id="torneosAbiertos" class="mb-12">
-                <h3 class="text-2xl font-semibold mb-6 text-gray-700">Inscripciones Abiertas</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="torneosAbiertosGrid">
-                    <!-- Los torneos abiertos se cargarán aquí dinámicamente -->
-                    <div class="flex justify-center items-center py-8">
-                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500"></div>
+            <!-- Torneos Abiertos -->
+            <div id="abiertos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Inscripciones Abiertas</h3>
+                <div id="torneos-abiertos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos abiertos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
                     </div>
                 </div>
             </div>
             
             <!-- Próximos Torneos -->
-            <div id="torneosProximos">
-                <h3 class="text-2xl font-semibold mb-6 text-gray-700">Próximamente</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="torneosProximosGrid">
-                    <!-- Los torneos próximos se cargarán aquí dinámicamente -->
-                    <div class="flex justify-center items-center py-8">
-                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+            <div id="proximos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Próximamente</h3>
+                <div id="torneos-proximos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los próximos torneos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
                     </div>
                 </div>
             </div>
@@ -174,14 +142,12 @@
                         <div class="col-span-3 text-center">Puntos</div>
                     </div>
                 </div>
-                <div id="leaderboardContainer" class="divide-y divide-gray-200">
-                    <!-- Leaderboard data will be loaded here -->
-                    <div class="flex justify-center py-8">
-                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                <div id="leaderboardBody" class="divide-y divide-gray-200">
+                    <!-- El leaderboard se cargará dinámicamente -->
+                    <div class="col-span-12 p-4 text-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mx-auto mb-2"></div>
+                        <p class="text-gray-500">Cargando leaderboard...</p>
                     </div>
-                </div>
-                <div class="p-4 text-center">
-                    <button id="loadMoreLeaderboard" class="text-orange-500 hover:text-orange-700 font-semibold">Ver tabla completa</button>
                 </div>
             </div>
         </div>
@@ -294,35 +260,6 @@
         </div>
     </div>
 
-    <!-- Participantes Modal -->
-    <div id="participantesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 relative">
-            <button id="closeParticipantesModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800" id="participantesModalTitle">Participantes</h3>
-                <p class="text-gray-600" id="participantesModalSubtitle">Usuarios registrados en este torneo</p>
-            </div>
-            
-            <div id="participantesContainer" class="max-h-64 overflow-y-auto">
-                <!-- Participantes se cargarán aquí -->
-                <div class="flex justify-center py-8">
-                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                </div>
-            </div>
-            
-            <div class="mt-6 pt-4 border-t border-gray-200">
-                <div class="flex justify-between items-center">
-                    <p class="text-gray-500 text-sm" id="cuposInfo">Cupos: 0/0</p>
-                    <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition" id="closeParticipantesBtn">
-                        Cerrar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
     <footer class="gradient-background text-white py-8 px-4">
         <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -340,7 +277,7 @@
                     <li><a href="#inicio" class="hover:text-gray-300 transition">Inicio</a></li>
                     <li><a href="#torneos" class="hover:text-gray-300 transition">Torneos</a></li>
                     <li><a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a></li>
-                    <li><a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
                 </ul>
             </div>
             
@@ -357,17 +294,8 @@
             <div>
                 <h4 class="font-bold text-lg mb-4">Conóceme</h4>
                 <div class="flex space-x-4 mb-4">
-                    <a href="https://twfox.carrd.co" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition" title="Visitar mi página">
-                        <i class="fas fa-user"></i>
-                    </a>
-                    <a href="https://twitter.com/foxcrackhq" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
-                        <i class="fab fa-twitter"></i>
-                    </a>
-                    <a href="https://instagram.com/foxcrackhq" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
-                        <i class="fab fa-instagram"></i>
-                    </a>
-                    <a href="https://discord.gg/foxcrack" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
-                        <i class="fab fa-discord"></i>
+                    <a href="https://twfox.carrd.co" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fas fa-link"></i>
                     </a>
                 </div>
                 <p class="text-sm opacity-80">Suscríbete para recibir noticias</p>
@@ -382,26 +310,18 @@
         </div>
     </footer>
 
-    <!-- Notification Toast -->
-    <div id="notification" class="fixed bottom-4 right-4 rounded-lg shadow-lg px-4 py-3 hidden transition opacity-0 transform translate-y-2 z-50">
-        <!-- Notification content will be set dynamically -->
-    </div>
-
     <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
-    
-    <script type="module" src="tournament-system.js"></script>
     <script type="module">
-    // Script simplificado para index.html
+    // Script principal para index.html
     import { 
         loginWithGoogle, 
         auth, 
         getUserProfile, 
         logoutUser
     } from './firebase.js';
+    
+    import { loadTournaments } from './torneos.js';
+    import { loadLeaderboard } from './leaderboard.js';
     
     // Referencias a elementos DOM
     const loginBtn = document.getElementById('loginBtn');
@@ -497,11 +417,14 @@
                 updateUIForLoggedInUser(user);
                 
                 // Mostrar mensaje
-                showNotification("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
                 
             } catch (error) {
                 console.error("Error en inicio de sesión:", error);
-                showNotification("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
             } finally {
                 // Restaurar botón
                 googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
@@ -530,11 +453,14 @@
                 updateUIForLoggedInUser(user);
                 
                 // Mostrar mensaje
-                showNotification("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
                 
             } catch (error) {
                 console.error("Error en registro:", error);
-                showNotification("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
             } finally {
                 // Restaurar botón
                 googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
@@ -544,40 +470,53 @@
     }
     
     // Función para mostrar notificaciones
-    function showNotification(message, type = "info") {
-        const notification = document.getElementById('notification');
-        
-        // Definir color según tipo
-        let bgColor = 'bg-blue-500';
-        
-        if (type === 'success') {
-            bgColor = 'bg-green-500';
-        } else if (type === 'error') {
-            bgColor = 'bg-red-500';
-        } else if (type === 'warning') {
-            bgColor = 'bg-yellow-500';
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
         }
         
-        // Configurar notificación
-        notification.className = `fixed bottom-4 right-4 ${bgColor} text-white rounded-lg shadow-lg px-4 py-3 z-50`;
-        notification.innerHTML = message;
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
         
-        // Mostrar con animación
-        notification.classList.remove('hidden', 'opacity-0', 'translate-y-2');
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
         
-        // Ocultar después de 3 segundos
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
         setTimeout(() => {
-            notification.classList.add('opacity-0', 'translate-y-2');
-            notification.style.transition = 'opacity 0.5s, transform 0.5s';
-            
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
             setTimeout(() => {
-                notification.classList.add('hidden');
+                notification.remove();
             }, 500);
         }, 3000);
     }
     
-    // Exponer función globalmente
-    window.showNotification = showNotification;
+    // Exponer la función globalmente
+    window.mostrarNotificacion = mostrarNotificacion;
     
     // Función para comprobar si el usuario es admin y mostrar el botón correspondiente
     async function checkAndShowAdminButton() {
@@ -590,26 +529,13 @@
             }
             
             // Verificar si el usuario es administrador
-            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSA4Net2"]; // UID correcto del admin
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
             const isAdmin = adminUIDs.includes(user.uid);
             console.log("¿El usuario actual es admin?", isAdmin);
             
-            // Verificar en la base de datos
-            let isHostInDB = false;
-            try {
-                const userQuery = await firebase.firestore()
-                    .collection("usuarios")
-                    .where("uid", "==", user.uid)
-                    .where("isHost", "==", true)
-                    .get();
-                isHostInDB = !userQuery.empty;
-            } catch (dbError) {
-                console.error("Error al consultar la base de datos:", dbError);
-            }
-            
-            // Si el usuario es admin o host, mostrar el botón
-            if (isAdmin || isHostInDB) {
-                // Añadir botón al menú de navegación
+            // Si el usuario es admin, mostrar el botón de Admin
+            if (isAdmin) {
+                // Buscar el elemento de navegación donde queremos añadir el botón
                 const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
                 
                 if (navLinks) {
@@ -649,30 +575,48 @@
             console.error("Error al verificar permisos de admin:", error);
         }
     }
-
-    // Verificar si hay usuario autenticado al cargar
-    document.addEventListener('DOMContentLoaded', () => {
-        // Toggle menú móvil
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
+    
+    // Configurar menú móvil
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
+    }
+    
+    // Cargar torneos y leaderboard al iniciar la página
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Cargar torneos
+        await loadTournaments();
         
-        if (mobileMenuBtn && mobileMenu) {
-            mobileMenuBtn.addEventListener('click', function() {
-                if (mobileMenu.classList.contains('hidden')) {
-                    mobileMenu.classList.remove('hidden');
-                    mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-                } else {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-                }
-            });
-        }
-
-        auth.onAuthStateChanged(user => {
+        // Cargar leaderboard
+        await loadLeaderboard();
+        
+        // Verificar si hay usuario autenticado
+        auth.onAuthStateChanged(async user => {
             if (user) {
                 console.log("Usuario autenticado:", user.uid);
-                updateUIForLoggedInUser(user);
-                checkAndShowAdminButton(); // Verificar y mostrar botón de admin
+                
+                // Actualizar UI para usuario logueado
+                try {
+                    await updateUIForLoggedInUser(user);
+                    
+                    // Verificar si es admin
+                    await checkAndShowAdminButton();
+                    
+                    // Recargar torneos para actualizar botones de inscripción
+                    await loadTournaments();
+                } catch (error) {
+                    console.error("Error al actualizar UI:", error);
+                }
             } else {
                 console.log("No hay usuario autenticado");
             }
