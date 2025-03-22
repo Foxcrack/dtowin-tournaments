@@ -495,13 +495,13 @@ async function registerForTournament(torneoId) {
         }
         
         // Verificar si el usuario está inscrito
-        const participants = torneoData.participants || [];
-        if (!participants.includes(user.uid)) {
+        const currentParticipants = torneoData.participants || [];
+        if (!currentParticipants.includes(user.uid)) {
             throw new Error("No estás inscrito en este torneo");
         }
         
         // Eliminar al usuario de la lista de participantes
-        const newParticipants = participants.filter(uid => uid !== user.uid);
+        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
         
         // Actualizar el documento del torneo
         await updateDoc(torneoRef, {
@@ -535,15 +535,15 @@ async function registerForTournament(torneoId) {
         }
         
         // Verificar si hay cupos disponibles
-        const participants = torneoData.participants || [];
-        if (torneoData.capacidad && participants.length >= torneoData.capacidad) {
+        const currentParticipants = torneoData.participants || [];
+        if (torneoData.capacidad && currentParticipants.length >= torneoData.capacidad) {
             throw new Error("No hay cupos disponibles para este torneo");
         }
-        
-        // Verificar si el usuario ya está inscrito
-        if (participants.includes(user.uid)) {
-            throw new Error("Ya estás inscrito en este torneo");
-        }
+
+// Verificar si el usuario ya está inscrito
+if (currentParticipants.includes(user.uid)) {
+    throw new Error("Ya estás inscrito en este torneo");
+}
         
         // Inscribir al usuario
         await updateDoc(torneoRef, {
