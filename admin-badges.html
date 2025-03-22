@@ -40,6 +40,19 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .badge-preview {
+            transition: transform 0.3s ease;
+        }
+        .badge-preview:hover {
+            transform: scale(1.05);
+        }
     </style>
     
     <!-- Firebase App (la base) siempre es requerida y debe ser la primera -->
@@ -86,7 +99,7 @@
                 <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
                 <div id="userProfile" class="flex items-center space-x-2">
                     <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">Admin</span>
+                    <span class="hidden md:inline" id="userName">Admin</span>
                 </div>
             </div>
         </div>
@@ -150,30 +163,43 @@
                     </div>
                     
                     <!-- Form para crear/editar badge (oculto inicialmente) -->
-                    <div id="badgeFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden">
+                    <div id="badgeFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden fade-in">
                         <h3 class="font-semibold text-lg mb-2" id="formTitle">Crear Nuevo Badge</h3>
                         <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
-                            <!-- Campo oculto para ID del badge (para edición) -->
-                            <input type="hidden" id="badgeId" value="">
-                            
                             <div class="md:col-span-2">
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
-                                    Nombre del Badge
+                                    Nombre del Badge *
                                 </label>
                                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge" required>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
-                                    Descripción
+                                    Descripción *
                                 </label>
-                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge"></textarea>
+                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge" required></textarea>
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
-                                    Color de Fondo (para badges sin imagen)
+                                    Color
                                 </label>
                                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
-                                <p class="text-xs text-gray-500 mt-1">Este color se usará como fondo si no se selecciona una imagen.</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
+                                    Ícono
+                                </label>
+                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
+                                    <option value="trophy">Trofeo</option>
+                                    <option value="medal">Medalla</option>
+                                    <option value="star">Estrella</option>
+                                    <option value="award">Premio</option>
+                                    <option value="crown">Corona</option>
+                                    <option value="certificate">Certificado</option>
+                                    <option value="shield">Escudo</option>
+                                    <option value="bolt">Rayo</option>
+                                    <option value="fire">Fuego</option>
+                                    <option value="gem">Gema</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
@@ -182,12 +208,12 @@
                                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
                                     id="imagenBadge" 
                                     type="file" 
-                                    accept="image/png, image/jpeg">
-                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados. <span id="imageRequiredText" class="font-semibold">Campo obligatorio para nuevos badges.</span></p>
+                                    accept="image/png, image/jpeg, image/svg+xml">
+                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
                             </div>
                             <div class="flex items-center">
                                 <!-- Contenedor de vista previa -->
-                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden">
+                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden badge-preview">
                                     <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
                                 </div>
                                 <div class="ml-4">
@@ -204,6 +230,16 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                    
+                    <!-- Filtros y búsqueda de badges -->
+                    <div class="flex flex-col md:flex-row gap-4 mb-6">
+                        <div class="flex-grow">
+                            <div class="relative">
+                                <input type="text" id="searchBadges" placeholder="Buscar badges..." class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-300">
+                                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Lista de badges -->
@@ -226,495 +262,6 @@
     </footer>
 
     <!-- Script para gestión de badges -->
-    <script>
-    // Ejecuta esto cuando la página cargue
-    document.addEventListener('DOMContentLoaded', function() {
-        // Referencias a elementos del DOM
-        const badgesContainer = document.getElementById('badgesContainer');
-        const createBadgeForm = document.getElementById('createBadgeForm');
-        const submitButton = document.querySelector('#createBadgeForm button[type="submit"]');
-        const cancelButton = document.getElementById('cancelButton');
-        const formSection = document.getElementById('badgeFormSection') || createBadgeForm.closest('.bg-gray-50');
-        const headerCreateBadgeBtn = document.querySelector('button.dtowin-primary');
-        const imagenBadgeInput = document.getElementById('imagenBadge');
-        const badgePreviewContainer = document.getElementById('badgePreviewContainer');
-        const formTitle = document.getElementById('formTitle');
-        const badgeIdInput = document.getElementById('badgeId');
-        const imageRequiredText = document.getElementById('imageRequiredText');
-        
-        // Estado para saber si estamos editando o creando
-        let isEditMode = false;
-        
-        // Verificar autenticación
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                // Cargar badges
-                loadBadges();
-            } else {
-                console.log("No hay usuario autenticado");
-                window.location.href = "index.html";
-            }
-        });
-        
-        // Configurar listeners
-        if (headerCreateBadgeBtn) {
-            headerCreateBadgeBtn.addEventListener('click', function() {
-                // Resetear el formulario para crear un nuevo badge
-                resetForm();
-                if (formSection) formSection.classList.remove('hidden');
-            });
-        }
-        
-        if (cancelButton) {
-            cancelButton.addEventListener('click', function() {
-                if (formSection) formSection.classList.add('hidden');
-            });
-        }
-        
-        // Resetear el formulario
-        function resetForm() {
-            createBadgeForm.reset();
-            badgeIdInput.value = '';
-            badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
-            formTitle.textContent = 'Crear Nuevo Badge';
-            submitButton.textContent = 'Crear Badge';
-            isEditMode = false;
-            
-            // Al crear, la imagen es requerida
-            if (imageRequiredText) imageRequiredText.classList.remove('hidden');
-        }
-        
-        // Vista previa de imagen
-        if (imagenBadgeInput) {
-            imagenBadgeInput.addEventListener('change', function() {
-                if (!badgePreviewContainer) return;
-                
-                const file = this.files[0];
-                if (file) {
-                    // Verificar que sea una imagen
-                    if (!file.type.startsWith('image/')) {
-                        mostrarNotificacion("El archivo debe ser una imagen", "error");
-                        this.value = '';
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        badgePreviewContainer.innerHTML = `
-                            <img src="${e.target.result}" alt="Vista previa" class="w-full h-full object-contain">
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-        
-        // Función para mostrar notificaciones
-        function mostrarNotificacion(mensaje, tipo) {
-            console.log(`Notificación (${tipo}):`, mensaje);
-            
-            const notificacion = document.createElement('div');
-            
-            // Definir clases según el tipo
-            let bgColor = 'bg-blue-500';
-            let icon = 'info-circle';
-            
-            if (tipo === 'success') {
-                bgColor = 'bg-green-500';
-                icon = 'check-circle';
-            } else if (tipo === 'error') {
-                bgColor = 'bg-red-500';
-                icon = 'exclamation-circle';
-            } else if (tipo === 'warning') {
-                bgColor = 'bg-yellow-500';
-                icon = 'exclamation-triangle';
-            }
-            
-            // Estilos de la notificación
-            notificacion.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-            notificacion.innerHTML = `
-                <i class="fas fa-${icon} mr-2"></i>
-                <span>${mensaje}</span>
-            `;
-            
-            document.body.appendChild(notificacion);
-            
-            // Eliminar después de 3 segundos
-            setTimeout(() => {
-                notificacion.classList.add('opacity-0');
-                notificacion.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    notificacion.remove();
-                }, 500);
-            }, 3000);
-        }
-        
-        // Cargar badges existentes
-        async function loadBadges() {
-            if (!badgesContainer) return;
-            
-            try {
-                console.log("Cargando badges existentes...");
-                badgesContainer.innerHTML = '<div class="flex justify-center"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
-                
-                const snapshot = await firebase.firestore().collection('badges').get();
-                
-                if (snapshot.empty) {
-                    console.log("No hay badges disponibles");
-                    badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
-                    return;
-                }
-                
-                console.log(`Se encontraron ${snapshot.size} badges`);
-                
-                let html = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
-                
-                snapshot.forEach(doc => {
-                    const badge = doc.data();
-                    console.log(`Badge: ${badge.nombre}`, badge);
-                    
-                    html += `
-                        <div class="bg-white rounded-lg p-4 shadow-md flex items-center" data-badge-id="${doc.id}">
-                            <div class="h-12 w-12 mr-3 rounded-full flex items-center justify-center overflow-hidden" style="background-color: ${badge.color || '#ff6b1a'}">
-                                ${badge.imageUrl ? 
-                                    `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` : 
-                                    `<i class="fas fa-certificate text-white"></i>`
-                                }
-                            </div>
-                            <div class="flex-grow">
-                                <h4 class="font-semibold">${badge.nombre || 'Sin nombre'}</h4>
-                                <p class="text-sm text-gray-600">${badge.descripcion || ''}</p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button class="text-blue-500 hover:text-blue-700 edit-badge-btn">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="text-red-500 hover:text-red-700 delete-badge-btn">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                badgesContainer.innerHTML = html;
-                console.log("Badges renderizados en el contenedor");
-                
-                // Añadir listeners a botones de eliminar
-                document.querySelectorAll('.delete-badge-btn').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        const card = this.closest('[data-badge-id]');
-                        const id = card.dataset.badgeId;
-                        const badgeName = card.querySelector('h4').textContent;
-                        
-                        if (confirm(`¿Estás seguro de que quieres eliminar el badge "${badgeName}"?`)) {
-                            try {
-                                console.log(`Eliminando badge ${id}: ${badgeName}`);
-                                
-                                // Mostrar spinner en el botón
-                                const originalHtml = this.innerHTML;
-                                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                                this.disabled = true;
-                                
-                                // Eliminar el documento
-                                await firebase.firestore().collection('badges').doc(id).delete();
-                                console.log("Badge eliminado de Firestore");
-                                
-                                // Actualizar UI
-                                card.remove();
-                                mostrarNotificacion('Badge eliminado correctamente', 'success');
-                                
-                                // Si no quedan badges, actualizar mensaje
-                                if (document.querySelectorAll('[data-badge-id]').length === 0) {
-                                    badgesContainer.innerHTML = '<p class="text-center">No hay badges disponibles. Crea el primer badge.</p>';
-                                }
-                            } catch (error) {
-                                console.error('Error al eliminar badge:', error);
-                                mostrarNotificacion('Error al eliminar badge: ' + error.message, 'error');
-                                
-                                // Restaurar botón
-                                this.innerHTML = originalHtml;
-                                this.disabled = false;
-                            }
-                        }
-                    });
-                });
-                
-                // Añadir listeners a botones de editar
-                document.querySelectorAll('.edit-badge-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const card = this.closest('[data-badge-id]');
-                        const id = card.dataset.badgeId;
-                        console.log(`Editando badge: ${id}`);
-                        loadBadgeForEdit(id);
-                    });
-                });
-            } catch (error) {
-                console.error('Error al cargar badges:', error);
-                badgesContainer.innerHTML = `<p class="text-center text-red-500">Error al cargar badges: ${error.message}</p>`;
-            }
-        }
-        
-        // Función para cargar un badge para edición
-        async function loadBadgeForEdit(badgeId) {
-            try {
-                console.log("Cargando badge para edición:", badgeId);
-                
-                // Obtener datos del badge
-                const badgeDoc = await firebase.firestore().collection('badges').doc(badgeId).get();
-                
-                if (!badgeDoc.exists) {
-                    throw new Error("El badge no existe");
-                }
-                
-                const badgeData = badgeDoc.data();
-                console.log("Datos del badge:", badgeData);
-                
-                // Llenar formulario con datos
-                document.getElementById('nombreBadge').value = badgeData.nombre || '';
-                document.getElementById('descripcionBadge').value = badgeData.descripcion || '';
-                document.getElementById('colorBadge').value = badgeData.color || '#ff6b1a';
-                badgeIdInput.value = badgeId;
-                
-                // Actualizar estado y texto del formulario
-                isEditMode = true;
-                formTitle.textContent = 'Editar Badge';
-                submitButton.textContent = 'Actualizar Badge';
-                
-                // Al editar, la imagen no es requerida (ya existe una)
-                if (imageRequiredText) imageRequiredText.classList.add('hidden');
-                
-                // Mostrar la imagen actual
-                if (badgeData.imageUrl) {
-                    badgePreviewContainer.innerHTML = `
-                        <img src="${badgeData.imageUrl}" alt="${badgeData.nombre}" class="w-full h-full object-contain">
-                    `;
-                }
-                
-                // Mostrar el formulario
-                if (formSection) {
-                    formSection.classList.remove('hidden');
-                    formSection.scrollIntoView({ behavior: 'smooth' });
-                }
-            } catch (error) {
-                console.error('Error al cargar badge para edición:', error);
-                mostrarNotificacion('Error al cargar datos del badge', 'error');
-            }
-        }
-    });
-    </script>
-
-    <!-- Implementación de la versión simplificada para subida de imágenes -->
-    <script>
-    // Esta función reemplaza las funciones de creación/edición de badges 
-    // para hacerlas más simples y directas
-
-    // Función para crear un badge (versión simplificada)
-    async function createSimpleBadge(nombre, descripcion, color, imageFile) {
-        try {
-            console.log("Iniciando creación de badge simple...");
-            
-            if (!nombre.trim()) {
-                throw new Error("El nombre del badge es obligatorio");
-            }
-            
-            if (!imageFile) {
-                throw new Error("La imagen es obligatoria para nuevos badges");
-            }
-            
-            if (!imageFile.type.startsWith('image/')) {
-                throw new Error("El archivo debe ser una imagen válida");
-            }
-            
-            // Crear un nombre único para el archivo
-            const timestamp = Date.now();
-            const fileName = `badge_${timestamp}_${imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-            console.log("Nombre de archivo: " + fileName);
-            
-            // 1. Subir imagen directamente sin optimización
-            const storageRef = firebase.storage().ref(`badges/${fileName}`);
-            
-            console.log("Subiendo imagen a Firebase Storage...");
-            await storageRef.put(imageFile);
-            console.log("Imagen subida correctamente");
-            
-            // 2. Obtener URL de la imagen
-            const downloadURL = await storageRef.getDownloadURL();
-            console.log("URL de descarga: " + downloadURL);
-            
-            // 3. Crear documento en Firestore
-            const badgeData = {
-                nombre: nombre,
-                descripcion: descripcion || "",
-                color: color || "#ff6b1a",
-                imageUrl: downloadURL,
-                createdBy: firebase.auth().currentUser.uid,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            console.log("Guardando datos en Firestore:", badgeData);
-            const docRef = await firebase.firestore().collection('badges').add(badgeData);
-            console.log("Badge creado con ID: " + docRef.id);
-            
-            return {
-                success: true,
-                id: docRef.id,
-                message: "Badge creado correctamente"
-            };
-        } catch (error) {
-            console.error("Error en createSimpleBadge:", error);
-            throw error;
-        }
-    }
-
-    // Función para actualizar un badge (versión simplificada)
-    async function updateSimpleBadge(badgeId, nombre, descripcion, color, imageFile) {
-        try {
-            console.log("Iniciando actualización de badge simple, ID: " + badgeId);
-            
-            if (!nombre.trim()) {
-                throw new Error("El nombre del badge es obligatorio");
-            }
-            
-            // 1. Preparar datos básicos de actualización
-            const updateData = {
-                nombre: nombre,
-                descripcion: descripcion || "",
-                color: color || "#ff6b1a",
-                updatedBy: firebase.auth().currentUser.uid,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            // 2. Si hay una nueva imagen, subirla
-            if (imageFile) {
-                console.log("Hay una nueva imagen para subir");
-                
-                if (!imageFile.type.startsWith('image/')) {
-                    throw new Error("El archivo debe ser una imagen válida");
-                }
-                
-                // Crear un nombre único para el archivo
-                const timestamp = Date.now();
-                const fileName = `badge_${timestamp}_${imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-                
-                // Subir la nueva imagen
-                const storageRef = firebase.storage().ref(`badges/${fileName}`);
-                console.log("Subiendo nueva imagen a Firebase Storage...");
-                await storageRef.put(imageFile);
-                console.log("Nueva imagen subida correctamente");
-                
-                // Obtener URL de la nueva imagen
-                const downloadURL = await storageRef.getDownloadURL();
-                console.log("Nueva URL de descarga: " + downloadURL);
-                
-                // Actualizar la URL en los datos
-                updateData.imageUrl = downloadURL;
-            }
-            
-            // 3. Actualizar documento en Firestore
-            console.log("Actualizando documento en Firestore:", updateData);
-            await firebase.firestore().collection('badges').doc(badgeId).update(updateData);
-            console.log("Badge actualizado correctamente");
-            
-            return {
-                success: true,
-                id: badgeId,
-                message: "Badge actualizado correctamente"
-            };
-        } catch (error) {
-            console.error("Error en updateSimpleBadge:", error);
-            throw error;
-        }
-    }
-
-    // Función para usar en la página de badges
-    async function handleBadgeForm(event) {
-        event.preventDefault();
-        
-        // Obtener referencia al botón
-        const submitButton = document.querySelector('#submitButton') || 
-                            document.querySelector('button[type="submit"]');
-        
-        // Guardar texto original del botón
-        const originalButtonText = submitButton ? submitButton.textContent : 'Procesar';
-        
-        // Cambiar estado del botón
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
-        }
-        
-        try {
-            // Obtener valores del formulario
-            const nombre = document.getElementById('nombreBadge').value;
-            const descripcion = document.getElementById('descripcionBadge').value;
-            const color = document.getElementById('colorBadge').value;
-            const imageFile = document.getElementById('imagenBadge').files[0];
-            const badgeId = document.getElementById('badgeId')?.value;
-            const isEditMode = badgeId && badgeId.trim() !== '';
-            
-            console.log("Procesando formulario de badge:");
-            console.log("- Modo: " + (isEditMode ? "Edición" : "Creación"));
-            console.log("- Badge ID: " + (badgeId || "Nuevo"));
-            console.log("- Nombre: " + nombre);
-            console.log("- Hay imagen: " + (imageFile ? "Sí" : "No"));
-            
-            let result;
-            
-            // Usar las funciones simplificadas
-            if (isEditMode) {
-                result = await updateSimpleBadge(badgeId, nombre, descripcion, color, imageFile);
-            } else {
-                result = await createSimpleBadge(nombre, descripcion, color, imageFile);
-            }
-            
-            // Mostrar notificación de éxito
-            mostrarNotificacion(result.message, 'success');
-            
-            // Ocultar formulario
-            const formSection = document.getElementById('badgeFormSection');
-            if (formSection) {
-                formSection.classList.add('hidden');
-            }
-            
-            // Resetear formulario
-            document.getElementById('createBadgeForm').reset();
-            const badgePreviewContainer = document.getElementById('badgePreviewContainer');
-            if (badgePreviewContainer) {
-                badgePreviewContainer.innerHTML = '<i class="fas fa-image text-4xl text-gray-400"></i>';
-            }
-            
-            // Recargar lista de badges
-            await loadBadges();
-            
-        } catch (error) {
-            console.error("Error al procesar el formulario:", error);
-            mostrarNotificacion("Error: " + (error.message || "Ha ocurrido un error inesperado"), 'error');
-        } finally {
-            // Restaurar botón
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = originalButtonText;
-            }
-        }
-    }
-
-    // Instalar esta función como el manejador de eventos del formulario
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('createBadgeForm');
-        if (form) {
-            // Remover manejadores anteriores si existen
-            const newForm = form.cloneNode(true);
-            form.parentNode.replaceChild(newForm, form);
-            
-            // Asignar nuevo manejador
-            newForm.addEventListener('submit', handleBadgeForm);
-            
-            console.log("Nuevo manejador de formulario instalado correctamente");
-        }
-    });
-    </script>
+    <script src="admin-panel-badges.js"></script>
 </body>
 </html>
