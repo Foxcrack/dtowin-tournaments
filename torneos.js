@@ -35,9 +35,10 @@ function renderPuntosPosicion(puntosPosicion) {
     if (!puntosPosicion) return 'No hay información de puntos';
     
     let html = '';
-    const colors = ['yellow-500', 'gray-400', 'orange-400', 'blue-400', 'purple-400'];
+    // Actualizado: cambiado el color del tercer puesto a bronce
+    const colors = ['yellow-500', 'gray-400', 'amber-600'];
     
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 3; i++) {
         if (puntosPosicion[i] !== undefined) {
             const colorClass = colors[i-1] || 'gray-500';
             html += `
@@ -291,10 +292,14 @@ async function renderTournaments(containerId, torneos) {
         // Generar HTML para puntos por posición
         const puntosPosicionHTML = renderPuntosPosicion(torneo.puntosPosicion);
         
-        // HTML del torneo
+        // HTML del torneo - Asegurarse de que la imagen se muestre correctamente
+        const bannerUrl = torneo.imageUrl || `https://via.placeholder.com/800x400/1a75ff/ffffff?text=${encodeURIComponent(torneo.nombre || 'Torneo')}`;
+        
         html += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
-                <img src="${torneo.imageUrl || 'https://via.placeholder.com/400x200'}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
+                <div class="w-full h-48 bg-gray-200">
+                    <img src="${bannerUrl}" alt="${torneo.nombre}" class="w-full h-full object-cover">
+                </div>
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
