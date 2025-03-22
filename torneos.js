@@ -14,7 +14,6 @@ import {
     FieldValue
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Cargar torneos desde Firebase
 // Obtener color según el estado del torneo
 function getStatusColor(estado) {
     switch(estado) {
@@ -489,46 +488,6 @@ async function registerForTournament(torneoId) {
         
         const torneoData = torneoSnap.data();
         
-        // Verificar que el torneo esté aún abierto o en proceso
-        if (torneoData.estado !== 'Abierto' && torneoData.estado !== 'En Progreso') {
-            throw new Error("No puedes desinscribirte de este torneo");
-        }
-        
-        // Verificar si el usuario está inscrito
-        const currentParticipants = torneoData.participants || [];
-        if (!currentParticipants.includes(user.uid)) {
-            throw new Error("No estás inscrito en este torneo");
-        }
-        
-        // Eliminar al usuario de la lista de participantes
-        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
-        
-        // Actualizar el documento del torneo
-        await updateDoc(torneoRef, {
-            participants: newParticipants,
-            updatedAt: serverTimestamp()
-        });
-        
-        // También actualizar el usuario para eliminar su participación
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", user.uid));
-        const userQuerySnapshot = await getDocs(q);
-        
-        if (!userQuerySnapshot.empty) {
-            const userDoc = userQuerySnapshot.docs[0];
-            
-            // Eliminar torneo de la lista de torneos del usuario
-            const userTorneos = userDoc.data().torneos || [];
-            const newUserTorneos = userTorneos.filter(id => id !== torneoId);
-            
-            await updateDoc(doc(db, "usuarios", userDoc.id), {
-                torneos: newUserTorneos,
-                updatedAt: serverTimestamp()
-            });
-        }
-        
-        return true;Snap.data();
-        
         // Verificar que el torneo esté abierto
         if (torneoData.estado !== 'Abierto') {
             throw new Error("Este torneo no está abierto para inscripciones");
@@ -539,15 +498,15 @@ async function registerForTournament(torneoId) {
         if (torneoData.capacidad && currentParticipants.length >= torneoData.capacidad) {
             throw new Error("No hay cupos disponibles para este torneo");
         }
-
-// Verificar si el usuario ya está inscrito
-if (currentParticipants.includes(user.uid)) {
-    throw new Error("Ya estás inscrito en este torneo");
-}
+        
+        // Verificar si el usuario ya está inscrito
+        if (currentParticipants.includes(user.uid)) {
+            throw new Error("Ya estás inscrito en este torneo");
+        }
         
         // Inscribir al usuario
         await updateDoc(torneoRef, {
-            participants: [...participants, user.uid],
+            participants: [...currentParticipants, user.uid],
             updatedAt: serverTimestamp()
         });
         
@@ -593,4 +552,49 @@ async function unregisterFromTournament(torneoId) {
             throw new Error("El torneo no existe");
         }
         
-        const torneoData = torneo
+        const torneoData = torneoSnap.data();
+        
+        // Verificar que el torneo esté aún abierto o en proceso
+        if (torneoData.estado !== 'Abierto' && torneoData.estado !== 'En Progreso') {
+            throw new Error("No puedes desinscribirte de este torneo");
+        }
+        
+        // Verificar si el usuario está inscrito
+        const currentParticipants = torneoData.participants || [];
+        if (!currentParticipants.includes(user.uid)) {
+            throw new Error("No estás inscrito en este torneo");
+        }
+        
+        // Eliminar al usuario de la lista de participantes
+        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
+        
+        // Actualizar el documento del torneo
+        await updateDoc(torneoRef, {
+            participants: newParticipants,
+            updatedAt: serverTimestamp()
+        });
+        
+        // También actualizar el usuario para eliminar su participación
+        const usersRef = collection(db, "usuarios");
+        const q = query(usersRef, where("uid", "==", user.uid));
+        const userQuerySnapshot = await getDocs(q);
+        
+        if (!userQuerySnapshot.empty) {
+            const userDoc = userQuerySnapshot.docs[0];
+            
+            // Eliminar torneo de la lista de torneos del usuario
+            const userTorneos = userDoc.data().torneos || [];
+            const newUserTorneos = userTorneos.filter(id => id !== torneoId);
+            
+            await updateDoc(doc(db, "usuarios", userDoc.id), {
+                torneos: newUserTorneos,
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("Error al desinscribirse del torneo:", error);
+        throw error;
+    }
+}
