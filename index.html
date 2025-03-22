@@ -593,35 +593,40 @@
     }
     
     // Cargar torneos y leaderboard al iniciar la página
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Cargar torneos
-        await loadTournaments();
-        
-        // Cargar leaderboard
-        await loadLeaderboard();
-        
-        // Verificar si hay usuario autenticado
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                
-                // Actualizar UI para usuario logueado
-                try {
-                    await updateUIForLoggedInUser(user);
-                    
-                    // Verificar si es admin
-                    await checkAndShowAdminButton();
-                    
-                    // Recargar torneos para actualizar botones de inscripción
-                    await loadTournaments();
-                } catch (error) {
-                    console.error("Error al actualizar UI:", error);
-                }
-            } else {
-                console.log("No hay usuario autenticado");
+    document.addEventListener('DOMContentLoaded', function() {
+    // Cargar torneos sin usar await
+    loadTournaments();
+    
+    // Cargar leaderboard sin usar await
+    loadLeaderboard();
+    
+    // Verificar si hay usuario autenticado
+    auth.onAuthStateChanged(function(user) {
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            
+            // Actualizar UI para usuario logueado sin await
+            try {
+                updateUIForLoggedInUser(user)
+                    .then(function() {
+                        // Verificar si es admin
+                        return checkAndShowAdminButton();
+                    })
+                    .then(function() {
+                        // Recargar torneos para actualizar botones de inscripción
+                        return loadTournaments();
+                    })
+                    .catch(function(error) {
+                        console.error("Error al actualizar UI:", error);
+                    });
+            } catch (error) {
+                console.error("Error en manejo de usuario:", error);
             }
-        });
+        } else {
+            console.log("No hay usuario autenticado");
+        }
     });
+});
     </script>
 </body>
 </html>
