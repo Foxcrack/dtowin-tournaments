@@ -56,12 +56,11 @@
                 <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
                 <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
             </div>
-            <div class="hidden md:flex items-center space-x-6" id="navLinks">
+            <div class="hidden md:flex items-center space-x-6">
                 <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
-                <!-- El botón admin se insertará aquí si el usuario es administrador -->
                 <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
             </div>
             <button class="md:hidden text-xl" id="mobileMenuBtn">
@@ -71,12 +70,11 @@
         
         <!-- Mobile Menu -->
         <div id="mobileMenu" class="md:hidden hidden">
-            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4" id="mobileNavLinks">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
                 <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
-                <!-- El botón admin móvil se insertará aquí si el usuario es administrador -->
             </div>
         </div>
     </nav>
@@ -91,10 +89,69 @@
         </div>
     </section>
 
-    <!-- Contenido principal de la página -->
-    <main class="container mx-auto py-8 px-4">
-        <!-- Aquí irían las secciones de torneos, leaderboard, etc. -->
-    </main>
+    <!-- Torneos Section -->
+    <section id="torneos" class="py-16 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Torneos y Eventos</h2>
+            
+            <!-- Torneos En Progreso -->
+            <div id="en-proceso-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">En Progreso</h3>
+                <div id="torneos-en-proceso" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos en progreso se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Torneos Abiertos -->
+            <div id="abiertos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Inscripciones Abiertas</h3>
+                <div id="torneos-abiertos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos abiertos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Próximos Torneos -->
+            <div id="proximos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Próximamente</h3>
+                <div id="torneos-proximos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los próximos torneos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section id="leaderboard" class="py-16 px-4 bg-gray-50">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global</h2>
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+                <div class="gradient-background text-white p-4">
+                    <div class="grid grid-cols-12 font-semibold">
+                        <div class="col-span-1 text-center">#</div>
+                        <div class="col-span-6">Jugador</div>
+                        <div class="col-span-2 text-center">Torneos</div>
+                        <div class="col-span-3 text-center">Puntos</div>
+                    </div>
+                </div>
+                <div id="leaderboardBody" class="divide-y divide-gray-200">
+                    <!-- El leaderboard se cargará dinámicamente -->
+                    <div class="col-span-12 p-4 text-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mx-auto mb-2"></div>
+                        <p class="text-gray-500">Cargando leaderboard...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer class="gradient-background text-white py-8 px-4">
@@ -200,473 +257,279 @@
 
     <!-- Scripts -->
     <script type="module">
-        // Importar funciones y objetos necesarios de Firebase
-        import { 
-            initializeApp 
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signOut, 
-            GoogleAuthProvider, 
-            signInWithPopup, 
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-        import {
-            getFirestore,
-            doc,
-            getDoc,
-            setDoc,
-            updateDoc,
-            serverTimestamp,
-            collection,
-            query,
-            where,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-        import { 
-            getStorage 
-        } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-            authDomain: "dtowin-tournament.firebaseapp.com",
-            projectId: "dtowin-tournament",
-            storageBucket: "dtowin-tournament.appspot.com",
-            messagingSenderId: "991226820083",
-            appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
-            measurementId: "G-R4Q5YKZXGY"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        // Lista de IDs de administradores
-        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
-
-        // Configurar proveedor de Google
-        const googleProvider = new GoogleAuthProvider();
-        googleProvider.setCustomParameters({
-            prompt: 'select_account'
+    // Script principal para index.html
+    import { 
+        loginWithGoogle, 
+        auth, 
+        getUserProfile, 
+        logoutUser,
+        isAuthenticated,
+        mostrarNotificacion
+    } from './firebase.js';
+    
+    import { loadTournaments } from './torneos.js';
+    import { loadLeaderboard } from './leaderboard.js';
+    
+    // Referencias a elementos DOM
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const loginModal = document.getElementById('loginModal');
+    const registroModal = document.getElementById('registroModal');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    const closeRegisterModal = document.getElementById('closeRegisterModal');
+    const showRegisterLink = document.getElementById('showRegisterLink');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const googleRegisterBtn = document.querySelector('.google-register-btn');
+    
+    // Función para mostrar el modal de login
+    function showLoginModal() {
+        if (loginModal) {
+            loginModal.classList.remove('hidden');
+            loginModal.classList.add('flex');
+        }
+    }
+    
+    // Eventos para mostrar/ocultar modales
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            if (auth.currentUser) {
+                window.location.href = 'perfil.html';
+            } else {
+                showLoginModal();
+            }
         });
-
-        // Referencias a elementos del DOM
-        const loginBtn = document.getElementById('loginBtn');
-        const registerBtn = document.getElementById('registerBtn');
-        const loginModal = document.getElementById('loginModal');
-        const registroModal = document.getElementById('registroModal');
-        const closeLoginModal = document.getElementById('closeLoginModal');
-        const closeRegisterModal = document.getElementById('closeRegisterModal');
-        const showRegisterLink = document.getElementById('showRegisterLink');
-        const googleLoginBtn = document.getElementById('googleLoginBtn');
-        const googleRegisterBtn = document.querySelector('.google-register-btn');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const navLinks = document.getElementById('navLinks');
-        const mobileNavLinks = document.getElementById('mobileNavLinks');
-
-        // Función para verificar si el usuario es administrador
-        async function isUserAdmin(userId) {
+    }
+    
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+    }
+    
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+        });
+    }
+    
+    if (closeRegisterModal) {
+        closeRegisterModal.addEventListener('click', () => {
+            registroModal.classList.add('hidden');
+            registroModal.classList.remove('flex');
+        });
+    }
+    
+    if (showRegisterLink) {
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+    }
+    
+    // Configurar login con Google
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async () => {
             try {
-                // Verificar si está en la lista directa de administradores
-                if (adminUIDs.includes(userId)) {
-                    console.log("Usuario es administrador directo", userId);
-                    return true;
-                }
+                // Mostrar carga
+                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleLoginBtn.disabled = true;
                 
-                // Verificar en la base de datos
-                const userQuery = await getDocs(
-                    query(collection(db, "usuarios"), where("uid", "==", userId), where("isHost", "==", true))
-                );
+                // Intentar login
+                const user = await loginWithGoogle();
+                console.log("Login exitoso:", user);
                 
-                // Si hay resultados, el usuario es admin/host
-                return !userQuery.empty;
+                // Cerrar modal
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+                
+                // Actualizar UI
+                updateUIForLoggedInUser(user);
+                
+                // Mostrar mensaje
+                mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
+                
             } catch (error) {
-                console.error("Error al verificar si el usuario es administrador:", error);
-                return false;
+                console.error("Error en inicio de sesión:", error);
+                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleLoginBtn.disabled = false;
             }
-        }
-
-        // Login con Google
-        async function loginWithGoogle() {
+        });
+    }
+    
+    // Lo mismo para registro con Google
+    if (googleRegisterBtn) {
+        googleRegisterBtn.addEventListener('click', async () => {
             try {
-                const result = await signInWithPopup(auth, googleProvider);
-                console.log("Usuario autenticado con Google:", result.user);
+                // Mostrar carga
+                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleRegisterBtn.disabled = true;
                 
-                // Verificar si el usuario existe en la base de datos
-                await ensureUserProfileExists(result.user);
+                // Usar mismo método que login
+                const user = await loginWithGoogle();
+                console.log("Registro exitoso:", user);
                 
-                return result.user;
+                // Cerrar modal
+                registroModal.classList.add('hidden');
+                registroModal.classList.remove('flex');
+                
+                // Actualizar UI
+                updateUIForLoggedInUser(user);
+                
+                // Mostrar mensaje
+                mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
+                
             } catch (error) {
-                console.error("Error al iniciar sesión con Google:", error);
-                throw error;
+                console.error("Error en registro:", error);
+                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleRegisterBtn.disabled = false;
             }
-        }
-
-        // Cerrar sesión
-        async function logoutUser() {
-            try {
-                await signOut(auth);
-                console.log("Sesión cerrada correctamente");
-                return true;
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                throw error;
-            }
-        }
-
-        // Crear perfil de usuario
-        async function createUserProfile(user) {
-            try {
-                // Referenciar la colección de usuarios
-                const userRef = doc(db, "usuarios", user.uid);
-                
-                // Datos básicos del usuario
-                const userData = {
-                    uid: user.uid,
-                    email: user.email,
-                    nombre: user.displayName || "Usuario",
-                    photoURL: user.photoURL || null,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp(),
-                    puntos: 0,
-                    victorias: 0,
-                    torneos: [],
-                    badges: {}
-                };
-                
-                // Guardar los datos del usuario
-                await setDoc(userRef, userData);
-                console.log("Perfil de usuario creado correctamente");
-                
-                return userData;
-            } catch (error) {
-                console.error("Error al crear perfil de usuario:", error);
-                throw error;
-            }
-        }
-
-        // Verificar perfil de usuario existente o crearlo
-        async function ensureUserProfileExists(user) {
-            try {
-                // Buscar el usuario por uid
-                const usersRef = collection(db, "usuarios");
-                const q = query(usersRef, where("uid", "==", user.uid));
-                const querySnapshot = await getDocs(q);
-                
-                // Si no existe, crear el perfil
-                if (querySnapshot.empty) {
-                    console.log("El usuario no existe en la base de datos, creando perfil...");
-                    return await createUserProfile(user);
-                } else {
-                    console.log("Usuario encontrado en la base de datos");
-                    return querySnapshot.docs[0].data();
-                }
-            } catch (error) {
-                console.error("Error al verificar/crear perfil de usuario:", error);
-                throw error;
-            }
-        }
-
-        // Mostrar notificaciones
-        function mostrarNotificacion(mensaje, tipo = "info") {
-            // Verificar si ya existe una notificación
-            const existingNotification = document.querySelector('.notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-            
-            // Crear elemento de notificación
-            const notification = document.createElement('div');
-            
-            // Clases según el tipo de notificación
-            let bgColor = 'bg-blue-500';
-            let icon = 'info-circle';
-            
-            if (tipo === 'success') {
-                bgColor = 'bg-green-500';
-                icon = 'check-circle';
-            } else if (tipo === 'error') {
-                bgColor = 'bg-red-500';
-                icon = 'exclamation-circle';
-            } else if (tipo === 'warning') {
-                bgColor = 'bg-yellow-500';
-                icon = 'exclamation-triangle';
-            }
-            
-            // Estilos de la notificación
-            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-            notification.innerHTML = `
-                <i class="fas fa-${icon} mr-2"></i>
-                <span>${mensaje}</span>
+        });
+    }
+    
+    // Función para actualizar la UI cuando el usuario inicia sesión
+    async function updateUIForLoggedInUser(user) {
+        console.log("Actualizando UI para usuario logueado:", user.uid);
+        
+        if (loginBtn) {
+            loginBtn.innerHTML = `
+                <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                    <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
+                </div>
             `;
             
-            // Añadir al DOM
-            document.body.appendChild(notification);
-            
-            // Eliminar después de 3 segundos
-            setTimeout(() => {
-                notification.classList.add('opacity-0');
-                notification.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
-
-        // Función para mostrar el modal de login
-        function showLoginModal() {
-            if (loginModal) {
-                loginModal.classList.remove('hidden');
-                loginModal.classList.add('flex');
-            } else {
-                console.error("Modal de login no encontrado");
-            }
-        }
-        
-        // Función para mostrar el modal de registro
-        function showRegisterModal() {
-            if (registroModal) {
-                registroModal.classList.remove('hidden');
-                registroModal.classList.add('flex');
-            } else {
-                console.error("Modal de registro no encontrado");
-            }
-        }
-
-        // Agregar el botón de administrador
-        function addAdminButton() {
-            // Crear botón para la versión desktop
-            const adminBtn = document.createElement('a');
-            adminBtn.href = "admin-panel.html";
-            adminBtn.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
-            adminBtn.textContent = "Admin";
-            adminBtn.id = "adminBtn";
-            
-            // Insertar antes del botón de login
-            if (navLinks) {
-                const loginBtnElement = document.getElementById('loginBtn');
-                if (loginBtnElement) {
-                    navLinks.insertBefore(adminBtn, loginBtnElement);
-                } else {
-                    navLinks.appendChild(adminBtn);
-                }
-            }
-            
-            // Crear botón para menú móvil
-            const mobileAdminBtn = document.createElement('a');
-            mobileAdminBtn.href = "admin-panel.html";
-            mobileAdminBtn.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
-            mobileAdminBtn.textContent = "Admin";
-            mobileAdminBtn.id = "mobileAdminBtn";
-            
-            // Agregar al menú móvil
-            if (mobileNavLinks) {
-                mobileNavLinks.appendChild(mobileAdminBtn);
-            }
-            
-            console.log("Botones de administrador añadidos");
-        }
-
-        // Remover el botón de administrador
-        function removeAdminButton() {
-            const adminBtn = document.getElementById('adminBtn');
-            const mobileAdminBtn = document.getElementById('mobileAdminBtn');
-            
-            if (adminBtn) {
-                adminBtn.remove();
-            }
-            
-            if (mobileAdminBtn) {
-                mobileAdminBtn.remove();
-            }
-            
-            console.log("Botones de administrador eliminados");
-        }
-
-        // Actualizar UI basada en autenticación y rol de administrador
-        async function updateUIBasedOnAuth() {
-            const currentUser = auth.currentUser;
-            
-            if (currentUser) {
-                // Usuario autenticado
-                console.log("Usuario autenticado:", currentUser.uid);
-                
-                if (loginBtn) {
-                    loginBtn.innerHTML = `
-                        <div class="flex items-center bg-white rounded-lg px-3 py-1">
-                            <img src="${currentUser.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-                            <span class="text-gray-800 font-medium">${currentUser.displayName || 'Usuario'}</span>
-                        </div>
-                    `;
-                    
-                    loginBtn.removeEventListener('click', showLoginModal);
-                    loginBtn.addEventListener('click', () => {
-                        window.location.href = 'perfil.html';
-                    });
-                }
-                
-                // Verificar si el usuario es administrador y mostrar/ocultar botón
-                const isAdmin = await isUserAdmin(currentUser.uid);
-                console.log("¿Es administrador?", isAdmin);
-                
-                if (isAdmin) {
-                    addAdminButton();
-                } else {
-                    removeAdminButton();
-                }
-            } else {
-                // Usuario no autenticado
-                console.log("No hay usuario autenticado");
-                
-                if (loginBtn) {
-                    loginBtn.textContent = "Iniciar Sesión";
-                    loginBtn.className = "bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition";
-                    
-                    // Asegurar que tiene el event listener correcto
-                    loginBtn.addEventListener('click', showLoginModal);
-                }
-                
-                // Remover botón de admin si existe
-                removeAdminButton();
-            }
-        }
-
-        // Configurar event listeners
-        if (loginBtn) {
-            loginBtn.addEventListener('click', function() {
-                if (auth.currentUser) {
-                    window.location.href = 'perfil.html';
-                } else {
-                    showLoginModal();
-                }
+            loginBtn.removeEventListener('click', showLoginModal);
+            loginBtn.addEventListener('click', () => {
+                window.location.href = 'perfil.html';
             });
         }
         
         if (registerBtn) {
-            registerBtn.addEventListener('click', function() {
-                showRegisterModal();
-            });
+            registerBtn.style.display = 'none';
         }
-        
-        if (closeLoginModal) {
-            closeLoginModal.addEventListener('click', () => {
-                loginModal.classList.add('hidden');
-                loginModal.classList.remove('flex');
-            });
-        }
-        
-        if (closeRegisterModal) {
-            closeRegisterModal.addEventListener('click', () => {
-                registroModal.classList.add('hidden');
-                registroModal.classList.remove('flex');
-            });
-        }
-        
-        if (showRegisterLink) {
-            showRegisterLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                loginModal.classList.add('hidden');
-                loginModal.classList.remove('flex');
-                registroModal.classList.remove('hidden');
-                registroModal.classList.add('flex');
-            });
-        }
-        
-        // Configurar menú móvil
-        if (mobileMenuBtn && mobileMenu) {
-            mobileMenuBtn.addEventListener('click', function() {
-                if (mobileMenu.classList.contains('hidden')) {
-                    mobileMenu.classList.remove('hidden');
-                    mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-                } else {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-                }
-            });
-        }
-
-        // Configurar login con Google
-        if (googleLoginBtn) {
-            googleLoginBtn.addEventListener('click', async () => {
-                try {
-                    // Mostrar carga
-                    googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                    googleLoginBtn.disabled = true;
-                    
-                    // Intentar login
-                    const user = await loginWithGoogle();
-                    
-                    // Cerrar modal
-                    loginModal.classList.add('hidden');
-                    loginModal.classList.remove('flex');
-                    
-                    // Mostrar mensaje y actualizar UI
-                    mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
-                    await updateUIBasedOnAuth();
-                    
-                } catch (error) {
-                    console.error("Error en inicio de sesión:", error);
-                    mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
-                } finally {
-                    // Restaurar botón
-                    googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                    googleLoginBtn.disabled = false;
-                }
-            });
-        }
-
-        // Lo mismo para registro con Google
-        if (googleRegisterBtn) {
-            googleRegisterBtn.addEventListener('click', async () => {
-                try {
-                    // Mostrar carga
-                    googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                    googleRegisterBtn.disabled = true;
-                    
-                    // Usar mismo método que login
-                    const user = await loginWithGoogle();
-                    
-                    // Cerrar modal
-                    registroModal.classList.add('hidden');
-                    registroModal.classList.remove('flex');
-                    
-                    // Mostrar mensaje y actualizar UI
-                    mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
-                    await updateUIBasedOnAuth();
-                    
-                } catch (error) {
-                    console.error("Error en registro:", error);
-                    mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
-                } finally {
-                    // Restaurar botón
-                    googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                    googleRegisterBtn.disabled = false;
-                }
-            });
-        }
-
-        // Inicializar al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("Inicializando aplicación...");
-            
-            // Verificar autenticación actual
-            auth.onAuthStateChanged(async (user) => {
-                await updateUIBasedOnAuth();
-                
-                // Cargar torneos y leaderboard si hay alguna función para ello
-                if (typeof loadTournaments === 'function') {
-                    loadTournaments();
-                }
-                
-                if (typeof loadLeaderboard === 'function') {
-                    loadLeaderboard();
-                }
-            });
+    }
+    
+    // Configurar menú móvil
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
         });
+    }
+    
+    // Cargar torneos y leaderboard al iniciar la página
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Cargar torneos
+        await loadTournaments();
+        
+        // Cargar leaderboard
+        await loadLeaderboard();
+        
+        // Verificar si hay usuario autenticado
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                
+                // Actualizar UI para usuario logueado
+                try {
+                    await updateUIForLoggedInUser(user);
+                    
+                    // Verificar si es admin
+                    await checkAndShowAdminButton();
+                    
+                    // Recargar torneos para actualizar botones de inscripción
+                    await loadTournaments();
+                } catch (error) {
+                    console.error("Error al actualizar UI:", error);
+                }
+            } else {
+                console.log("No hay usuario autenticado");
+            }
+        });
+    });
+    
+    // Verificar si el usuario es admin y mostrar el botón correspondiente
+    async function checkAndShowAdminButton() {
+        try {
+            const user = auth.currentUser;
+            
+            if (!user) {
+                console.log("No hay usuario autenticado");
+                return;
+            }
+            
+            // Verificar si el usuario es administrador
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
+            const isAdmin = adminUIDs.includes(user.uid);
+            console.log("¿El usuario actual es admin?", isAdmin);
+            
+            // Si el usuario es admin, mostrar el botón de Admin
+            if (isAdmin) {
+                // Buscar el elemento de navegación donde queremos añadir el botón
+                const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+                
+                if (navLinks) {
+                    // Crear el botón de Admin
+                    const adminButton = document.createElement("a");
+                    adminButton.href = "admin-panel.html";
+                    adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
+                    adminButton.textContent = "Admin";
+                    
+                    // Insertar antes del botón de "Mi Perfil" o al final si no existe
+                    const profileLink = navLinks.querySelector('a[href="perfil.html"]');
+                    if (profileLink) {
+                        navLinks.insertBefore(adminButton, profileLink.nextSibling);
+                    } else {
+                        navLinks.appendChild(adminButton);
+                    }
+                    
+                    // También agregar al menú móvil si existe
+                    const mobileMenu = document.getElementById("mobileMenu");
+                    if (mobileMenu) {
+                        const mobileMenuLinks = mobileMenu.querySelector("div");
+                        if (mobileMenuLinks) {
+                            const mobileAdminLink = document.createElement("a");
+                            mobileAdminLink.href = "admin-panel.html";
+                            mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
+                            mobileAdminLink.textContent = "Admin";
+                            mobileMenuLinks.appendChild(mobileAdminLink);
+                        }
+                    }
+                    
+                    console.log("Botón de Admin añadido correctamente");
+                } else {
+                    console.error("No se pudo encontrar la barra de navegación");
+                }
+            }
+        } catch (error) {
+            console.error("Error al verificar permisos de admin:", error);
+        }
+    }
     </script>
 </body>
 </html>
