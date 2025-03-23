@@ -119,6 +119,54 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }, 3000);
 }
 
+// Obtener datos del banner para un torneo
+async function getBannerForTournament(torneo) {
+    try {
+        // Si el torneo ya tiene una URL de imagen, usarla
+        if (torneo.imageUrl) {
+            return torneo.imageUrl;
+        }
+        
+        // Si el torneo tiene bannerId, obtener el banner correspondiente
+        if (torneo.bannerId) {
+            const bannerDoc = await getDoc(doc(db, "banners", torneo.bannerId));
+            
+            if (bannerDoc.exists()) {
+                const bannerData = bannerDoc.data();
+                // Usar imageData o imageUrl del banner
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        // Si el torneo tiene bannerRef, obtener el banner por referencia
+        if (torneo.bannerRef) {
+            const bannerDoc = await getDoc(torneo.bannerRef);
+            
+            if (bannerDoc.exists()) {
+                const bannerData = bannerDoc.data();
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        // Intentar buscar por nombre del torneo (solución de respaldo)
+        if (torneo.nombre) {
+            const bannersRef = collection(db, "banners");
+            const q = query(bannersRef, where("nombre", "==", torneo.nombre.split(' ')[0]), limit(1));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const bannerData = querySnapshot.docs[0].data();
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.error("Error al obtener banner para torneo:", error);
+        return null;
+    }
+}
+
 // Función principal para cargar torneos
 export async function loadTournaments() {
     try {
@@ -138,8 +186,7 @@ export async function loadTournaments() {
         // Mostrar indicadores de carga
         const loadingHTML = `
             <div class="col-span-full flex justify-center items-center p-4">
-                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mr-3"></div>
-                <p class="text-gray-500">Cargando torneos...</p>
+                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
             </div>
         `;
         enProcesoContainer.innerHTML = loadingHTML;
@@ -156,21 +203,36 @@ export async function loadTournaments() {
         const torneosAbiertos = [];
         const torneosProximos = [];
         
-        querySnapshot.forEach(doc => {
+        // Procesar cada torneo y obtener sus datos de banner
+        const torneoPromises = [];
+        
+        querySnapshot.forEach(docSnapshot => {
             const torneo = {
-                id: doc.id,
-                ...doc.data()
+                id: docSnapshot.id,
+                ...docSnapshot.data()
             };
             
-            // Clasificar según estado
-            if (torneo.estado === 'En Progreso') {
-                torneosEnProceso.push(torneo);
-            } else if (torneo.estado === 'Abierto') {
-                torneosAbiertos.push(torneo);
-            } else if (torneo.estado === 'Próximamente') {
-                torneosProximos.push(torneo);
-            }
+            // Agregar promesa para cargar el banner
+            torneoPromises.push(
+                getBannerForTournament(torneo).then(bannerUrl => {
+                    if (bannerUrl) {
+                        torneo.bannerImageUrl = bannerUrl;
+                    }
+                    
+                    // Clasificar según estado
+                    if (torneo.estado === 'En Progreso') {
+                        torneosEnProceso.push(torneo);
+                    } else if (torneo.estado === 'Abierto') {
+                        torneosAbiertos.push(torneo);
+                    } else if (torneo.estado === 'Próximamente') {
+                        torneosProximos.push(torneo);
+                    }
+                })
+            );
         });
+        
+        // Esperar a que todos los torneos se procesen
+        await Promise.all(torneoPromises);
         
         // Ordenar por fecha (más cercana primero)
         const sortByDate = (a, b) => {
@@ -291,10 +353,13 @@ async function renderTournaments(containerId, torneos) {
         // Generar HTML para puntos por posición
         const puntosPosicionHTML = renderPuntosPosicion(torneo.puntosPosicion);
         
+        // Usar la imagen del banner si está disponible, de lo contrario usar imageUrl o fallback
+        const imageSrc = torneo.bannerImageUrl || torneo.imageUrl || 'https://via.placeholder.com/400x200';
+        
         // HTML del torneo
         html += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
-                <img src="${torneo.imageUrl || 'https://via.placeholder.com/400x200'}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
+                <img src="${imageSrc}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
