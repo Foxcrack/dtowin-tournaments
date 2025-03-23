@@ -80,90 +80,9 @@
     <!-- Profile Section -->
     <section class="py-16 px-4">
         <div class="container mx-auto" id="profileContainer">
-            <!-- Perfil del usuario -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
-                <!-- Encabezado del perfil -->
-                <div class="gradient-background text-white p-8">
-                    <div class="flex flex-col md:flex-row items-center">
-                        <img id="profileAvatar" src="dtowin.png" alt="Usuario" class="w-24 h-24 rounded-full border-4 border-white mb-4 md:mb-0 md:mr-6">
-                        <div class="text-center md:text-left">
-                            <h2 id="profileUsername" class="text-3xl font-bold">Cargando...</h2>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Estadísticas del usuario -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
-                    <div class="text-center">
-                        <p class="text-gray-500 text-sm">Puntos</p>
-                        <p id="profilePoints" class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-gray-500 text-sm">Torneos</p>
-                        <p id="profileTournaments" class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-gray-500 text-sm">Victorias</p>
-                        <p id="profileWins" class="text-2xl font-bold text-gray-800">0</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-gray-500 text-sm">Ranking</p>
-                        <p id="profileRanking" class="text-2xl font-bold text-gray-800">#0</p>
-                    </div>
-                </div>
-                
-                <!-- Opciones de perfil (solo visibles para el propio perfil) -->
-                <div id="profileOptions" class="p-6 border-b hidden">
-                    <div class="flex justify-end space-x-4">
-                        <button id="editProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
-                            <i class="fas fa-edit mr-2"></i>Editar Perfil
-                        </button>
-                        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
-                            <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Pestañas de contenido -->
-                <div class="p-6">
-                    <div class="border-b border-gray-200">
-                        <ul class="flex flex-wrap -mb-px">
-                            <li class="mr-2">
-                                <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">
-                                    <i class="fas fa-certificate mr-2"></i>Badges
-                                </a>
-                            </li>
-                            <li class="mr-2">
-                                <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">
-                                    <i class="fas fa-trophy mr-2"></i>Torneos
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Contenido de pestañas -->
-                    <div class="py-4">
-                        <!-- Badges del usuario -->
-                        <div id="badges" class="tab-content">
-                            <h3 class="text-xl font-semibold mb-4">Mis Badges</h3>
-                            <div id="userBadges">
-                                <div class="flex justify-center">
-                                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Historial de torneos -->
-                        <div id="tournaments" class="tab-content hidden">
-                            <h3 class="text-xl font-semibold mb-4">Historial de Torneos</h3>
-                            <div id="userTournaments">
-                                <div class="flex justify-center">
-                                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- El contenido del perfil se cargará dinámicamente -->
+            <div class="flex justify-center py-8">
+                <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
             </div>
         </div>
     </section>
@@ -264,7 +183,7 @@
                 </div>
                 
                 <p class="text-center text-gray-500 text-xs">
-                    ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</a>
+                    ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
                 </p>
             </form>
         </div>
@@ -312,7 +231,7 @@
                     <div class="text-center mt-4">
                         <p class="text-gray-600 text-sm">o</p>
                     </div>
-                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-register-btn">
+                    <button type="button" class="google-register-btn w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
@@ -325,253 +244,422 @@
         </div>
     </div>
 
+    <!-- Plantillas para contenido dinámico -->
+    <template id="profileTemplate">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <!-- Encabezado del perfil -->
+            <div class="gradient-background text-white p-8">
+                <div class="flex flex-col md:flex-row items-center">
+                    <img id="profileAvatar" src="dtowin.png" alt="Usuario" class="w-24 h-24 rounded-full border-4 border-white mb-4 md:mb-0 md:mr-6">
+                    <div class="text-center md:text-left">
+                        <h2 id="profileUsername" class="text-3xl font-bold">Cargando...</h2>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas del usuario -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Puntos</p>
+                    <p id="profilePoints" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Torneos</p>
+                    <p id="profileTournaments" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Victorias</p>
+                    <p id="profileWins" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Ranking</p>
+                    <p id="profileRanking" class="text-2xl font-bold text-gray-800">#0</p>
+                </div>
+            </div>
+            
+            <!-- Opciones de perfil (solo visibles para el propio perfil) -->
+            <div id="profileOptions" class="p-6 border-b hidden">
+                <div class="flex justify-end space-x-4">
+                    <button id="editProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                        <i class="fas fa-edit mr-2"></i>Editar Perfil
+                    </button>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Pestañas de contenido -->
+            <div class="p-6">
+                <div class="border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px">
+                        <li class="mr-2">
+                            <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">
+                                <i class="fas fa-certificate mr-2"></i>Badges
+                            </a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">
+                                <i class="fas fa-trophy mr-2"></i>Torneos
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Contenido de pestañas -->
+                <div class="py-4">
+                    <!-- Badges del usuario -->
+                    <div id="badges" class="tab-content">
+                        <h3 class="text-xl font-semibold mb-4">Mis Badges</h3>
+                        <div id="userBadges">
+                            <div class="flex justify-center">
+                                <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Historial de torneos -->
+                    <div id="tournaments" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4">Historial de Torneos</h3>
+                        <div id="userTournaments">
+                            <div class="flex justify-center">
+                                <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Scripts -->
     <script type="module">
-    // Script principal para perfil.html
-    import { 
-        loginWithGoogle, 
-        auth, 
-        logoutUser 
-    } from './firebase.js';
-    
-    import { loadProfile } from './perfil.js';
-    
-    // Referencias a elementos DOM
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const tabLinks = document.querySelectorAll('[href^="#"]');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const loginModal = document.getElementById('loginModal');
-    const registroModal = document.getElementById('registroModal');
-    const closeLoginModal = document.getElementById('closeLoginModal');
-    const closeRegisterModal = document.getElementById('closeRegisterModal');
-    const showRegisterLink = document.getElementById('showRegisterLink');
-    const googleLoginBtn = document.getElementById('googleLoginBtn');
-    const googleRegisterBtn = document.querySelector('.google-register-btn');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    // Función para mostrar el modal de login
-    function showLoginModal() {
-        if (loginModal) {
-            loginModal.classList.remove('hidden');
-            loginModal.classList.add('flex');
-        }
-    }
-    
-    // Eventos para mostrar/ocultar modales
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
-            if (auth.currentUser) {
-                window.location.href = 'perfil.html';
+        import { 
+            loginWithGoogle, 
+            auth, 
+            logoutUser 
+        } from './firebase.js';
+        
+        import { loadProfile } from './perfil.js';
+        
+        // Debug - Registrar estado inicial de autenticación
+        console.log("Estado inicial de autenticación:", auth.currentUser ? "Autenticado como " + auth.currentUser.uid : "No autenticado");
+        
+        // Referencias a elementos DOM
+        const loginBtn = document.getElementById('loginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const registroModal = document.getElementById('registroModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const showRegisterLink = document.getElementById('showRegisterLink');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const googleRegisterBtn = document.querySelector('.google-register-btn');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const profileContainer = document.getElementById('profileContainer');
+        
+        // Función para actualizar UI basado en estado de autenticación
+        function updateUIBasedOnAuth() {
+            const currentUser = auth.currentUser;
+            console.log("Actualizando UI basado en autenticación:", currentUser ? "Autenticado" : "No autenticado");
+            
+            if (currentUser) {
+                // Usuario autenticado
+                if (loginBtn) {
+                    loginBtn.innerHTML = `
+                        <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                            <img src="${currentUser.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                            <span class="text-gray-800 font-medium">${currentUser.displayName || 'Usuario'}</span>
+                        </div>
+                    `;
+                    
+                    loginBtn.removeEventListener('click', showLoginModal);
+                    loginBtn.addEventListener('click', () => {
+                        window.location.href = 'perfil.html';
+                    });
+                }
             } else {
-                showLoginModal();
+                // Usuario no autenticado
+                if (loginBtn) {
+                    loginBtn.textContent = "Iniciar Sesión";
+                    loginBtn.className = "bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition";
+                    
+                    // Asegurar que tiene el event listener correcto
+                    loginBtn.addEventListener('click', showLoginModal);
+                }
             }
-        });
-    }
-    
-    if (closeLoginModal) {
-        closeLoginModal.addEventListener('click', () => {
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-        });
-    }
-    
-    if (closeRegisterModal) {
-        closeRegisterModal.addEventListener('click', () => {
-            registroModal.classList.add('hidden');
-            registroModal.classList.remove('flex');
-        });
-    }
-    
-    if (showRegisterLink) {
-        showRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-            registroModal.classList.remove('hidden');
-            registroModal.classList.add('flex');
-        });
-    }
-    
-    // Configurar logout
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await logoutUser();
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                mostrarNotificacion("Error al cerrar sesión", "error");
+        }
+        
+        // Función para mostrar el modal de login
+        function showLoginModal() {
+            console.log("Mostrando modal de login");
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+            } else {
+                console.error("Modal de login no encontrado");
             }
-        });
-    }
-    
-    // Configurar edición de perfil
-    if (editProfileBtn) {
-        editProfileBtn.addEventListener('click', () => {
-            // TODO: Implementar modal de edición de perfil
-            mostrarNotificacion("Funcionalidad de edición de perfil en desarrollo", "info");
-        });
-    }
-    
-    // Configurar navegación por pestañas
-    tabLinks.forEach(tabLink => {
-        tabLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            // Ocultar todos los contenidos
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // Mostrar el contenido correspondiente
-            const targetId = tabLink.getAttribute('href').substring(1);
-            const targetContent = document.getElementById(targetId);
-            if (targetContent) {
-                targetContent.classList.remove('hidden');
+        }
+        
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo = "info") {
+            // Verificar si ya existe una notificación
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
             }
             
-            // Desactivar todos los enlaces
-            tabLinks.forEach(link => {
-                link.classList.remove('text-blue-600', 'border-blue-600');
-                link.classList.add('text-gray-500', 'border-transparent');
-            });
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
             
-            // Activar el enlace actual
-            tabLink.classList.remove('text-gray-500', 'border-transparent');
-            tabLink.classList.add('text-blue-600', 'border-blue-600');
-        });
-    });
-    
-    // Configurar login con Google
-    if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleLoginBtn.disabled = true;
+            // Clases según el tipo de notificación
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
+            
+            if (tipo === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (tipo === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (tipo === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Estilos de la notificación
+            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notification.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${mensaje}</span>
+            `;
+            
+            // Añadir al DOM
+            document.body.appendChild(notification);
+            
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notification.classList.add('opacity-0');
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+        
+        // Función para renderizar la plantilla de perfil
+        function renderProfileTemplate() {
+            const template = document.getElementById('profileTemplate');
+            if (template && profileContainer) {
+                profileContainer.innerHTML = '';
+                const clone = document.importNode(template.content, true);
+                profileContainer.appendChild(clone);
                 
-                // Intentar login
-                const user = await loginWithGoogle();
-                console.log("Login exitoso:", user);
+                // Configurar pestañas después de renderizar
+                setupTabs();
                 
-                // Cerrar modal
+                // Configurar botones después de renderizar
+                setupButtons();
+            }
+        }
+        
+        // Configurar navegación por pestañas
+        function setupTabs() {
+            const tabLinks = document.querySelectorAll('[href^="#"]');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabLinks.forEach(tabLink => {
+                tabLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    // Ocultar todos los contenidos
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // Mostrar el contenido correspondiente
+                    const targetId = tabLink.getAttribute('href').substring(1);
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.remove('hidden');
+                    }
+                    
+                    // Desactivar todos los enlaces
+                    tabLinks.forEach(link => {
+                        link.classList.remove('text-blue-600', 'border-blue-600');
+                        link.classList.add('text-gray-500', 'border-transparent');
+                    });
+                    
+                    // Activar el enlace actual
+                    tabLink.classList.remove('text-gray-500', 'border-transparent');
+                    tabLink.classList.add('text-blue-600', 'border-blue-600');
+                });
+            });
+        }
+        
+        // Configurar botones del perfil
+        function setupButtons() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            
+            // Configurar logout
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await logoutUser();
+                        mostrarNotificacion("Has cerrado sesión correctamente", "success");
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    } catch (error) {
+                        console.error("Error al cerrar sesión:", error);
+                        mostrarNotificacion("Error al cerrar sesión", "error");
+                    }
+                });
+            }
+            
+            // Configurar edición de perfil
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => {
+                    mostrarNotificacion("Funcionalidad de edición de perfil en desarrollo", "info");
+                });
+            }
+        }
+        
+        // Eventos para modales
+        if (loginBtn) {
+            loginBtn.addEventListener('click', function() {
+                if (auth.currentUser) {
+                    window.location.href = 'perfil.html';
+                } else {
+                    showLoginModal();
+                }
+            });
+        }
+        
+        if (closeLoginModal) {
+            closeLoginModal.addEventListener('click', () => {
                 loginModal.classList.add('hidden');
                 loginModal.classList.remove('flex');
-                
-                // Recargar perfil
-                window.location.reload();
-                
-            } catch (error) {
-                console.error("Error en inicio de sesión:", error);
-                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleLoginBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Lo mismo para registro con Google
-    if (googleRegisterBtn) {
-        googleRegisterBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleRegisterBtn.disabled = true;
-                
-                // Usar mismo método que login
-                const user = await loginWithGoogle();
-                console.log("Registro exitoso:", user);
-                
-                // Cerrar modal
+            });
+        }
+        
+        if (closeRegisterModal) {
+            closeRegisterModal.addEventListener('click', () => {
                 registroModal.classList.add('hidden');
                 registroModal.classList.remove('flex');
-                
-                // Recargar perfil
-                window.location.reload();
-                
-            } catch (error) {
-                console.error("Error en registro:", error);
-                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleRegisterBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Configurar menú móvil
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', function() {
-            if (mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.remove('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                mobileMenu.classList.add('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            }
-        });
-    }
-    
-    // Función para mostrar notificaciones
-    function mostrarNotificacion(mensaje, tipo = "info") {
-        // Verificar si ya existe una notificación
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
+            });
         }
         
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        
-        // Clases según el tipo de notificación
-        let bgColor = 'bg-blue-500';
-        let icon = 'info-circle';
-        
-        if (tipo === 'success') {
-            bgColor = 'bg-green-500';
-            icon = 'check-circle';
-        } else if (tipo === 'error') {
-            bgColor = 'bg-red-500';
-            icon = 'exclamation-circle';
-        } else if (tipo === 'warning') {
-            bgColor = 'bg-yellow-500';
-            icon = 'exclamation-triangle';
+        if (showRegisterLink) {
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+                registroModal.classList.remove('hidden');
+                registroModal.classList.add('flex');
+            });
         }
         
-        // Estilos de la notificación
-        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-        notification.innerHTML = `
-            <i class="fas fa-${icon} mr-2"></i>
-            <span>${mensaje}</span>
-        `;
+        // Configurar menú móvil
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                if (mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+        }
         
-        // Añadir al DOM
-        document.body.appendChild(notification);
+        // Configurar login con Google
+        if (googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', async () => {
+                try {
+                    // Mostrar carga
+                    googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleLoginBtn.disabled = true;
+                    
+                    // Intentar login
+                    const user = await loginWithGoogle();
+                    console.log("Login exitoso:", user);
+                    
+                    // Cerrar modal
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                    
+                    // Mostrar mensaje y recargar
+                    mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error("Error en inicio de sesión:", error);
+                    mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+                } finally {
+                    // Restaurar botón
+                    googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleLoginBtn.disabled = false;
+                }
+            });
+        }
         
-        // Eliminar después de 3 segundos
-        setTimeout(() => {
-            notification.classList.add('opacity-0');
-            notification.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                notification.remove();
-            }, 500);
-        }, 3000);
-    }
-    
-    // Exponer la función globalmente
-    window.mostrarNotificacion = mostrarNotificacion;
-    
-    // Cargar perfil del usuario al iniciar la página
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Cargar perfil
-        await loadProfile();
-    });
+        // Lo mismo para registro con Google
+        if (googleRegisterBtn) {
+            googleRegisterBtn.addEventListener('click', async () => {
+                try {
+                    // Mostrar carga
+                    googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleRegisterBtn.disabled = true;
+                    
+                    // Usar mismo método que login
+                    const user = await loginWithGoogle();
+                    console.log("Registro exitoso:", user);
+                    
+                    // Cerrar modal
+                    registroModal.classList.add('hidden');
+                    registroModal.classList.remove('flex');
+                    
+                    // Mostrar mensaje y recargar
+                    mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error("Error en registro:", error);
+                    mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+                } finally {
+                    // Restaurar botón
+                    googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleRegisterBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Exponer funciones globalmente
+        window.mostrarNotificacion = mostrarNotificacion;
+        window.renderProfileTemplate = renderProfileTemplate;
+        
+        // Cargar perfil del usuario al iniciar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar el estado de autenticación y actualizar la UI
+            auth.onAuthStateChanged(user => {
+                console.log("Estado de autenticación cambiado:", user ? "Autenticado" : "No autenticado");
+                updateUIBasedOnAuth();
+                
+                // Renderizar la plantilla de perfil solo si hay un usuario autenticado
+                if (user) {
+                    renderProfileTemplate();
+                }
+                
+                // Cargar perfil
+                loadProfile();
+            });
+        });
     </script>
 </body>
 </html>
