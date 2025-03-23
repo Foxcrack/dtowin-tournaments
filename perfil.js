@@ -11,23 +11,44 @@ import {
     limit 
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Función para cargar perfil
+// Variable para controlar si se está cargando el perfil
+let isLoadingProfile = false;
+
+// Función principal para cargar perfil
 export async function loadProfile() {
     try {
+        // Evitar cargas múltiples
+        if (isLoadingProfile) {
+            console.log("Ya se está cargando el perfil, ignorando solicitud duplicada");
+            return;
+        }
+        
+        isLoadingProfile = true;
         console.log("Cargando perfil...");
         
         // Verificar si hay un userId en la URL (para perfiles públicos)
         const urlParams = new URLSearchParams(window.location.search);
         const requestedUid = urlParams.get('uid');
         
+        // Esperar a que Firebase Auth esté inicializado
+        await new Promise(resolve => {
+            const unsubscribe = auth.onAuthStateChanged(user => {
+                unsubscribe();
+                resolve(user);
+            });
+        });
+        
+        // Verificar si el usuario está autenticado
+        const currentUser = auth.currentUser;
+        console.log("Estado de autenticación:", currentUser ? "Autenticado" : "No autenticado");
+        
         // Si hay un userId en la URL, cargamos ese perfil
         // Si no, intentamos cargar el perfil del usuario autenticado
-        const currentUser = auth.currentUser;
-        
         if (!requestedUid && !currentUser) {
-            // No hay perfil para mostrar, redirigir al inicio
-            console.log("No hay perfil para mostrar, redirigiendo...");
+            // No hay perfil para mostrar, mostrar mensaje de inicio de sesión
+            console.log("No hay perfil para mostrar, mostrando pantalla de login");
             showLoginRequired();
+            isLoadingProfile = false;
             return;
         }
         
@@ -43,6 +64,7 @@ export async function loadProfile() {
         if (querySnapshot.empty) {
             console.error("No se encontró el perfil del usuario");
             showProfileNotFound();
+            isLoadingProfile = false;
             return;
         }
         
@@ -66,9 +88,11 @@ export async function loadProfile() {
             hideProfileOptions();
         }
         
+        isLoadingProfile = false;
     } catch (error) {
         console.error("Error al cargar perfil:", error);
         showProfileError();
+        isLoadingProfile = false;
     }
 }
 
@@ -86,7 +110,7 @@ function showLoginRequired() {
                     <button id="loginPromptBtn" class="dtowin-primary text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition">
                         Iniciar Sesión
                     </button>
-                    <p class="text-sm text-gray-500 mt-4">¿No tienes cuenta? <a href="#" id="registerPromptBtn" class="text-blue-500 hover:underline">Regístrate</a></p>
+                    <p class="text-sm text-gray-500 mt-4">¿No tienes cuenta? <button id="registerPromptBtn" class="text-blue-500 hover:underline">Regístrate</button></p>
                 </div>
             </div>
         `;
@@ -97,16 +121,25 @@ function showLoginRequired() {
         
         if (loginPromptBtn) {
             loginPromptBtn.addEventListener('click', () => {
-                const loginBtn = document.getElementById('loginBtn');
-                if (loginBtn) loginBtn.click();
+                const loginBtn = document.querySelector('#loginModal');
+                if (loginBtn) {
+                    loginBtn.classList.remove('hidden');
+                    loginBtn.classList.add('flex');
+                } else {
+                    alert("Modal de inicio de sesión no encontrado");
+                }
             });
         }
         
         if (registerPromptBtn) {
-            registerPromptBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const registerBtn = document.getElementById('registerBtn');
-                if (registerBtn) registerBtn.click();
+            registerPromptBtn.addEventListener('click', () => {
+                const registerModal = document.querySelector('#registroModal');
+                if (registerModal) {
+                    registerModal.classList.remove('hidden');
+                    registerModal.classList.add('flex');
+                } else {
+                    alert("Modal de registro no encontrado");
+                }
             });
         }
     }
