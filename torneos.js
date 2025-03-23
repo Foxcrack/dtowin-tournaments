@@ -1,5 +1,5 @@
 // Script para la gestión de torneos en la página principal
-import { auth, db } from './firebase.js';
+import { auth, db, isAuthenticated } from './firebase.js';
 import { 
     collection, 
     getDocs, 
@@ -10,8 +10,7 @@ import {
     where, 
     orderBy, 
     limit,
-    serverTimestamp, 
-    FieldValue
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Obtener color según el estado del torneo
@@ -193,67 +192,73 @@ export async function loadTournaments() {
         abiertosContainer.innerHTML = loadingHTML;
         proximosContainer.innerHTML = loadingHTML;
         
-        // Obtener todos los torneos visibles
-        const torneosRef = collection(db, "torneos");
-        const q = query(torneosRef, where("visible", "!=", false));
-        const querySnapshot = await getDocs(q);
-        
-        // Clasificar torneos por estado
-        const torneosEnProceso = [];
-        const torneosAbiertos = [];
-        const torneosProximos = [];
-        
-        // Procesar cada torneo y obtener sus datos de banner
-        const torneoPromises = [];
-        
-        querySnapshot.forEach(docSnapshot => {
-            const torneo = {
-                id: docSnapshot.id,
-                ...docSnapshot.data()
+        try {
+            // Obtener todos los torneos visibles
+            const torneosRef = collection(db, "torneos");
+            const q = query(torneosRef, where("visible", "!=", false));
+            const querySnapshot = await getDocs(q);
+            
+            // Clasificar torneos por estado
+            const torneosEnProceso = [];
+            const torneosAbiertos = [];
+            const torneosProximos = [];
+            
+            // Procesar cada torneo y obtener sus datos de banner
+            const torneoPromises = [];
+            
+            querySnapshot.forEach(docSnapshot => {
+                const torneo = {
+                    id: docSnapshot.id,
+                    ...docSnapshot.data()
+                };
+                
+                // Agregar promesa para cargar el banner
+                torneoPromises.push(
+                    getBannerForTournament(torneo).then(bannerUrl => {
+                        if (bannerUrl) {
+                            torneo.bannerImageUrl = bannerUrl;
+                        }
+                        
+                        // Clasificar según estado
+                        if (torneo.estado === 'En Progreso') {
+                            torneosEnProceso.push(torneo);
+                        } else if (torneo.estado === 'Abierto') {
+                            torneosAbiertos.push(torneo);
+                        } else if (torneo.estado === 'Próximamente') {
+                            torneosProximos.push(torneo);
+                        }
+                    })
+                );
+            });
+            
+            // Esperar a que todos los torneos se procesen
+            await Promise.all(torneoPromises);
+            
+            // Ordenar por fecha (más cercana primero)
+            const sortByDate = (a, b) => {
+                const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date();
+                const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date();
+                return dateA - dateB;
             };
             
-            // Agregar promesa para cargar el banner
-            torneoPromises.push(
-                getBannerForTournament(torneo).then(bannerUrl => {
-                    if (bannerUrl) {
-                        torneo.bannerImageUrl = bannerUrl;
-                    }
-                    
-                    // Clasificar según estado
-                    if (torneo.estado === 'En Progreso') {
-                        torneosEnProceso.push(torneo);
-                    } else if (torneo.estado === 'Abierto') {
-                        torneosAbiertos.push(torneo);
-                    } else if (torneo.estado === 'Próximamente') {
-                        torneosProximos.push(torneo);
-                    }
-                })
-            );
-        });
-        
-        // Esperar a que todos los torneos se procesen
-        await Promise.all(torneoPromises);
-        
-        // Ordenar por fecha (más cercana primero)
-        const sortByDate = (a, b) => {
-            const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date();
-            const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date();
-            return dateA - dateB;
-        };
-        
-        torneosEnProceso.sort(sortByDate);
-        torneosAbiertos.sort(sortByDate);
-        torneosProximos.sort(sortByDate);
-        
-        // Renderizar torneos en sus respectivos contenedores
-        await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
-        await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
-        await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
-        
-        // Configurar botones de inscripción/desinscripción
-        setupTournamentButtons();
-        
-        console.log("Torneos cargados correctamente");
+            torneosEnProceso.sort(sortByDate);
+            torneosAbiertos.sort(sortByDate);
+            torneosProximos.sort(sortByDate);
+            
+            // Renderizar torneos en sus respectivos contenedores
+            await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
+            await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
+            await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
+            
+            // Configurar botones de inscripción/desinscripción
+            setupTournamentButtons();
+            
+            console.log("Torneos cargados correctamente");
+            
+        } catch (error) {
+            console.error("Error al consultar torneos:", error);
+            showErrorMessage();
+        }
         
     } catch (error) {
         console.error("Error al cargar torneos:", error);
@@ -290,7 +295,7 @@ async function renderTournaments(containerId, torneos) {
     let html = '';
     
     // Verificar si el usuario está autenticado
-    const currentUser = auth.currentUser;
+    const userAuthenticated = isAuthenticated();
     
     for (const torneo of torneos) {
         // Formatear fecha
@@ -312,24 +317,35 @@ async function renderTournaments(containerId, torneos) {
         const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
         
         // Verificar si el usuario actual está inscrito
-        const estaInscrito = currentUser && participants.includes(currentUser.uid);
+        const estaInscrito = userAuthenticated && auth.currentUser && participants.includes(auth.currentUser.uid);
         
         // Determinar estado del botón de inscripción
         let botonInscripcion = '';
+        
         if (torneo.estado === 'Abierto') {
-            if (estaInscrito) {
+            if (!userAuthenticated) {
+                // Usuario no autenticado - Mostrar botón de registro
+                botonInscripcion = `
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold register-btn">
+                        Registrarse para participar
+                    </button>
+                `;
+            } else if (estaInscrito) {
+                // Usuario autenticado e inscrito - Mostrar botón de desinscripción
                 botonInscripcion = `
                     <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
                         Desinscribirse
                     </button>
                 `;
             } else if (lleno) {
+                // Torneo lleno
                 botonInscripcion = `
                     <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
                         Cupos Agotados
                     </button>
                 `;
             } else {
+                // Usuario autenticado pero no inscrito
                 botonInscripcion = `
                     <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" data-torneo-id="${torneo.id}">
                         Inscribirse
@@ -416,19 +432,23 @@ async function loadParticipants(torneoId, participantIds) {
         const maxToShow = Math.min(5, participantIds.length); // Mostrar máximo 5 participantes
         
         for (let i = 0; i < maxToShow; i++) {
-            const uid = participantIds[i];
-            const usersRef = collection(db, "usuarios");
-            const q = query(usersRef, where("uid", "==", uid), limit(1));
-            const querySnapshot = await getDocs(q);
-            
-            if (!querySnapshot.empty) {
-                const userData = querySnapshot.docs[0].data();
-                html += `
-                    <li class="text-xs truncate">
-                        <i class="fas fa-user text-gray-400 mr-1"></i>
-                        ${userData.nombre || 'Usuario'}
-                    </li>
-                `;
+            try {
+                const uid = participantIds[i];
+                const usersRef = collection(db, "usuarios");
+                const q = query(usersRef, where("uid", "==", uid), limit(1));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    html += `
+                        <li class="text-xs truncate">
+                            <i class="fas fa-user text-gray-400 mr-1"></i>
+                            ${userData.nombre || 'Usuario'}
+                        </li>
+                    `;
+                }
+            } catch (e) {
+                console.error(`Error al cargar participante individual:`, e);
             }
         }
         
@@ -446,7 +466,7 @@ async function loadParticipants(torneoId, participantIds) {
         
     } catch (error) {
         console.error(`Error al cargar participantes para torneo ${torneoId}:`, error);
-        container.innerHTML = '<p class="text-center text-red-500 text-xs">Error al cargar participantes</p>';
+        container.innerHTML = '<p class="text-center text-gray-500 text-xs">Error al cargar participantes</p>';
     }
 }
 
@@ -461,7 +481,7 @@ function setupTournamentButtons() {
             const torneoId = this.dataset.torneoId;
             
             // Verificar si el usuario está autenticado
-            if (!auth.currentUser) {
+            if (!isAuthenticated()) {
                 mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
                 // Abrir modal de login
                 const loginBtn = document.getElementById('loginBtn');
@@ -501,7 +521,7 @@ function setupTournamentButtons() {
             const torneoId = this.dataset.torneoId;
             
             // Verificar si el usuario está autenticado
-            if (!auth.currentUser) {
+            if (!isAuthenticated()) {
                 mostrarNotificacion("Debes iniciar sesión para desinscribirte", "error");
                 return;
             }
@@ -530,6 +550,28 @@ function setupTournamentButtons() {
                 // Restaurar botón
                 this.disabled = false;
                 this.textContent = originalText;
+            }
+        });
+    });
+    
+    // Botones de registro para usuarios no autenticados
+    document.querySelectorAll('.register-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Mostrar mensaje y redirigir a registro
+            mostrarNotificacion("Para participar en torneos, primero debes registrarte", "info");
+            
+            // Abrir modal de registro
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) {
+                setTimeout(() => {
+                    registerBtn.click();
+                }, 1000);
+            } else {
+                // Alternativa: abrir modal de login
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
             }
         });
     });
