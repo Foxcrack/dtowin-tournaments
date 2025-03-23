@@ -35,7 +35,7 @@ function renderPuntosPosicion(puntosPosicion) {
     if (!puntosPosicion) return 'No hay información de puntos';
     
     let html = '';
-    const colors = ['yellow-500', 'gray-400', 'orange-400', 'blue-400', 'purple-400'];
+    const colors = ['yellow-500', 'gray-400', 'red-500', 'blue-400', 'purple-400'];
     
     for (let i = 1; i <= 5; i++) {
         if (puntosPosicion[i] !== undefined) {
