@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Dtowin Torneos</title>
+    <title>Mi Perfil - Dtowin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .badge {
             display: inline-block;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             text-align: center;
-            line-height: 50px;
+            line-height: 40px;
             margin: 0 5px;
             color: white;
         }
@@ -32,22 +32,15 @@
         .dtowin-cream {
             background-color: #fff3e6;
         }
-        .profile-banner {
-            height: 200px;
-            background-size: cover;
-            background-position: center;
-            position: relative;
+        .spinner {
+            animation: spin 1s linear infinite;
         }
-        .badge-glow {
-            animation: glow 2s infinite alternate;
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-        @keyframes glow {
-            from {
-                box-shadow: 0 0 5px -5px #ffdd00;
-            }
-            to {
-                box-shadow: 0 0 20px 5px #ffdd00;
-            }
+        .notification {
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
@@ -56,18 +49,17 @@
     <nav class="gradient-background text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
-                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+                <a href="index.html" class="flex items-center">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+                    <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+                </a>
             </div>
             <div class="hidden md:flex items-center space-x-6">
-                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition font-bold">Mi Perfil</a>
-                <div id="userInfo" class="flex items-center">
-                    <img src="https://via.placeholder.com/32" alt="Profile" id="navbarUserImage" class="w-8 h-8 rounded-full mr-2">
-                    <span id="navbarUserName">Usuario</span>
-                </div>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
             </div>
             <button class="md:hidden text-xl" id="mobileMenuBtn">
                 <i class="fas fa-bars"></i>
@@ -77,282 +69,445 @@
         <!-- Mobile Menu -->
         <div id="mobileMenu" class="md:hidden hidden">
             <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
                 <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition font-bold">Mi Perfil</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
             </div>
         </div>
     </nav>
 
-    <!-- Perfil Header -->
-    <div class="profile-banner gradient-background" id="profileBanner">
-        <!-- Banner edit button -->
-        <button id="editBannerBtn" class="absolute bottom-4 right-4 bg-white bg-opacity-80 text-gray-700 rounded-full p-2 shadow-md hover:bg-opacity-100 transition">
-            <i class="fas fa-camera"></i>
-        </button>
-    </div>
-
-    <div class="container mx-auto px-4 -mt-16">
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <div class="flex flex-col md:flex-row">
-                <!-- Foto de perfil y datos básicos -->
-                <div class="flex flex-col items-center md:items-start md:flex-row mb-6 md:mb-0">
-                    <div class="relative">
-                        <img src="https://via.placeholder.com/150" alt="Profile" id="profileImage" class="w-32 h-32 rounded-full border-4 border-white">
-                        <!-- Profile image edit button -->
-                        <button id="editProfileImageBtn" class="absolute bottom-0 right-0 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-gray-100 transition">
-                            <i class="fas fa-camera text-gray-700"></i>
+    <!-- Profile Section -->
+    <section class="py-16 px-4">
+        <div class="container mx-auto" id="profileContainer">
+            <!-- Perfil del usuario -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+                <!-- Encabezado del perfil -->
+                <div class="gradient-background text-white p-8">
+                    <div class="flex flex-col md:flex-row items-center">
+                        <img id="profileAvatar" src="dtowin.png" alt="Usuario" class="w-24 h-24 rounded-full border-4 border-white mb-4 md:mb-0 md:mr-6">
+                        <div class="text-center md:text-left">
+                            <h2 id="profileUsername" class="text-3xl font-bold">Cargando...</h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estadísticas del usuario -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm">Puntos</p>
+                        <p id="profilePoints" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm">Torneos</p>
+                        <p id="profileTournaments" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm">Victorias</p>
+                        <p id="profileWins" class="text-2xl font-bold text-gray-800">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-gray-500 text-sm">Ranking</p>
+                        <p id="profileRanking" class="text-2xl font-bold text-gray-800">#0</p>
+                    </div>
+                </div>
+                
+                <!-- Opciones de perfil (solo visibles para el propio perfil) -->
+                <div id="profileOptions" class="p-6 border-b hidden">
+                    <div class="flex justify-end space-x-4">
+                        <button id="editProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-edit mr-2"></i>Editar Perfil
+                        </button>
+                        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
                         </button>
                     </div>
-                    <div class="md:ml-6 mt-4 md:mt-0 text-center md:text-left">
-                        <h2 class="text-2xl font-bold" id="profileName">Nombre de Usuario</h2>
-                        <p class="text-gray-600" id="profileEmail">usuario@gmail.com</p>
-                        <p class="mt-2">Posición en el ranking: <span class="font-bold" id="userRank">0</span></p>
-                        <p>Total de puntos: <span class="font-bold" id="userPoints">0</span></p>
-                        <p>Torneos participados: <span class="font-bold" id="userTournaments">0</span></p>
+                </div>
+                
+                <!-- Pestañas de contenido -->
+                <div class="p-6">
+                    <div class="border-b border-gray-200">
+                        <ul class="flex flex-wrap -mb-px">
+                            <li class="mr-2">
+                                <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">
+                                    <i class="fas fa-certificate mr-2"></i>Badges
+                                </a>
+                            </li>
+                            <li class="mr-2">
+                                <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">
+                                    <i class="fas fa-trophy mr-2"></i>Torneos
+                                </a>
+                            </li>
+                        </ul>
                     </div>
-                </div>
-
-                <!-- Botones de acción -->
-                <div class="ml-auto flex flex-col space-y-2">
-                    <button id="editProfileBtn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                        <i class="fas fa-user-edit mr-2"></i>Editar Perfil
-                    </button>
-                    <button id="logoutBtn" class="dtowin-red text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Badges del usuario -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h3 class="text-xl font-bold mb-4">Mis Badges</h3>
-            <div id="userBadges" class="flex flex-wrap gap-6">
-                <div class="flex flex-col items-center">
-                    <div class="badge bg-yellow-500 text-2xl badge-glow">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <span class="mt-2 text-sm font-semibold">Campeón Nacional</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="badge bg-purple-500 text-2xl">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <span class="mt-2 text-sm font-semibold">Evento Especial</span>
-                </div>
-                <!-- Los badges se cargarán dinámicamente aquí -->
-            </div>
-        </div>
-
-        <!-- Historial de torneos -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h3 class="text-xl font-bold mb-4">Historial de Torneos</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                            <th class="py-3 px-4 text-left">Torneo</th>
-                            <th class="py-3 px-4 text-left">Fecha</th>
-                            <th class="py-3 px-4 text-left">Posición</th>
-                            <th class="py-3 px-4 text-left">Puntos</th>
-                            <th class="py-3 px-4 text-left">Badges</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tournamentHistory" class="text-gray-600">
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4">Evento Especial</td>
-                            <td class="py-3 px-4">10 de Febrero, 2025</td>
-                            <td class="py-3 px-4"><span class="text-yellow-500 font-bold">1° Lugar</span></td>
-                            <td class="py-3 px-4">5</td>
-                            <td class="py-3 px-4">
-                                <div class="flex">
-                                    <span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-full mr-1">
-                                        Evento Especial
-                                    </span>
+                    
+                    <!-- Contenido de pestañas -->
+                    <div class="py-4">
+                        <!-- Badges del usuario -->
+                        <div id="badges" class="tab-content">
+                            <h3 class="text-xl font-semibold mb-4">Mis Badges</h3>
+                            <div id="userBadges">
+                                <div class="flex justify-center">
+                                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4">Copa de Invierno</td>
-                            <td class="py-3 px-4">5 de Enero, 2025</td>
-                            <td class="py-3 px-4"><span class="text-gray-500 font-bold">2° Lugar</span></td>
-                            <td class="py-3 px-4">4</td>
-                            <td class="py-3 px-4">
-                                <span class="text-gray-400">-</span>
-                            </td>
-                        </tr>
-                        <!-- El historial de torneos se cargará dinámicamente aquí -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para editar perfil -->
-    <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Editar Perfil</h3>
-                <p class="text-gray-600">Actualiza tu información personal</p>
-            </div>
-            
-            <form id="editProfileForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">
-                        Nombre de usuario
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editUsername" type="text" placeholder="Tu nombre de usuario">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editBannerURL">
-                        Banner de perfil (URL)
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editBannerURL" type="text" placeholder="URL de imagen para tu banner">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editPhotoURL">
-                        Foto de perfil (URL)
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editPhotoURL" type="text" placeholder="URL de imagen para tu foto de perfil">
-                </div>
-                
-                <div class="mt-6 flex justify-end">
-                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Modal para cambiar banner -->
-    <div id="changeBannerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeChangeBannerModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Cambiar Banner</h3>
-                <p class="text-gray-600">Elige una imagen para tu banner</p>
-            </div>
-            
-            <form id="changeBannerForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerURL">
-                        URL de la imagen
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerURL" type="text" placeholder="https://ejemplo.com/imagen.jpg">
-                </div>
-                
-                <p class="text-sm text-gray-600 mb-4">O selecciona una de nuestras imágenes predefinidas:</p>
-                
-                <div class="grid grid-cols-3 gap-2 mb-6">
-                    <div class="w-full h-16 bg-gradient-to-r from-blue-600 to-red-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="gradient"></div>
-                    <div class="w-full h-16 bg-red-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="red"></div>
-                    <div class="w-full h-16 bg-blue-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="blue"></div>
-                    <div class="w-full h-16 bg-purple-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="purple"></div>
-                    <div class="w-full h-16 bg-green-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="green"></div>
-                    <div class="w-full h-16 bg-yellow-600 rounded cursor-pointer hover:opacity-90 transition" data-banner="yellow"></div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Aplicar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Modal para cambiar foto de perfil -->
-    <div id="changePhotoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeChangePhotoModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Cambiar Foto de Perfil</h3>
-                <p class="text-gray-600">Elige una nueva foto para tu perfil</p>
-            </div>
-            
-            <form id="changePhotoForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="photoURL">
-                        URL de la imagen
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="photoURL" type="text" placeholder="https://ejemplo.com/foto.jpg">
-                </div>
-                
-                <div class="flex justify-center mb-6">
-                    <div class="relative rounded-full overflow-hidden w-32 h-32 bg-gray-200 flex items-center justify-center" id="photoPreview">
-                        <i class="fas fa-user text-gray-400 text-5xl"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Historial de torneos -->
+                        <div id="tournaments" class="tab-content hidden">
+                            <h3 class="text-xl font-semibold mb-4">Historial de Torneos</h3>
+                            <div id="userTournaments">
+                                <div class="flex justify-center">
+                                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="flex justify-end">
-                    <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">Aplicar</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+    </section>
 
     <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
+    <footer class="gradient-background text-white py-8 px-4">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                    <h3 class="text-xl font-bold">Dtowin Torneos</h3>
+                </div>
+                <p class="text-sm opacity-80">La plataforma líder para organizar y participar en torneos competitivos.</p>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Enlaces</h4>
+                <ul class="space-y-2">
+                    <li><a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a></li>
+                    <li><a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a></li>
+                    <li><a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Soporte</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:text-gray-300 transition">FAQ</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Contacto</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Términos y Condiciones</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Privacidad</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Conóceme</h4>
+                <div class="flex space-x-4 mb-4">
+                    <a href="https://twfox.carrd.co" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fas fa-link"></i>
+                    </a>
+                </div>
+                <p class="text-sm opacity-80">Suscríbete para recibir noticias</p>
+                <div class="flex mt-2">
+                    <input type="email" placeholder="Tu correo" class="px-3 py-2 rounded-l-lg w-full focus:outline-none text-gray-700">
+                    <button class="bg-white text-orange-500 px-4 py-2 rounded-r-lg font-semibold hover:bg-gray-100 transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto mt-8 pt-8 border-t border-white border-opacity-20 text-center">
             <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
         </div>
     </footer>
 
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+                <p class="text-gray-600">Bienvenido de vuelta</p>
+                <!-- Mensaje de error -->
+                <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
+                        Correo electrónico
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="loginPassword" type="password" placeholder="******************">
+                    <a class="inline-block align-baseline font-bold text-sm text-orange-500 hover:text-orange-700" href="#">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+                
+                <div class="mb-6">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
+                        Iniciar Sesión
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    ¿No tienes cuenta? <a href="#" id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registro Modal -->
+    <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
+                <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+                <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="registroForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                        Nombre de usuario
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                        Correo electrónico (Gmail)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="******************">
+                </div>
+                
+                <div class="mb-6">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
+                        Registrarse
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center google-register-btn">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    Al registrarte aceptas nuestros términos y condiciones
+                </p>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module">
-        // Importar funciones y objetos de Firebase
-        import { auth, db, logoutUser, getUserProfile } from './firebase.js';
-        import { getUserBadges } from './badges.js';
-        import { collection, query, where, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-
-        // Referencias a elementos DOM
-        const profileName = document.getElementById('profileName');
-        const profileEmail = document.getElementById('profileEmail');
-        const profileImage = document.getElementById('profileImage');
-        const profileBanner = document.getElementById('profileBanner');
-        const navbarUserName = document.getElementById('navbarUserName');
-        const navbarUserImage = document.getElementById('navbarUserImage');
-        const userRank = document.getElementById('userRank');
-        const userPoints = document.getElementById('userPoints');
-        const userTournaments = document.getElementById('userTournaments');
-        const userBadges = document.getElementById('userBadges');
-        const tournamentHistory = document.getElementById('tournamentHistory');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const editProfileBtn = document.getElementById('editProfileBtn');
-        const editBannerBtn = document.getElementById('editBannerBtn');
-        const editProfileImageBtn = document.getElementById('editProfileImageBtn');
-        const editProfileModal = document.getElementById('editProfileModal');
-        const changeBannerModal = document.getElementById('changeBannerModal');
-        const changePhotoModal = document.getElementById('changePhotoModal');
-        const closeEditProfileModal = document.getElementById('closeEditProfileModal');
-        const closeChangeBannerModal = document.getElementById('closeChangeBannerModal');
-        const closeChangePhotoModal = document.getElementById('closeChangePhotoModal');
-        const editProfileForm = document.getElementById('editProfileForm');
-        const changeBannerForm = document.getElementById('changeBannerForm');
-        const changePhotoForm = document.getElementById('changePhotoForm');
-        const editUsername = document.getElementById('editUsername');
-        const editBannerURL = document.getElementById('editBannerURL');
-        const editPhotoURL = document.getElementById('editPhotoURL');
-        const bannerURL = document.getElementById('bannerURL');
-        const photoURL = document.getElementById('photoURL');
-        const photoPreview = document.getElementById('photoPreview');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
-        
-        // Variables globales
-        let currentUser = null;
-        let userProfile = null;
-        
-        // Toggle menú móvil
-        mobileMenuBtn.addEventListener('click', () => {
+    // Script principal para perfil.html
+    import { 
+        loginWithGoogle, 
+        auth, 
+        logoutUser 
+    } from './firebase.js';
+    
+    import { loadProfile } from './perfil.js';
+    
+    // Referencias a elementos DOM
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const tabLinks = document.querySelectorAll('[href^="#"]');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const loginModal = document.getElementById('loginModal');
+    const registroModal = document.getElementById('registroModal');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    const closeRegisterModal = document.getElementById('closeRegisterModal');
+    const showRegisterLink = document.getElementById('showRegisterLink');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const googleRegisterBtn = document.querySelector('.google-register-btn');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    // Función para mostrar el modal de login
+    function showLoginModal() {
+        if (loginModal) {
+            loginModal.classList.remove('hidden');
+            loginModal.classList.add('flex');
+        }
+    }
+    
+    // Eventos para mostrar/ocultar modales
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            if (auth.currentUser) {
+                window.location.href = 'perfil.html';
+            } else {
+                showLoginModal();
+            }
+        });
+    }
+    
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+        });
+    }
+    
+    if (closeRegisterModal) {
+        closeRegisterModal.addEventListener('click', () => {
+            registroModal.classList.add('hidden');
+            registroModal.classList.remove('flex');
+        });
+    }
+    
+    if (showRegisterLink) {
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+    }
+    
+    // Configurar logout
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await logoutUser();
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                mostrarNotificacion("Error al cerrar sesión", "error");
+            }
+        });
+    }
+    
+    // Configurar edición de perfil
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', () => {
+            // TODO: Implementar modal de edición de perfil
+            mostrarNotificacion("Funcionalidad de edición de perfil en desarrollo", "info");
+        });
+    }
+    
+    // Configurar navegación por pestañas
+    tabLinks.forEach(tabLink => {
+        tabLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Ocultar todos los contenidos
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Mostrar el contenido correspondiente
+            const targetId = tabLink.getAttribute('href').substring(1);
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
+            
+            // Desactivar todos los enlaces
+            tabLinks.forEach(link => {
+                link.classList.remove('text-blue-600', 'border-blue-600');
+                link.classList.add('text-gray-500', 'border-transparent');
+            });
+            
+            // Activar el enlace actual
+            tabLink.classList.remove('text-gray-500', 'border-transparent');
+            tabLink.classList.add('text-blue-600', 'border-blue-600');
+        });
+    });
+    
+    // Configurar login con Google
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async () => {
+            try {
+                // Mostrar carga
+                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleLoginBtn.disabled = true;
+                
+                // Intentar login
+                const user = await loginWithGoogle();
+                console.log("Login exitoso:", user);
+                
+                // Cerrar modal
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+                
+                // Recargar perfil
+                window.location.reload();
+                
+            } catch (error) {
+                console.error("Error en inicio de sesión:", error);
+                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleLoginBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Lo mismo para registro con Google
+    if (googleRegisterBtn) {
+        googleRegisterBtn.addEventListener('click', async () => {
+            try {
+                // Mostrar carga
+                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleRegisterBtn.disabled = true;
+                
+                // Usar mismo método que login
+                const user = await loginWithGoogle();
+                console.log("Registro exitoso:", user);
+                
+                // Cerrar modal
+                registroModal.classList.add('hidden');
+                registroModal.classList.remove('flex');
+                
+                // Recargar perfil
+                window.location.reload();
+                
+            } catch (error) {
+                console.error("Error en registro:", error);
+                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleRegisterBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Configurar menú móvil
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
             if (mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.remove('hidden');
                 mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
@@ -361,385 +516,62 @@
                 mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
             }
         });
-
-        // Cerrar sesión
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await logoutUser();
-                window.location.href = 'index.html'; // Redirigir al inicio después de cerrar sesión
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                alert("Error al cerrar sesión. Inténtalo de nuevo.");
-            }
-        });
-
-        // Mostrar/ocultar modales
-        editProfileBtn.addEventListener('click', () => {
-            // Prellenar campos con datos actuales
-            if (userProfile) {
-                editUsername.value = userProfile.nombre || currentUser.displayName || '';
-                editBannerURL.value = userProfile.bannerURL || '';
-                editPhotoURL.value = userProfile.photoURL || currentUser.photoURL || '';
-            }
-            
-            editProfileModal.classList.remove('hidden');
-            editProfileModal.classList.add('flex');
-        });
-        
-        editBannerBtn.addEventListener('click', () => {
-            if (userProfile) {
-                bannerURL.value = userProfile.bannerURL || '';
-            }
-            
-            changeBannerModal.classList.remove('hidden');
-            changeBannerModal.classList.add('flex');
-        });
-        
-        editProfileImageBtn.addEventListener('click', () => {
-            if (userProfile) {
-                photoURL.value = userProfile.photoURL || currentUser.photoURL || '';
-                updatePhotoPreview(photoURL.value);
-            }
-            
-            changePhotoModal.classList.remove('hidden');
-            changePhotoModal.classList.add('flex');
-        });
-
-        closeEditProfileModal.addEventListener('click', () => {
-            editProfileModal.classList.add('hidden');
-            editProfileModal.classList.remove('flex');
-        });
-        
-        closeChangeBannerModal.addEventListener('click', () => {
-            changeBannerModal.classList.add('hidden');
-            changeBannerModal.classList.remove('flex');
-        });
-        
-        closeChangePhotoModal.addEventListener('click', () => {
-            changePhotoModal.classList.add('hidden');
-            changePhotoModal.classList.remove('flex');
-        });
-        
-        // Actualizar vista previa de foto de perfil
-        photoURL.addEventListener('input', function() {
-            updatePhotoPreview(this.value);
-        });
-        
-        function updatePhotoPreview(url) {
-            if (url) {
-                photoPreview.innerHTML = `<img src="${url}" alt="Preview" class="w-full h-full object-cover">`;
-            } else {
-                photoPreview.innerHTML = `<i class="fas fa-user text-gray-400 text-5xl"></i>`;
-            }
+    }
+    
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
         }
         
-        // Seleccionar banner predefinido
-        const predefinedBanners = document.querySelectorAll('[data-banner]');
-        predefinedBanners.forEach(banner => {
-            banner.addEventListener('click', () => {
-                const bannerType = banner.getAttribute('data-banner');
-                let bannerValue = '';
-                
-                switch(bannerType) {
-                    case 'gradient':
-                        bannerValue = 'gradient';
-                        break;
-                    case 'red':
-                        bannerValue = 'red-600';
-                        break;
-                    case 'blue':
-                        bannerValue = 'blue-600';
-                        break;
-                    case 'purple':
-                        bannerValue = 'purple-600';
-                        break;
-                    case 'green':
-                        bannerValue = 'green-600';
-                        break;
-                    case 'yellow':
-                        bannerValue = 'yellow-600';
-                        break;
-                }
-                
-                // Resaltar el banner seleccionado
-                predefinedBanners.forEach(b => b.classList.remove('ring-4', 'ring-orange-500'));
-                banner.classList.add('ring-4', 'ring-orange-500');
-                
-                // Actualizar el campo de URL
-                bannerURL.value = bannerValue;
-            });
-        });
-
-        // Guardar cambios del perfil
-        editProfileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentUser) return;
-            
-            const newUsername = editUsername.value.trim();
-            const newBannerURL = editBannerURL.value.trim();
-            const newPhotoURL = editPhotoURL.value.trim();
-            
-            if (newUsername === '') {
-                alert('El nombre de usuario no puede estar vacío');
-                return;
-            }
-            
-            // Verificar si el nombre de usuario ya existe
-            try {
-                if (await checkUsernameExists(newUsername, currentUser.uid)) {
-                    alert('Este nombre de usuario ya existe. Por favor, elige otro.');
-                    return;
-                }
-                
-                // Buscar el documento del usuario
-                const usersCollection = collection(db, "usuarios");
-                const q = query(usersCollection, where("uid", "==", currentUser.uid));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    // Preparar datos a actualizar
-                    const updateData = {
-                        nombre: newUsername
-                    };
-                    
-                    if (newBannerURL) {
-                        updateData.bannerURL = newBannerURL;
-                    }
-                    
-                    if (newPhotoURL) {
-                        updateData.photoURL = newPhotoURL;
-                    }
-                    
-                    // Actualizar el documento existente
-                    const userDoc = querySnapshot.docs[0];
-                    await updateDoc(doc(db, "usuarios", userDoc.id), updateData);
-                    
-                    // Actualizar la UI y datos globales
-                    userProfile = { ...userProfile, ...updateData };
-                    updateProfileUI();
-                    
-                    // Cerrar el modal
-                    editProfileModal.classList.add('hidden');
-                    editProfileModal.classList.remove('flex');
-                    
-                    alert('Perfil actualizado correctamente');
-                } else {
-                    alert('No se encontró tu perfil en la base de datos');
-                }
-            } catch (error) {
-                console.error("Error al actualizar el perfil:", error);
-                alert("Error al actualizar el perfil. Inténtalo de nuevo.");
-            }
-        });
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
         
-        // Guardar cambios de banner
-        changeBannerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentUser) return;
-            
-            const newBannerURL = bannerURL.value.trim();
-            
-            try {
-                // Buscar el documento del usuario
-                const usersCollection = collection(db, "usuarios");
-                const q = query(usersCollection, where("uid", "==", currentUser.uid));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    // Actualizar el documento existente
-                    const userDoc = querySnapshot.docs[0];
-                    await updateDoc(doc(db, "usuarios", userDoc.id), {
-                        bannerURL: newBannerURL
-                    });
-                    
-                    // Actualizar la UI y datos globales
-                    userProfile.bannerURL = newBannerURL;
-                    updateProfileUI();
-                    
-                    // Cerrar el modal
-                    changeBannerModal.classList.add('hidden');
-                    changeBannerModal.classList.remove('flex');
-                    
-                    alert('Banner actualizado correctamente');
-                } else {
-                    alert('No se encontró tu perfil en la base de datos');
-                }
-            } catch (error) {
-                console.error("Error al actualizar el banner:", error);
-                alert("Error al actualizar el banner. Inténtalo de nuevo.");
-            }
-        });
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
         
-        // Guardar cambios de foto de perfil
-        changePhotoForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentUser) return;
-            
-            const newPhotoURL = photoURL.value.trim();
-            
-            if (!newPhotoURL) {
-                alert('Por favor, proporciona una URL válida para tu foto de perfil');
-                return;
-            }
-            
-            try {
-                // Buscar el documento del usuario
-                const usersCollection = collection(db, "usuarios");
-                const q = query(usersCollection, where("uid", "==", currentUser.uid));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    // Actualizar el documento existente
-                    const userDoc = querySnapshot.docs[0];
-                    await updateDoc(doc(db, "usuarios", userDoc.id), {
-                        photoURL: newPhotoURL
-                    });
-                    
-                    // Actualizar la UI y datos globales
-                    userProfile.photoURL = newPhotoURL;
-                    updateProfileUI();
-                    
-                    // Cerrar el modal
-                    changePhotoModal.classList.add('hidden');
-                    changePhotoModal.classList.remove('flex');
-                    
-                    alert('Foto de perfil actualizada correctamente');
-                } else {
-                    alert('No se encontró tu perfil en la base de datos');
-                }
-            } catch (error) {
-                console.error("Error al actualizar la foto de perfil:", error);
-                alert("Error al actualizar la foto de perfil. Inténtalo de nuevo.");
-            }
-        });
-
-        // Función para verificar si un nombre de usuario ya existe
-        async function checkUsernameExists(username, currentUserId) {
-            if (!username) return false;
-            
-            // Si el nombre no ha cambiado, no hay problema
-            if (userProfile && userProfile.nombre === username) {
-                return false;
-            }
-            
-            try {
-                const usersCollection = collection(db, "usuarios");
-                const q = query(usersCollection, where("nombre", "==", username));
-                const querySnapshot = await getDocs(q);
-                
-                // Si no hay resultados, el nombre está disponible
-                if (querySnapshot.empty) return false;
-                
-                // Si hay resultados, verificar que no sea el usuario actual
-                return !querySnapshot.docs.some(doc => doc.data().uid === currentUserId);
-            } catch (error) {
-                console.error("Error al verificar nombre de usuario:", error);
-                return true; // Por seguridad, asumimos que existe
-            }
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
         }
         
-        // Función para actualizar la UI con los datos del perfil
-        function updateProfileUI() {
-            if (!currentUser) return;
-            
-            // Nombre de usuario y email
-            profileName.textContent = userProfile?.nombre || currentUser.displayName || 'Usuario';
-            profileEmail.textContent = currentUser.email || '';
-            navbarUserName.textContent = userProfile?.nombre || currentUser.displayName || 'Usuario';
-            
-            // Foto de perfil
-            const photoSource = userProfile?.photoURL || currentUser.photoURL;
-            if (photoSource) {
-                profileImage.src = photoSource;
-                navbarUserImage.src = photoSource;
-            }
-            
-            // Banner de perfil
-            if (userProfile?.bannerURL) {
-                const bannerValue = userProfile.bannerURL;
-                
-                // Verificar si es un banner predefinido o una URL
-                if (bannerValue === 'gradient') {
-                    profileBanner.style.backgroundImage = 'linear-gradient(135deg, #0042ff, #ff3000)';
-                } else if (bannerValue.includes('-')) {
-                    // Es un color de Tailwind
-                    profileBanner.style.backgroundImage = 'none';
-                    profileBanner.className = `profile-banner bg-${bannerValue}`;
-                } else {
-                    // Es una URL
-                    profileBanner.style.backgroundImage = `url(${bannerValue})`;
-                    profileBanner.className = 'profile-banner';
-                }
-            } else {
-                // Banner por defecto
-                profileBanner.style.backgroundImage = 'linear-gradient(135deg, #0042ff, #ff3000)';
-                profileBanner.className = 'profile-banner gradient-background';
-            }
-            
-            // Puntos y ranking
-            if (userProfile) {
-                userPoints.textContent = userProfile.puntos || 0;
-                // Aquí puedes agregar la lógica para el ranking
-            }
-        }
-
-        // Cargar datos del perfil cuando el usuario está autenticado
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                currentUser = user;
-                
-                try {
-                    // Obtener datos adicionales del perfil
-                    userProfile = await getUserProfile(user.uid);
-                    
-                    // Actualizar UI con los datos del perfil
-                    updateProfileUI();
-                    
-                    // Obtener badges del usuario
-                    const badges = await getUserBadges(user.uid);
-                    
-                    // Mostrar badges
-                    if (badges && badges.length > 0) {
-                        userBadges.innerHTML = ''; // Limpiar contenedor
-                        
-                        badges.forEach(badge => {
-                            const badgeElement = document.createElement('div');
-                            badgeElement.className = 'flex flex-col items-center';
-                            
-                            if (badge.imageUrl) {
-                                badgeElement.innerHTML = `
-                                    <img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-16 h-16 rounded-full">
-                                    <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
-                                `;
-                            } else {
-                                const badgeColor = badge.color || '#ff6b1a';
-                                badgeElement.innerHTML = `
-                                    <div class="badge text-2xl" style="background-color: ${badgeColor}">
-                                        <i class="fas fa-${badge.icono || 'award'}"></i>
-                                    </div>
-                                    <span class="mt-2 text-sm font-semibold">${badge.nombre}</span>
-                                `;
-                            }
-                            
-                            userBadges.appendChild(badgeElement);
-                        });
-                    }
-                    
-                    // Aquí puedes agregar código para cargar el historial de torneos
-                    // Todo este código es una simulación. En la implementación real,
-                    // deberías obtener estos datos de tu base de datos Firebase.
-                
-                } catch (error) {
-                    console.error("Error al cargar datos del perfil:", error);
-                }
-            } else {
-                // Si no hay usuario autenticado, redirigir al inicio
-                window.location.href = 'index.html';
-            }
-        });
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Exponer la función globalmente
+    window.mostrarNotificacion = mostrarNotificacion;
+    
+    // Cargar perfil del usuario al iniciar la página
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Cargar perfil
+        await loadProfile();
+    });
     </script>
 </body>
 </html>
