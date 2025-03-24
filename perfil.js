@@ -1,451 +1,309 @@
-// perfil.js - Script para la gestión del perfil de usuario
-import { auth, db } from './firebase.js';
-import { 
-    doc, 
-    getDoc, 
-    collection, 
-    query, 
-    where, 
-    getDocs,
-    orderBy,
-    limit 
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+// Importar Firebase
+import { auth, db, storage } from './firebase.js';
 
-// Variable para controlar si se está cargando el perfil
-let isLoadingProfile = false;
-
-// Función principal para cargar perfil
+// Función principal para cargar el perfil
 export async function loadProfile() {
-    try {
-        // Evitar cargas múltiples
-        if (isLoadingProfile) {
-            console.log("Ya se está cargando el perfil, ignorando solicitud duplicada");
-            return;
-        }
-        
-        isLoadingProfile = true;
-        console.log("Cargando perfil...");
-        
-        // Verificar si hay un userId en la URL (para perfiles públicos)
-        const urlParams = new URLSearchParams(window.location.search);
-        const requestedUid = urlParams.get('uid');
-        
-        // Esperar a que Firebase Auth esté inicializado
-        await new Promise(resolve => {
-            const unsubscribe = auth.onAuthStateChanged(user => {
-                unsubscribe();
-                resolve(user);
-            });
-        });
-        
-        // Verificar si el usuario está autenticado
-        const currentUser = auth.currentUser;
-        console.log("Estado de autenticación:", currentUser ? "Autenticado" : "No autenticado");
-        
-        // Si hay un userId en la URL, cargamos ese perfil
-        // Si no, intentamos cargar el perfil del usuario autenticado
-        if (!requestedUid && !currentUser) {
-            // No hay perfil para mostrar, mostrar mensaje de inicio de sesión
-            console.log("No hay perfil para mostrar, mostrando pantalla de login");
-            showLoginRequired();
-            isLoadingProfile = false;
-            return;
-        }
-        
-        // Determinar qué UID usar para cargar el perfil
-        const uidToLoad = requestedUid || currentUser.uid;
-        console.log("Cargando perfil con UID:", uidToLoad);
-        
-        // Obtener datos del usuario
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", uidToLoad));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            console.error("No se encontró el perfil del usuario");
-            showProfileNotFound();
-            isLoadingProfile = false;
-            return;
-        }
-        
-        // Obtener datos del perfil
-        const userData = querySnapshot.docs[0].data();
-        console.log("Datos del usuario:", userData);
-        
-        // Actualizar información del perfil
-        updateProfileInfo(userData);
-        
-        // Cargar badges del usuario
-        await loadUserBadges(userData);
-        
-        // Cargar historial de torneos
-        await loadUserTournaments(userData);
-        
-        // Si es el propio perfil del usuario, mostrar opciones adicionales
-        if (!requestedUid && currentUser) {
-            showProfileOptions();
-        } else {
-            hideProfileOptions();
-        }
-        
-        isLoadingProfile = false;
-    } catch (error) {
-        console.error("Error al cargar perfil:", error);
-        showProfileError();
-        isLoadingProfile = false;
-    }
-}
-
-// Mostrar mensaje cuando se requiere inicio de sesión
-function showLoginRequired() {
-    const profileContainer = document.getElementById('profileContainer');
+    console.log("Cargando perfil...");
     
-    if (profileContainer) {
-        profileContainer.innerHTML = `
-            <div class="text-center py-8">
-                <div class="bg-blue-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-user-lock text-blue-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Inicia sesión para ver tu perfil</h3>
-                    <p class="text-gray-600 mb-4">Para ver tu perfil personal, necesitas iniciar sesión en tu cuenta.</p>
-                    <button id="loginPromptBtn" class="dtowin-primary text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+    // Verificar si hay un usuario autenticado
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+        // Si no hay usuario autenticado, mostrar mensaje
+        const profileContainer = document.getElementById('profileContainer');
+        if (profileContainer) {
+            profileContainer.innerHTML = `
+                <div class="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto text-center">
+                    <i class="fas fa-user-lock text-gray-400 text-5xl mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-700 mb-2">Acceso Restringido</h2>
+                    <p class="text-gray-600 mb-6">Debes iniciar sesión para ver tu perfil.</p>
+                    <button id="loginFromProfileBtn" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
                         Iniciar Sesión
                     </button>
-                    <p class="text-sm text-gray-500 mt-4">¿No tienes cuenta? <button id="registerPromptBtn" class="text-blue-500 hover:underline">Regístrate</button></p>
                 </div>
-            </div>
-        `;
+            `;
+            
+            // Configurar botón de login
+            const loginBtn = document.getElementById('loginFromProfileBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', () => {
+                    const loginModal = document.getElementById('loginModal');
+                    if (loginModal) {
+                        loginModal.classList.remove('hidden');
+                        loginModal.classList.add('flex');
+                    }
+                });
+            }
+        }
+        return;
+    }
+    
+    // Renderizar plantilla de perfil
+    if (typeof window.renderProfileTemplate === 'function') {
+        window.renderProfileTemplate();
+    } else {
+        console.error("Función renderProfileTemplate no disponible");
+    }
+    
+    try {
+        // Obtener datos del usuario desde Firestore
+        const userDoc = await db.collection('usuarios').doc(currentUser.uid).get();
         
-        // Configurar botones
-        const loginPromptBtn = document.getElementById('loginPromptBtn');
-        const registerPromptBtn = document.getElementById('registerPromptBtn');
-        
-        if (loginPromptBtn) {
-            loginPromptBtn.addEventListener('click', () => {
-                const loginBtn = document.querySelector('#loginModal');
-                if (loginBtn) {
-                    loginBtn.classList.remove('hidden');
-                    loginBtn.classList.add('flex');
-                } else {
-                    alert("Modal de inicio de sesión no encontrado");
-                }
+        // Verificar si existe el documento del usuario
+        if (!userDoc.exists) {
+            console.log("No existe documento para este usuario, creando uno nuevo...");
+            
+            // Crear documento de usuario si no existe
+            await db.collection('usuarios').doc(currentUser.uid).set({
+                uid: currentUser.uid,
+                displayName: currentUser.displayName || 'Usuario',
+                email: currentUser.email,
+                photoURL: currentUser.photoURL || 'dtowin.png',
+                customName: '',
+                bannerId: '',
+                points: 0,
+                tournaments: 0,
+                wins: 0,
+                createdAt: new Date()
             });
+            
+            // Volver a obtener el documento
+            const newUserDoc = await db.collection('usuarios').doc(currentUser.uid).get();
+            updateProfileUI(newUserDoc.data(), true);
+        } else {
+            // Actualizar UI con datos existentes
+            updateProfileUI(userDoc.data(), true);
         }
         
-        if (registerPromptBtn) {
-            registerPromptBtn.addEventListener('click', () => {
-                const registerModal = document.querySelector('#registroModal');
-                if (registerModal) {
-                    registerModal.classList.remove('hidden');
-                    registerModal.classList.add('flex');
-                } else {
-                    alert("Modal de registro no encontrado");
-                }
-            });
+        // Cargar badges del usuario
+        await loadUserBadges(currentUser.uid);
+        
+        // Cargar torneos del usuario
+        await loadUserTournaments(currentUser.uid);
+        
+    } catch (error) {
+        console.error("Error al cargar perfil:", error);
+        if (typeof window.mostrarNotificacion === 'function') {
+            window.mostrarNotificacion("Error al cargar el perfil", "error");
         }
     }
 }
 
-// Mostrar mensaje cuando no se encuentra el perfil
-function showProfileNotFound() {
-    const profileContainer = document.getElementById('profileContainer');
+// Función para actualizar la UI del perfil
+function updateProfileUI(userData, isOwnProfile = false) {
+    console.log("Actualizando UI del perfil con datos:", userData);
     
-    if (profileContainer) {
-        profileContainer.innerHTML = `
-            <div class="text-center py-8">
-                <div class="bg-yellow-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-user-slash text-yellow-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Perfil no encontrado</h3>
-                    <p class="text-gray-600 mb-4">Lo sentimos, no pudimos encontrar el perfil que estás buscando.</p>
-                    <a href="index.html" class="dtowin-blue text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition inline-block">
-                        Volver al inicio
-                    </a>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// Mostrar mensaje de error
-function showProfileError() {
-    const profileContainer = document.getElementById('profileContainer');
-    
-    if (profileContainer) {
-        profileContainer.innerHTML = `
-            <div class="text-center py-8">
-                <div class="bg-red-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Error al cargar perfil</h3>
-                    <p class="text-gray-600 mb-4">Ocurrió un error al intentar cargar el perfil. Por favor, intenta de nuevo más tarde.</p>
-                    <button onclick="window.location.reload()" class="dtowin-blue text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                        Reintentar
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// Actualizar información del perfil
-function updateProfileInfo(userData) {
-    // Actualizar nombre de usuario
-    const profileUsername = document.getElementById('profileUsername');
-    if (profileUsername) {
-        profileUsername.textContent = userData.nombre || 'Usuario';
-    }
-    
-    // Actualizar foto de perfil
+    // Actualizar avatar
     const profileAvatar = document.getElementById('profileAvatar');
     if (profileAvatar) {
         profileAvatar.src = userData.photoURL || 'dtowin.png';
-        profileAvatar.alt = userData.nombre || 'Usuario';
     }
     
-    // Actualizar datos estadísticos
-    updateProfileStats(userData);
-}
-
-// Actualizar estadísticas del perfil
-function updateProfileStats(userData) {
-    // Puntos totales
+    // Actualizar nombre de usuario (priorizar nombre personalizado si existe)
+    const profileUsername = document.getElementById('profileUsername');
+    if (profileUsername) {
+        profileUsername.textContent = userData.customName || userData.displayName || 'Usuario';
+    }
+    
+    // Actualizar estadísticas
     const profilePoints = document.getElementById('profilePoints');
     if (profilePoints) {
-        profilePoints.textContent = userData.puntos || 0;
+        profilePoints.textContent = userData.points || 0;
     }
     
-    // Torneos jugados
     const profileTournaments = document.getElementById('profileTournaments');
     if (profileTournaments) {
-        profileTournaments.textContent = userData.torneos ? userData.torneos.length : 0;
+        profileTournaments.textContent = userData.tournaments || 0;
     }
     
-    // Victorias
     const profileWins = document.getElementById('profileWins');
     if (profileWins) {
-        profileWins.textContent = userData.victorias || 0;
+        profileWins.textContent = userData.wins || 0;
     }
     
-    // Posición en el ranking
+    // Ranking (pendiente de implementar lógica real)
     const profileRanking = document.getElementById('profileRanking');
     if (profileRanking) {
-        if (userData.ranking) {
-            profileRanking.textContent = `#${userData.ranking}`;
+        profileRanking.textContent = "#" + (userData.ranking || 0);
+    }
+    
+    // Mostrar opciones de perfil solo si es el propio perfil
+    const profileOptions = document.getElementById('profileOptions');
+    if (profileOptions) {
+        if (isOwnProfile) {
+            profileOptions.classList.remove('hidden');
+            
+            // Configurar botón de editar perfil
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => showEditProfileModal(userData));
+            }
         } else {
-            // Si no tiene ranking definido, poner "Sin clasificar"
-            profileRanking.textContent = "Sin clasificar";
+            profileOptions.classList.add('hidden');
         }
+    }
+    
+    // Aplicar banner si existe
+    if (userData.bannerId) {
+        applyProfileBanner(userData.bannerId);
     }
 }
 
-// Cargar badges del usuario
-async function loadUserBadges(userData) {
-    const badgesContainer = document.getElementById('userBadges');
-    if (!badgesContainer) return;
-    
-    // Mostrar indicador de carga
-    badgesContainer.innerHTML = `
-        <div class="text-center p-4">
-            <div class="spinner w-6 h-6 border-t-2 border-b-2 border-blue-500 rounded-full mx-auto mb-2"></div>
-            <p class="text-sm text-gray-500">Cargando badges...</p>
-        </div>
-    `;
+// Función para cargar los badges del usuario
+async function loadUserBadges(userId) {
+    const userBadgesContainer = document.getElementById('userBadges');
+    if (!userBadgesContainer) return;
     
     try {
-        // Si el usuario no tiene badges, mostrar mensaje
-        if (!userData.badges || Object.keys(userData.badges).length === 0) {
-            badgesContainer.innerHTML = `
-                <div class="text-center p-4">
-                    <p class="text-gray-500">Este usuario no tiene badges todavía</p>
-                </div>
+        // Obtener badges asignados al usuario
+        const userBadgesSnapshot = await db.collection('user_badges')
+            .where('userId', '==', userId)
+            .get();
+        
+        if (userBadgesSnapshot.empty) {
+            userBadgesContainer.innerHTML = `
+                <p class="text-center text-gray-500 py-4">No tienes badges aún. ¡Participa en torneos para conseguirlos!</p>
             `;
             return;
         }
         
-        let html = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">';
+        // Array para almacenar promesas de obtención de badges
+        const badgePromises = [];
         
-        // Obtener datos de cada badge
-        const badgeIds = Object.keys(userData.badges);
+        userBadgesSnapshot.forEach(doc => {
+            const badgeData = doc.data();
+            // Obtener detalles del badge
+            badgePromises.push(
+                db.collection('badges').doc(badgeData.badgeId).get()
+            );
+        });
         
-        for (const badgeId of badgeIds) {
-            try {
-                const badgeRef = doc(db, "badges", badgeId);
-                const badgeSnap = await getDoc(badgeRef);
-                
-                if (badgeSnap.exists()) {
-                    const badgeData = badgeSnap.data();
-                    
-                    // Determinar la fuente de la imagen
-                    const imageSource = badgeData.imageUrl || badgeData.imageData;
-                    
-                    // Si hay imagen, mostrarla; si no, usar un icono
-                    let badgeImage;
-                    if (imageSource) {
-                        badgeImage = `<img src="${imageSource}" alt="${badgeData.nombre}" class="w-16 h-16 object-cover rounded-full mx-auto mb-2">`;
-                    } else {
-                        badgeImage = `
-                            <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2" style="background-color: ${badgeData.color || '#ff6b1a'}">
-                                <i class="fas fa-${badgeData.icono || 'trophy'} text-white text-xl"></i>
-                            </div>
-                        `;
-                    }
-                    
-                    html += `
-                        <div class="bg-white p-3 rounded-lg shadow text-center">
-                            ${badgeImage}
-                            <h4 class="font-semibold text-gray-800">${badgeData.nombre || 'Badge'}</h4>
-                            <p class="text-xs text-gray-500">${badgeData.descripcion || ''}</p>
+        // Esperar a que se resuelvan todas las promesas
+        const badgeResults = await Promise.all(badgePromises);
+        
+        // Generar HTML para los badges
+        let badgesHTML = '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">';
+        
+        badgeResults.forEach(badgeDoc => {
+            if (badgeDoc.exists) {
+                const badge = badgeDoc.data();
+                badgesHTML += `
+                    <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center text-center">
+                        <div class="h-16 w-16 rounded-full overflow-hidden flex items-center justify-center mb-3" 
+                             style="background-color: ${badge.color || '#ff6b1a'}">
+                            ${badge.imageUrl 
+                                ? `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="h-12 w-12 object-contain">` 
+                                : `<i class="fas fa-${badge.icono || 'trophy'} text-white text-2xl"></i>`
+                            }
                         </div>
-                    `;
-                }
-            } catch (error) {
-                console.error(`Error al cargar badge ${badgeId}:`, error);
+                        <h4 class="font-semibold">${badge.nombre}</h4>
+                        <p class="text-sm text-gray-600 mt-1">${badge.descripcion || ''}</p>
+                    </div>
+                `;
             }
-        }
+        });
         
-        html += '</div>';
-        badgesContainer.innerHTML = html;
+        badgesHTML += '</div>';
+        userBadgesContainer.innerHTML = badgesHTML;
         
     } catch (error) {
         console.error("Error al cargar badges:", error);
-        badgesContainer.innerHTML = `
-            <div class="text-center p-4">
-                <p class="text-red-500">Error al cargar badges. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>
-            </div>
+        userBadgesContainer.innerHTML = `
+            <p class="text-center text-red-500 py-4">Error al cargar badges. Intenta de nuevo más tarde.</p>
         `;
     }
 }
 
-// Cargar historial de torneos del usuario
-async function loadUserTournaments(userData) {
-    const tournamentsContainer = document.getElementById('userTournaments');
-    if (!tournamentsContainer) return;
-    
-    // Mostrar indicador de carga
-    tournamentsContainer.innerHTML = `
-        <div class="text-center p-4">
-            <div class="spinner w-6 h-6 border-t-2 border-b-2 border-blue-500 rounded-full mx-auto mb-2"></div>
-            <p class="text-sm text-gray-500">Cargando historial de torneos...</p>
-        </div>
-    `;
+// Función para cargar los torneos del usuario
+async function loadUserTournaments(userId) {
+    const userTournamentsContainer = document.getElementById('userTournaments');
+    if (!userTournamentsContainer) return;
     
     try {
-        // Si el usuario no ha participado en torneos, mostrar mensaje
-        if (!userData.torneos || userData.torneos.length === 0) {
-            tournamentsContainer.innerHTML = `
-                <div class="text-center p-4">
-                    <p class="text-gray-500">Este usuario no ha participado en torneos todavía</p>
-                </div>
+        // Obtener participaciones en torneos
+        const participationsSnapshot = await db.collection('tournament_participants')
+            .where('userId', '==', userId)
+            .get();
+        
+        if (participationsSnapshot.empty) {
+            userTournamentsContainer.innerHTML = `
+                <p class="text-center text-gray-500 py-4">No has participado en ningún torneo aún.</p>
             `;
             return;
         }
         
-        // Obtener datos de cada torneo
-        const torneoIds = userData.torneos;
-        const torneosData = [];
+        // Array para almacenar promesas de obtención de torneos
+        const tournamentPromises = [];
+        const participations = [];
         
-        for (const torneoId of torneoIds) {
-            try {
-                const torneoRef = doc(db, "torneos", torneoId);
-                const torneoSnap = await getDoc(torneoRef);
-                
-                if (torneoSnap.exists()) {
-                    torneosData.push({
-                        id: torneoId,
-                        ...torneoSnap.data()
-                    });
-                }
-            } catch (error) {
-                console.error(`Error al cargar torneo ${torneoId}:`, error);
-            }
-        }
-        
-        // Ordenar por fecha (más reciente primero)
-        torneosData.sort((a, b) => {
-            const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date(0);
-            const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date(0);
-            return dateB - dateA; // Orden descendente
+        participationsSnapshot.forEach(doc => {
+            const participationData = doc.data();
+            participations.push(participationData);
+            
+            // Obtener detalles del torneo
+            tournamentPromises.push(
+                db.collection('tournaments').doc(participationData.tournamentId).get()
+            );
         });
         
-        // Generar HTML
-        let html = '<div class="space-y-4">';
+        // Esperar a que se resuelvan todas las promesas
+        const tournamentResults = await Promise.all(tournamentPromises);
         
-        torneosData.forEach(torneo => {
-            // Formatear fecha
-            const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
-            const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            
-            // Determinar clase de estado
-            let estadoClass;
-            switch (torneo.estado) {
-                case 'Finalizado':
-                    estadoClass = 'bg-gray-100 text-gray-800';
-                    break;
-                case 'En Progreso':
-                    estadoClass = 'bg-yellow-100 text-yellow-800';
-                    break;
-                case 'Abierto':
-                    estadoClass = 'bg-green-100 text-green-800';
-                    break;
-                default:
-                    estadoClass = 'bg-blue-100 text-blue-800';
-            }
-            
-            // Determinar posición del usuario (si existe)
-            let posicionHTML = '';
-            if (torneo.resultados && torneo.resultados[userData.uid]) {
-                const posicion = torneo.resultados[userData.uid].posicion;
-                const puntos = torneo.resultados[userData.uid].puntos || 0;
+        // Generar HTML para los torneos
+        let tournamentsHTML = '<div class="space-y-4">';
+        
+        tournamentResults.forEach((tournamentDoc, index) => {
+            if (tournamentDoc.exists) {
+                const tournament = tournamentDoc.data();
+                const participation = participations[index];
                 
-                // Clase para posiciones destacadas
-                let posicionClass = '';
-                if (posicion === 1) {
-                    posicionClass = 'bg-yellow-500 text-white';
-                } else if (posicion === 2) {
-                    posicionClass = 'bg-gray-400 text-white';
-                } else if (posicion === 3) {
-                    posicionClass = 'bg-red-500 text-white';
-                } else {
-                    posicionClass = 'bg-gray-200 text-gray-800';
+                // Determinar estado de participación
+                let statusClass = 'bg-gray-200 text-gray-700';
+                let statusText = 'Pendiente';
+                
+                if (participation.position === 1) {
+                    statusClass = 'bg-yellow-400 text-yellow-900';
+                    statusText = 'Ganador';
+                } else if (participation.position > 0) {
+                    statusClass = 'bg-blue-200 text-blue-800';
+                    statusText = `Posición #${participation.position}`;
+                } else if (tournament.status === 'completed') {
+                    statusClass = 'bg-red-200 text-red-800';
+                    statusText = 'No clasificado';
                 }
                 
-                posicionHTML = `
-                    <div class="flex items-center">
-                        <span class="${posicionClass} w-8 h-8 rounded-full flex items-center justify-center font-bold mr-2">
-                            ${posicion}
-                        </span>
-                        <span class="text-sm font-medium">${puntos} puntos</span>
+                tournamentsHTML += `
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-semibold">${tournament.title || 'Torneo sin nombre'}</h4>
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">
+                            ${tournament.description || 'Sin descripción'}
+                        </p>
+                        <div class="flex justify-between items-center mt-3 text-sm">
+                            <span class="text-gray-500">
+                                <i class="far fa-calendar mr-1"></i>
+                                ${tournament.date ? new Date(tournament.date.toDate()).toLocaleDateString() : 'Fecha no disponible'}
+                            </span>
+                            <a href="torneo.html?id=${tournamentDoc.id}" class="text-blue-500 hover:underline">
+                                Ver detalles
+                            </a>
+                        </div>
                     </div>
                 `;
             }
-            
-            html += `
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h4>
-                        <span class="px-2 py-1 rounded text-xs ${estadoClass}">
-                            ${torneo.estado || 'Desconocido'}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-3">
-                        <i class="far fa-calendar-alt mr-1"></i> ${fechaFormateada}
-                    </div>
-                    ${posicionHTML}
-                </div>
-            `;
         });
         
-        html += '</div>';
-        tournamentsContainer.innerHTML = html;
+        tournamentsHTML += '</div>';
+        userTournamentsContainer.innerHTML = tournamentsHTML;
         
     } catch (error) {
-        console.error("Error al cargar historial de torneos:", error);
-        tournamentsContainer.innerHTML = `
-            <div class="text-center p-4">
-                <p class="text-red-500">Error al cargar historial de torneos. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>
-            </div>
+        console.error("Error al cargar torneos:", error);
+        userTournamentsContainer.innerHTML = `
+            <p class="text-center text-red-500 py-4">Error al cargar torneos. Intenta de nuevo más tarde.</p>
         `;
     }
 }
@@ -456,12 +314,284 @@ function showProfileOptions() {
     if (!profileOptionsContainer) return;
     
     profileOptionsContainer.classList.remove('hidden');
+    
+    // Configurar botón de editar perfil
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', showEditProfileModal);
+    }
+    
+    // Configurar botón de cerrar sesión
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+    }
 }
 
-// Ocultar opciones adicionales (para perfiles de otros usuarios)
-function hideProfileOptions() {
-    const profileOptionsContainer = document.getElementById('profileOptions');
-    if (!profileOptionsContainer) return;
+// Función para mostrar el modal de edición de perfil
+async function showEditProfileModal() {
+    try {
+        // Verificar si el usuario está autenticado
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            console.error("Usuario no autenticado");
+            return;
+        }
+        
+        // Obtener datos actuales del usuario
+        const userRef = doc(db, "usuarios", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+            console.error("Documento de usuario no encontrado");
+            return;
+        }
+        
+        const userData = userSnap.data();
+        
+        // Verificar si ya existe un modal de edición
+        let editModal = document.getElementById('editProfileModal');
+        
+        if (editModal) {
+            // Si ya existe, solo mostrarlo
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+            return;
+        }
+        
+        // Cargar banners disponibles
+        const bannersRef = collection(db, "banners");
+        const bannersQuery = query(bannersRef, where("activo", "==", true));
+        const bannersSnapshot = await getDocs(bannersQuery);
+        
+        let bannersOptions = '';
+        bannersSnapshot.forEach(doc => {
+            const banner = doc.data();
+            bannersOptions += `
+                <option value="${doc.id}" ${userData.bannerId === doc.id ? 'selected' : ''}>
+                    ${banner.nombre || 'Banner sin nombre'}
+                </option>
+            `;
+        });
+        
+        // Crear modal de edición
+        editModal = document.createElement('div');
+        editModal.id = 'editProfileModal';
+        editModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+        editModal.innerHTML = `
+            <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                <button id="closeEditModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">Editar Perfil</h3>
+                    <p class="text-gray-600">Personaliza tu perfil</p>
+                </div>
+                
+                <form id="editProfileForm">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="customName">
+                            Nombre personalizado
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="customName" 
+                            type="text" 
+                            placeholder="Tu nombre personalizado"
+                            value="${userData.customName || userData.nombre || ''}">
+                        <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en tu perfil</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileBanner">
+                            Banner de perfil
+                        </label>
+                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                            id="profileBanner">
+                            <option value="">Sin banner</option>
+                            ${bannersOptions}
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Selecciona un banner para personalizar tu perfil</p>
+                    </div>
+                    
+                    <div id="bannerPreview" class="mb-6 rounded-lg overflow-hidden h-24 bg-gray-200 flex items-center justify-center">
+                        <p class="text-gray-500 text-sm">Vista previa del banner</p>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="button" id="cancelEditBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition mr-2">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        // Añadir modal al DOM
+        document.body.appendChild(editModal);
+        
+        // Configurar eventos
+        const closeEditModal = document.getElementById('closeEditModal');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const editProfileForm = document.getElementById('editProfileForm');
+        const profileBannerSelect = document.getElementById('profileBanner');
+        const bannerPreview = document.getElementById('bannerPreview');
+        
+        // Función para cerrar el modal
+        const closeModal = () => {
+            editModal.classList.add('hidden');
+            editModal.classList.remove('flex');
+        };
+        
+        // Configurar cierre del modal
+        if (closeEditModal) closeEditModal.addEventListener('click', closeModal);
+        if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeModal);
+        
+        // Actualizar vista previa del banner cuando cambia la selección
+        if (profileBannerSelect) {
+            // Mostrar vista previa inicial si hay un banner seleccionado
+            updateBannerPreview(profileBannerSelect.value);
+            
+            profileBannerSelect.addEventListener('change', (e) => {
+                updateBannerPreview(e.target.value);
+            });
+        }
+        
+        // Manejar envío del formulario
+        if (editProfileForm) {
+            editProfileForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const customName = document.getElementById('customName').value.trim();
+                const bannerId = document.getElementById('profileBanner').value;
+                
+                try {
+                    // Actualizar datos del usuario
+                    await updateDoc(userRef, {
+                        customName: customName,
+                        bannerId: bannerId
+                    });
+                    
+                    // Cerrar modal
+                    closeModal();
+                    
+                    // Recargar perfil
+                    window.location.reload();
+                    
+                } catch (error) {
+                    console.error("Error al actualizar perfil:", error);
+                    alert("Error al guardar cambios. Por favor, intenta de nuevo.");
+                }
+            });
+        }
+        
+        // Función para actualizar vista previa del banner
+        async function updateBannerPreview(bannerId) {
+            if (!bannerPreview) return;
+            
+            if (!bannerId) {
+                bannerPreview.innerHTML = `<p class="text-gray-500 text-sm">Sin banner seleccionado</p>`;
+                bannerPreview.style.backgroundImage = 'none';
+                return;
+            }
+            
+            try {
+                const bannerRef = doc(db, "banners", bannerId);
+                const bannerSnap = await getDoc(bannerRef);
+                
+                if (bannerSnap.exists()) {
+                    const bannerData = bannerSnap.data();
+                    if (bannerData.imageUrl) {
+                        bannerPreview.innerHTML = '';
+                        bannerPreview.style.backgroundImage = `url(${bannerData.imageUrl})`;
+                        bannerPreview.style.backgroundSize = 'cover';
+                        bannerPreview.style.backgroundPosition = 'center';
+                    } else {
+                        bannerPreview.innerHTML = `<p class="text-gray-500 text-sm">Banner sin imagen</p>`;
+                    }
+                }
+            } catch (error) {
+                console.error("Error al cargar vista previa del banner:", error);
+                bannerPreview.innerHTML = `<p class="text-red-500 text-sm">Error al cargar vista previa</p>`;
+            }
+        }
+        
+    } catch (error) {
+        console.error("Error al mostrar modal de edición:", error);
+    }
+}
+
+// Función para aplicar banner al perfil
+async function applyProfileBanner(userData) {
+    if (!userData.bannerId) return;
     
-    profileOptionsContainer.classList.add('hidden');
+    try {
+        const bannerRef = doc(db, "banners", userData.bannerId);
+        const bannerSnap = await getDoc(bannerRef);
+        
+        if (!bannerSnap.exists()) return;
+        
+        const bannerData = bannerSnap.data();
+        if (!bannerData.imageUrl) return;
+        
+        // Aplicar banner al encabezado del perfil
+        const profileHeader = document.querySelector('.gradient-background');
+        if (profileHeader) {
+            profileHeader.style.backgroundImage = `url(${bannerData.imageUrl})`;
+            profileHeader.style.backgroundSize = 'cover';
+            profileHeader.style.backgroundPosition = 'center';
+            
+            // Añadir overlay para mejorar legibilidad
+            profileHeader.style.position = 'relative';
+            
+            // Verificar si ya existe un overlay
+            let overlay = profileHeader.querySelector('.banner-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'banner-overlay absolute inset-0';
+                overlay.style.background = 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7))';
+                overlay.style.zIndex = '1';
+                profileHeader.appendChild(overlay);
+                
+                // Asegurar que el contenido esté por encima del overlay
+                const contentContainer = profileHeader.querySelector('.flex');
+                if (contentContainer) {
+                    contentContainer.style.position = 'relative';
+                    contentContainer.style.zIndex = '2';
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error al aplicar banner:", error);
+    }
+}
+
+// Modificar la función updateProfileInfo para usar el nombre personalizado y aplicar el banner
+function updateProfileInfo(userData) {
+    // Actualizar nombre de usuario (priorizar nombre personalizado si existe)
+    const profileUsername = document.getElementById('profileUsername');
+    if (profileUsername) {
+        profileUsername.textContent = userData.customName || userData.nombre || 'Usuario';
+    }
+    
+    // Actualizar foto de perfil
+    const profileAvatar = document.getElementById('profileAvatar');
+    if (profileAvatar) {
+        profileAvatar.src = userData.photoURL || 'dtowin.png';
+        profileAvatar.alt = userData.customName || userData.nombre || 'Usuario';
+    }
+    
+    // Aplicar banner si existe
+    if (userData.bannerId) {
+        applyProfileBanner(userData);
+    }
+    
+    // Actualizar datos estadísticos
+    updateProfileStats(userData);
 }
