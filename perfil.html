@@ -332,6 +332,68 @@
         </div>
     </template>
 
+    <!-- Modal de edición de perfil -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Editar Perfil</h3>
+                <p class="text-gray-600">Personaliza tu perfil</p>
+                <p id="editProfileErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="editProfileForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">
+                        Nombre de usuario
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editUsername" type="text" placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Foto de perfil
+                    </label>
+                    <div class="flex items-center space-x-4 mb-2">
+                        <img id="currentProfilePhoto" src="dtowin.png" alt="Foto actual" class="w-16 h-16 rounded-full object-cover">
+                        <div>
+                            <label for="profilePhotoInput" class="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600 cursor-pointer inline-block">
+                                <i class="fas fa-upload mr-2"></i>Cambiar foto
+                            </label>
+                            <input id="profilePhotoInput" type="file" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                    <div id="photoPreviewContainer" class="hidden">
+                        <p class="text-sm text-gray-700 mb-1">Vista previa:</p>
+                        <img id="photoPreview" src="" alt="Vista previa" class="w-16 h-16 rounded-full object-cover">
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Banner de perfil
+                    </label>
+                    <p class="text-sm text-gray-600 mb-2">Selecciona uno de los banners disponibles:</p>
+                    <div id="bannerSelector" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
+                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                        <p class="text-gray-500 text-sm">Cargando banners...</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button type="button" id="cancelEditProfile" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="saveProfileChanges" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module">
         import { 
@@ -521,7 +583,15 @@
             // Configurar edición de perfil
             if (editProfileBtn) {
                 editProfileBtn.addEventListener('click', () => {
-                    mostrarNotificacion("Funcionalidad de edición de perfil en desarrollo", "info");
+                    const editProfileModal = document.getElementById('editProfileModal');
+                    if (editProfileModal) {
+                        console.log("Mostrando modal de edición de perfil");
+                        editProfileModal.classList.remove('hidden');
+                        editProfileModal.classList.add('flex');
+                    } else {
+                        console.error("Modal de edición de perfil no encontrado");
+                        mostrarNotificacion("Error: Modal de edición no encontrado", "error");
+                    }
                 });
             }
         }
@@ -659,67 +729,31 @@
                 // Cargar perfil
                 loadProfile();
             });
+            
+            // Configurar modal de edición de perfil
+            const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+            const cancelEditProfile = document.getElementById('cancelEditProfile');
+            
+            if (closeEditProfileModal) {
+                closeEditProfileModal.addEventListener('click', () => {
+                    const modal = document.getElementById('editProfileModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            }
+            
+            if (cancelEditProfile) {
+                cancelEditProfile.addEventListener('click', () => {
+                    const modal = document.getElementById('editProfileModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            }
         });
     </script>
-    <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-        <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-            <i class="fas fa-times"></i>
-        </button>
-        <div class="text-center mb-6">
-            <h3 class="text-2xl font-bold text-gray-800">Editar Perfil</h3>
-            <p class="text-gray-600">Personaliza tu perfil</p>
-            <p id="editProfileErrorMsg" class="text-red-500 mt-2 text-sm"></p>
-        </div>
-        
-        <form id="editProfileForm">
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">
-                    Nombre de usuario
-                </label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editUsername" type="text" placeholder="Tu nombre de usuario">
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">
-                    Foto de perfil
-                </label>
-                <div class="flex items-center space-x-4 mb-2">
-                    <img id="currentProfilePhoto" src="dtowin.png" alt="Foto actual" class="w-16 h-16 rounded-full object-cover">
-                    <div>
-                        <label for="profilePhotoInput" class="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600 cursor-pointer inline-block">
-                            <i class="fas fa-upload mr-2"></i>Cambiar foto
-                        </label>
-                        <input id="profilePhotoInput" type="file" accept="image/*" class="hidden">
-                    </div>
-                </div>
-                <div id="photoPreviewContainer" class="hidden">
-                    <p class="text-sm text-gray-700 mb-1">Vista previa:</p>
-                    <img id="photoPreview" src="" alt="Vista previa" class="w-16 h-16 rounded-full object-cover">
-                </div>
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">
-                    Banner de perfil
-                </label>
-                <p class="text-sm text-gray-600 mb-2">Selecciona uno de los banners disponibles:</p>
-                <div id="bannerSelector" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
-                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-                    <p class="text-gray-500 text-sm">Cargando banners...</p>
-                </div>
-            </div>
-            
-            <div class="flex justify-between">
-                <button type="button" id="cancelEditProfile" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">
-                    Cancelar
-                </button>
-                <button type="submit" id="saveProfileChanges" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                    Guardar Cambios
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 </body>
 </html>
