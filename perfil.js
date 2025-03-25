@@ -962,6 +962,7 @@ function readFileAsBase64(file) {
 }
 
 // Manejar envío del formulario de edición
+// Manejar envío del formulario de edición
 async function handleProfileFormSubmit(event) {
     event.preventDefault();
     console.log("Enviando formulario de edición de perfil");
@@ -971,6 +972,12 @@ async function handleProfileFormSubmit(event) {
     const saveProfileChanges = document.getElementById('saveProfileChanges');
     const editProfileErrorMsg = document.getElementById('editProfileErrorMsg');
     
+    // Ocultar mensaje de error inicialmente
+    if (editProfileErrorMsg) {
+        editProfileErrorMsg.textContent = "";
+        editProfileErrorMsg.classList.add('hidden');
+    }
+    
     // Validar datos
     if (!editUsername || !editUsername.value.trim()) {
         if (editProfileErrorMsg) {
@@ -979,44 +986,6 @@ async function handleProfileFormSubmit(event) {
         }
         mostrarNotificacion("El nombre de usuario es obligatorio", "error");
         return;
-    }
-    
-    // Verificar que el nombre no esté duplicado
-    try {
-        const nuevoNombre = editUsername.value.trim();
-        const currentUser = firebase.auth().currentUser;
-        
-        // Buscar si ya existe un usuario con este nombre
-        const usersRef = firebase.firestore().collection("usuarios");
-        const querySnapshot = await usersRef.where("nombre", "==", nuevoNombre).get();
-        
-        // Si encontramos algún usuario con ese nombre que no sea el actual
-        if (!querySnapshot.empty) {
-            let esDuplicado = false;
-            
-            querySnapshot.forEach(doc => {
-                if (doc.data().uid !== currentUser.uid) {
-                    esDuplicado = true;
-                }
-            });
-            
-            if (esDuplicado) {
-                if (editProfileErrorMsg) {
-                    editProfileErrorMsg.textContent = "Este nombre de usuario ya está en uso";
-                    editProfileErrorMsg.classList.remove('hidden');
-                }
-                mostrarNotificacion("Este nombre de usuario ya está en uso", "error");
-                return;
-            }
-        }
-    } catch (error) {
-        console.error("Error al verificar duplicados:", error);
-    }
-    
-    // Ocultar mensaje de error si existe
-    if (editProfileErrorMsg) {
-        editProfileErrorMsg.textContent = "";
-        editProfileErrorMsg.classList.add('hidden');
     }
     
     // Cambiar estado del botón
@@ -1032,9 +1001,30 @@ async function handleProfileFormSubmit(event) {
             throw new Error("No hay usuario autenticado");
         }
         
+        // Verificar que el nombre no esté duplicado
+        const nuevoNombre = editUsername.value.trim();
+        let esDuplicado = false;
+        
+        try {
+            const usersRef = firebase.firestore().collection("usuarios");
+            const querySnapshot = await usersRef.where("nombre", "==", nuevoNombre).get();
+            
+            querySnapshot.forEach(doc => {
+                if (doc.data().uid !== currentUser.uid) {
+                    esDuplicado = true;
+                }
+            });
+        } catch (error) {
+            console.error("Error al verificar duplicados:", error);
+        }
+        
+        if (esDuplicado) {
+            throw new Error("Este nombre de usuario ya está en uso");
+        }
+        
         // Datos a actualizar
         const updateData = {
-            nombre: editUsername.value.trim(),
+            nombre: nuevoNombre,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
@@ -1051,20 +1041,35 @@ async function handleProfileFormSubmit(event) {
         // Si hay nueva foto de perfil, procesarla
         if (newProfilePhoto) {
             try {
-                // Convertir a base64 para guardar directamente
-                const base64Image = await readFileAsBase64(newProfilePhoto);
-                updateData.photoURL = base64Image;
+                // Validar tamaño de la imagen
+                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+                if (newProfilePhoto.size > MAX_SIZE) {
+                    throw new Error("La imagen es demasiado grande. Máximo 2MB");
+                }
                 
-                // También actualizar en Auth
+                // Subir la imagen a Firebase Storage en lugar de usar base64
+                const storageRef = firebase.storage().ref();
+                const photoRef = storageRef.child(`profile_photos/${currentUser.uid}/${Date.now()}_${newProfilePhoto.name}`);
+                
+                // Subir el archivo
+                const uploadTask = await photoRef.put(newProfilePhoto);
+                
+                // Obtener la URL de descarga
+                const downloadURL = await uploadTask.ref.getDownloadURL();
+                
+                // Usar la URL en lugar del base64
+                updateData.photoURL = downloadURL;
+                
+                // Actualizar en Auth con la URL (no la data base64)
                 await currentUser.updateProfile({
                     displayName: updateData.nombre,
-                    photoURL: base64Image
+                    photoURL: downloadURL
                 });
                 
                 console.log("Foto y nombre actualizados en Auth");
             } catch (photoError) {
                 console.error("Error al procesar la foto:", photoError);
-                mostrarNotificacion("Error al procesar la foto", "error");
+                throw new Error("Error al procesar la foto: " + (photoError.message || "Error desconocido"));
             }
         } else {
             // Solo actualizar el nombre en Auth
@@ -1125,7 +1130,7 @@ async function handleProfileFormSubmit(event) {
             editProfileErrorMsg.classList.remove('hidden');
         }
         
-        mostrarNotificacion("Error al guardar cambios en el perfil", "error");
+        mostrarNotificacion("Error al guardar cambios en el perfil: " + (error.message || "Error desconocido"), "error");
         
     } finally {
         // Restaurar botón
@@ -1135,7 +1140,6 @@ async function handleProfileFormSubmit(event) {
         }
     }
 }
-
 // Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
     // Verificar si la función ya existe globalmente
