@@ -465,3 +465,372 @@ function hideProfileOptions() {
     
     profileOptionsContainer.classList.add('hidden');
 }
+
+// Variables globales para el modal de edición
+let selectedBannerId = null;
+let newProfilePhoto = null;
+
+// Función para inicializar el modal de edición de perfil
+function initEditProfileModal() {
+    console.log("Inicializando modal de edición de perfil");
+    
+    // Referencias a elementos DOM
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const editProfileModal = document.getElementById('editProfileModal');
+    const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+    const cancelEditProfile = document.getElementById('cancelEditProfile');
+    const editProfileForm = document.getElementById('editProfileForm');
+    const profilePhotoInput = document.getElementById('profilePhotoInput');
+    
+    // Configurar evento para abrir modal
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', async () => {
+            console.log("Abriendo modal de edición de perfil");
+            
+            try {
+                // Cargar datos actuales en el formulario
+                await loadCurrentProfileData();
+                
+                // Mostrar modal
+                if (editProfileModal) {
+                    editProfileModal.classList.remove('hidden');
+                    editProfileModal.classList.add('flex');
+                }
+                
+                // Cargar banners disponibles
+                await loadAvailableBanners();
+            } catch (error) {
+                console.error("Error al abrir el modal de edición:", error);
+                mostrarNotificacion("Error al cargar datos del perfil", "error");
+            }
+        });
+    }
+    
+    // Cerrar modal
+    if (closeEditProfileModal) {
+        closeEditProfileModal.addEventListener('click', () => {
+            closeEditProfileModal();
+        });
+    }
+    
+    // Cancelar edición
+    if (cancelEditProfile) {
+        cancelEditProfile.addEventListener('click', () => {
+            closeEditProfileModal();
+        });
+    }
+    
+    // Preview de foto de perfil
+    if (profilePhotoInput) {
+        profilePhotoInput.addEventListener('change', handleProfilePhotoChange);
+    }
+    
+    // Manejar envío del formulario
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', handleProfileFormSubmit);
+    }
+}
+
+// Función para cerrar el modal de edición
+function closeEditProfileModal() {
+    const editProfileModal = document.getElementById('editProfileModal');
+    if (editProfileModal) {
+        editProfileModal.classList.remove('flex');
+        editProfileModal.classList.add('hidden');
+    }
+    
+    // Resetear variables
+    selectedBannerId = null;
+    newProfilePhoto = null;
+    
+    // Ocultar vista previa de foto
+    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+    if (photoPreviewContainer) {
+        photoPreviewContainer.classList.add('hidden');
+    }
+}
+
+// Cargar datos actuales del perfil en el formulario
+async function loadCurrentProfileData() {
+    console.log("Cargando datos actuales del perfil");
+    
+    try {
+        // Obtener usuario actual
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            throw new Error("No hay usuario autenticado");
+        }
+        
+        // Buscar perfil en Firestore
+        const usersRef = firebase.firestore().collection("usuarios");
+        const q = firebase.firestore().collection("usuarios").where("uid", "==", currentUser.uid);
+        const querySnapshot = await q.get();
+        
+        if (querySnapshot.empty) {
+            console.warn("No se encontró perfil del usuario en Firestore");
+            return;
+        }
+        
+        // Obtener datos del usuario
+        const userData = querySnapshot.docs[0].data();
+        console.log("Datos del usuario:", userData);
+        
+        // Llenar campos del formulario
+        const editUsername = document.getElementById('editUsername');
+        const currentProfilePhoto = document.getElementById('currentProfilePhoto');
+        
+        if (editUsername) {
+            editUsername.value = userData.nombre || currentUser.displayName || '';
+        }
+        
+        if (currentProfilePhoto) {
+            currentProfilePhoto.src = userData.photoURL || currentUser.photoURL || 'dtowin.png';
+        }
+        
+        // Guardar bannerId actual si existe
+        selectedBannerId = userData.bannerId || null;
+        
+    } catch (error) {
+        console.error("Error al cargar datos del perfil:", error);
+        throw error;
+    }
+}
+
+// Manejar cambio de foto de perfil
+function handleProfilePhotoChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    console.log("Archivo de foto seleccionado:", file.name);
+    
+    // Verificar que sea imagen
+    if (!file.type.startsWith('image/')) {
+        mostrarNotificacion("El archivo debe ser una imagen", "error");
+        event.target.value = '';
+        return;
+    }
+    
+    // Verificar tamaño (max 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+        mostrarNotificacion("La imagen es demasiado grande. Máximo 2MB", "warning");
+    }
+    
+    // Guardar referencia al archivo
+    newProfilePhoto = file;
+    
+    // Mostrar vista previa
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+    
+    if (photoPreview && photoPreviewContainer) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            photoPreview.src = e.target.result;
+            photoPreviewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Cargar banners disponibles
+async function loadAvailableBanners() {
+    console.log("Cargando banners disponibles");
+    
+    const bannerSelector = document.getElementById('bannerSelector');
+    if (!bannerSelector) return;
+    
+    try {
+        // Mostrar estado de carga
+        bannerSelector.innerHTML = '<div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div><p class="text-gray-500 text-sm">Cargando banners...</p>';
+        
+        // Obtener banners visibles
+        const bannersRef = firebase.firestore().collection("banners");
+        const bannersSnapshot = await bannersRef.where("visible", "!=", false).orderBy("visible").orderBy("orden").get();
+        
+        // Verificar si hay banners
+        if (bannersSnapshot.empty) {
+            bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
+            return;
+        }
+        
+        // Crear HTML para selector de banners
+        let html = '';
+        
+        // Opción de "Sin banner"
+        html += `
+            <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${!selectedBannerId ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="">
+                <div class="h-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                    Sin banner
+                </div>
+            </div>
+        `;
+        
+        // Añadir cada banner
+        bannersSnapshot.forEach(doc => {
+            const banner = doc.data();
+            const isSelected = selectedBannerId === doc.id;
+            
+            // Determinar fuente de imagen
+            const imageSource = banner.imageUrl || banner.imageData || '';
+            
+            html += `
+                <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${isSelected ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="${doc.id}">
+                    <img src="${imageSource}" alt="${banner.nombre}" class="h-12 w-full object-cover">
+                </div>
+            `;
+        });
+        
+        bannerSelector.innerHTML = html;
+        
+        // Agregar eventos de selección
+        document.querySelectorAll('.banner-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Quitar selección actual
+                document.querySelectorAll('.banner-option').forEach(opt => {
+                    opt.classList.remove('border-blue-500', 'bg-blue-50');
+                });
+                
+                // Marcar como seleccionado
+                this.classList.add('border-blue-500', 'bg-blue-50');
+                
+                // Guardar ID de banner seleccionado
+                selectedBannerId = this.dataset.bannerId || null;
+                console.log("Banner seleccionado:", selectedBannerId);
+            });
+        });
+        
+    } catch (error) {
+        console.error("Error al cargar banners:", error);
+        bannerSelector.innerHTML = '<p class="text-red-500 text-center py-2">Error al cargar banners</p>';
+    }
+}
+
+// Leer archivo como base64
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+// Manejar envío del formulario de edición
+async function handleProfileFormSubmit(event) {
+    event.preventDefault();
+    console.log("Enviando formulario de edición de perfil");
+    
+    // Referencias a elementos
+    const editUsername = document.getElementById('editUsername');
+    const saveProfileChanges = document.getElementById('saveProfileChanges');
+    const editProfileErrorMsg = document.getElementById('editProfileErrorMsg');
+    
+    // Validar datos
+    if (!editUsername || !editUsername.value.trim()) {
+        if (editProfileErrorMsg) {
+            editProfileErrorMsg.textContent = "El nombre de usuario es obligatorio";
+            editProfileErrorMsg.classList.remove('hidden');
+        }
+        return;
+    }
+    
+    // Ocultar mensaje de error si existe
+    if (editProfileErrorMsg) {
+        editProfileErrorMsg.textContent = "";
+        editProfileErrorMsg.classList.add('hidden');
+    }
+    
+    // Cambiar estado del botón
+    if (saveProfileChanges) {
+        saveProfileChanges.disabled = true;
+        saveProfileChanges.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white mr-2 inline-block"></div> Guardando...';
+    }
+    
+    try {
+        // Obtener usuario actual
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            throw new Error("No hay usuario autenticado");
+        }
+        
+        // Datos a actualizar
+        const updateData = {
+            nombre: editUsername.value.trim(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Si hay un banner seleccionado, añadirlo
+        if (selectedBannerId !== null) {
+            updateData.bannerId = selectedBannerId || firebase.firestore.FieldValue.delete();
+        }
+        
+        // Si hay nueva foto de perfil, subirla
+        if (newProfilePhoto) {
+            // Convertir a base64 para guardar directamente
+            updateData.photoURL = await readFileAsBase64(newProfilePhoto);
+            
+            // También actualizar en Auth
+            await currentUser.updateProfile({
+                displayName: updateData.nombre,
+                photoURL: updateData.photoURL
+            });
+        } else {
+            // Solo actualizar el nombre en Auth
+            await currentUser.updateProfile({
+                displayName: updateData.nombre
+            });
+        }
+        
+        // Actualizar en Firestore
+        const userRef = firebase.firestore().collection("usuarios").where("uid", "==", currentUser.uid);
+        const querySnapshot = await userRef.get();
+        
+        if (!querySnapshot.empty) {
+            await querySnapshot.docs[0].ref.update(updateData);
+        } else {
+            console.warn("No se encontró documento del usuario, creando uno nuevo");
+            
+            // Crear documento si no existe
+            const newUserData = {
+                uid: currentUser.uid,
+                nombre: updateData.nombre,
+                email: currentUser.email,
+                photoURL: updateData.photoURL || currentUser.photoURL,
+                bannerId: updateData.bannerId || null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await firebase.firestore().collection("usuarios").add(newUserData);
+        }
+        
+        // Mostrar mensaje de éxito
+        mostrarNotificacion("Perfil actualizado correctamente", "success");
+        
+        // Cerrar modal
+        closeEditProfileModal();
+        
+        // Recargar perfil
+        setTimeout(() => {
+            loadProfile();
+        }, 1000);
+        
+    } catch (error) {
+        console.error("Error al guardar cambios:", error);
+        
+        if (editProfileErrorMsg) {
+            editProfileErrorMsg.textContent = "Error al guardar cambios: " + (error.message || "Error desconocido");
+            editProfileErrorMsg.classList.remove('hidden');
+        }
+        
+        mostrarNotificacion("Error al guardar cambios", "error");
+        
+    } finally {
+        // Restaurar botón
+        if (saveProfileChanges) {
+            saveProfileChanges.disabled = false;
+            saveProfileChanges.textContent = "Guardar Cambios";
+        }
+    }
+}
