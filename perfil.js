@@ -8,16 +8,11 @@ import {
     where, 
     getDocs,
     orderBy,
-    limit,
-    updateDoc,
-    serverTimestamp,
-    FieldValue
+    limit 
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Variable para controlar si se está cargando el perfil
+// Variables globales
 let isLoadingProfile = false;
-
-// Variables globales para el modal de edición
 let selectedBannerId = null;
 let newProfilePhoto = null;
 
@@ -550,8 +545,8 @@ function hideProfileOptions() {
 
 // Configurar botones del perfil
 function setupButtons() {
+    console.log("Configurando botones del perfil");
     const logoutBtn = document.getElementById('logoutBtn');
-    const editProfileBtn = document.getElementById('editProfileBtn');
     
     // Configurar logout
     if (logoutBtn) {
@@ -568,12 +563,9 @@ function setupButtons() {
             }
         });
     }
-    
-    // Inicializar modal de edición de perfil
-    initEditProfileModal();
 }
 
-// NUEVAS FUNCIONES PARA EDICIÓN DE PERFIL
+// ----- FUNCIONES PARA EDICIÓN DE PERFIL -----
 
 // Función para inicializar el modal de edición de perfil
 function initEditProfileModal() {
@@ -589,21 +581,23 @@ function initEditProfileModal() {
     
     // Configurar evento para abrir modal
     if (editProfileBtn) {
+        console.log("Configurando botón editar perfil");
         editProfileBtn.addEventListener('click', async () => {
-            console.log("Abriendo modal de edición de perfil");
+            console.log("Botón editar perfil clickeado");
             
             try {
-                // Cargar datos actuales en el formulario
-                await loadCurrentProfileData();
-                
-                // Mostrar modal
+                // Mostrar modal primero para que se vea la carga
                 if (editProfileModal) {
                     editProfileModal.classList.remove('hidden');
                     editProfileModal.classList.add('flex');
                 }
                 
+                // Cargar datos actuales
+                await loadCurrentProfileData();
+                
                 // Cargar banners disponibles
                 await loadAvailableBanners();
+                
             } catch (error) {
                 console.error("Error al abrir el modal de edición:", error);
                 mostrarNotificacion("Error al cargar datos del perfil", "error");
@@ -614,14 +608,40 @@ function initEditProfileModal() {
     // Cerrar modal
     if (closeEditProfileModal) {
         closeEditProfileModal.addEventListener('click', () => {
-            closeEditProfileModalFunc();
+            if (editProfileModal) {
+                editProfileModal.classList.remove('flex');
+                editProfileModal.classList.add('hidden');
+            }
+            
+            // Resetear variables
+            selectedBannerId = null;
+            newProfilePhoto = null;
+            
+            // Ocultar vista previa de foto
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            if (photoPreviewContainer) {
+                photoPreviewContainer.classList.add('hidden');
+            }
         });
     }
     
     // Cancelar edición
     if (cancelEditProfile) {
         cancelEditProfile.addEventListener('click', () => {
-            closeEditProfileModalFunc();
+            if (editProfileModal) {
+                editProfileModal.classList.remove('flex');
+                editProfileModal.classList.add('hidden');
+            }
+            
+            // Resetear variables
+            selectedBannerId = null;
+            newProfilePhoto = null;
+            
+            // Ocultar vista previa de foto
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            if (photoPreviewContainer) {
+                photoPreviewContainer.classList.add('hidden');
+            }
         });
     }
     
@@ -633,25 +653,6 @@ function initEditProfileModal() {
     // Manejar envío del formulario
     if (editProfileForm) {
         editProfileForm.addEventListener('submit', handleProfileFormSubmit);
-    }
-}
-
-// Función para cerrar el modal de edición
-function closeEditProfileModalFunc() {
-    const editProfileModal = document.getElementById('editProfileModal');
-    if (editProfileModal) {
-        editProfileModal.classList.remove('flex');
-        editProfileModal.classList.add('hidden');
-    }
-    
-    // Resetear variables
-    selectedBannerId = null;
-    newProfilePhoto = null;
-    
-    // Ocultar vista previa de foto
-    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
-    if (photoPreviewContainer) {
-        photoPreviewContainer.classList.add('hidden');
     }
 }
 
@@ -671,33 +672,127 @@ async function loadCurrentProfileData() {
         const q = query(usersRef, where("uid", "==", currentUser.uid));
         const querySnapshot = await getDocs(q);
         
-        if (querySnapshot.empty) {
-            console.warn("No se encontró perfil del usuario en Firestore");
-            return;
-        }
+        // Datos del usuario (del Auth)
+        let userData = {
+            nombre: currentUser.displayName || '',
+            photoURL: currentUser.photoURL || 'dtowin.png',
+            uid: currentUser.uid,
+            email: currentUser.email
+        };
         
-        // Obtener datos del usuario
-        const userData = querySnapshot.docs[0].data();
-        console.log("Datos del usuario:", userData);
+        // Si encontramos datos adicionales en Firestore
+        if (!querySnapshot.empty) {
+            const firestoreData = querySnapshot.docs[0].data();
+            userData = {...userData, ...firestoreData};
+            console.log("Datos del usuario cargados desde Firestore:", userData);
+        } else {
+            console.warn("No se encontró perfil del usuario en Firestore, usando datos de auth");
+        }
         
         // Llenar campos del formulario
         const editUsername = document.getElementById('editUsername');
         const currentProfilePhoto = document.getElementById('currentProfilePhoto');
         
         if (editUsername) {
-            editUsername.value = userData.nombre || currentUser.displayName || '';
+            editUsername.value = userData.nombre || '';
+            console.log("Nombre asignado al campo:", userData.nombre);
         }
         
         if (currentProfilePhoto) {
-            currentProfilePhoto.src = userData.photoURL || currentUser.photoURL || 'dtowin.png';
+            currentProfilePhoto.src = userData.photoURL || 'dtowin.png';
         }
         
         // Guardar bannerId actual si existe
         selectedBannerId = userData.bannerId || null;
+        console.log("Banner ID cargado:", selectedBannerId);
         
     } catch (error) {
         console.error("Error al cargar datos del perfil:", error);
+        mostrarNotificacion("Error al cargar los datos del perfil", "error");
         throw error;
+    }
+}
+
+// Cargar banners disponibles
+async function loadAvailableBanners() {
+    console.log("Cargando banners disponibles");
+    
+    const bannerSelector = document.getElementById('bannerSelector');
+    if (!bannerSelector) return;
+    
+    try {
+        // Mostrar estado de carga
+        bannerSelector.innerHTML = '<div class="flex justify-center items-center"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div><p class="text-gray-500 text-sm ml-2">Cargando banners...</p></div>';
+        
+        // Obtener banners visibles
+        const bannersRef = collection(db, "banners");
+        const bannersSnapshot = await getDocs(bannersRef);
+        
+        // Verificar si hay banners
+        if (bannersSnapshot.empty) {
+            bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
+            return;
+        }
+        
+        // Crear HTML para selector de banners
+        let html = '';
+        
+        // Opción de "Sin banner"
+        html += `
+            <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${!selectedBannerId ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="">
+                <div class="h-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+                    Sin banner
+                </div>
+            </div>
+        `;
+        
+        // Añadir cada banner
+        bannersSnapshot.forEach(doc => {
+            const banner = doc.data();
+            
+            // Verificar si el banner tiene imageData o imageUrl y está visible
+            if ((banner.imageData || banner.imageUrl) && banner.visible !== false) {
+                const isSelected = selectedBannerId === doc.id;
+                
+                // Determinar fuente de imagen
+                const imageSource = banner.imageUrl || banner.imageData || '';
+                
+                html += `
+                    <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${isSelected ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="${doc.id}">
+                        <img src="${imageSource}" alt="${banner.nombre || 'Banner'}" class="h-12 w-full object-cover">
+                    </div>
+                `;
+            }
+        });
+        
+        // Si no se añadieron banners (todos ocultos o sin imagen)
+        if (html === '') {
+            bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
+            return;
+        }
+        
+        bannerSelector.innerHTML = html;
+        
+        // Agregar eventos de selección
+        document.querySelectorAll('.banner-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Quitar selección actual
+                document.querySelectorAll('.banner-option').forEach(opt => {
+                    opt.classList.remove('border-blue-500', 'bg-blue-50');
+                });
+                
+                // Marcar como seleccionado
+                this.classList.add('border-blue-500', 'bg-blue-50');
+                
+                // Guardar ID de banner seleccionado
+                selectedBannerId = this.dataset.bannerId || null;
+                console.log("Banner seleccionado:", selectedBannerId);
+            });
+        });
+        
+    } catch (error) {
+        console.error("Error al cargar banners:", error);
+        bannerSelector.innerHTML = '<p class="text-red-500 text-center py-2">Error al cargar banners</p>';
     }
 }
 
@@ -738,79 +833,6 @@ function handleProfilePhotoChange(event) {
     }
 }
 
-// Cargar banners disponibles
-async function loadAvailableBanners() {
-    console.log("Cargando banners disponibles");
-    
-    const bannerSelector = document.getElementById('bannerSelector');
-    if (!bannerSelector) return;
-    
-    try {
-        // Mostrar estado de carga
-        bannerSelector.innerHTML = '<div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div><p class="text-gray-500 text-sm">Cargando banners...</p>';
-        
-        // Obtener banners visibles
-        const bannersRef = collection(db, "banners");
-        const bannersSnapshot = await getDocs(query(bannersRef, where("visible", "!=", false), orderBy("visible"), orderBy("orden")));
-        
-        // Verificar si hay banners
-        if (bannersSnapshot.empty) {
-            bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
-            return;
-        }
-        
-        // Crear HTML para selector de banners
-        let html = '';
-        
-        // Opción de "Sin banner"
-        html += `
-            <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${!selectedBannerId ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="">
-                <div class="h-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
-                    Sin banner
-                </div>
-            </div>
-        `;
-        
-        // Añadir cada banner
-        bannersSnapshot.forEach(doc => {
-            const banner = doc.data();
-            const isSelected = selectedBannerId === doc.id;
-            
-            // Determinar fuente de imagen
-            const imageSource = banner.imageUrl || banner.imageData || '';
-            
-            html += `
-                <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${isSelected ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="${doc.id}">
-                    <img src="${imageSource}" alt="${banner.nombre}" class="h-12 w-full object-cover">
-                </div>
-            `;
-        });
-        
-        bannerSelector.innerHTML = html;
-        
-        // Agregar eventos de selección
-        document.querySelectorAll('.banner-option').forEach(option => {
-            option.addEventListener('click', function() {
-                // Quitar selección actual
-                document.querySelectorAll('.banner-option').forEach(opt => {
-                    opt.classList.remove('border-blue-500', 'bg-blue-50');
-                });
-                
-                // Marcar como seleccionado
-                this.classList.add('border-blue-500', 'bg-blue-50');
-                
-                // Guardar ID de banner seleccionado
-                selectedBannerId = this.dataset.bannerId || null;
-                console.log("Banner seleccionado:", selectedBannerId);
-            });
-        });
-        
-    } catch (error) {
-        console.error("Error al cargar banners:", error);
-        bannerSelector.innerHTML = '<p class="text-red-500 text-center py-2">Error al cargar banners</p>';
-    }
-}
-
 // Leer archivo como base64
 function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
@@ -837,6 +859,7 @@ async function handleProfileFormSubmit(event) {
             editProfileErrorMsg.textContent = "El nombre de usuario es obligatorio";
             editProfileErrorMsg.classList.remove('hidden');
         }
+        mostrarNotificacion("El nombre de usuario es obligatorio", "error");
         return;
     }
     
@@ -862,73 +885,83 @@ async function handleProfileFormSubmit(event) {
         // Datos a actualizar
         const updateData = {
             nombre: editUsername.value.trim(),
-            updatedAt: serverTimestamp()
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         // Si hay un banner seleccionado, añadirlo
         if (selectedBannerId !== null) {
             if (selectedBannerId === "") {
-                // Si seleccionó "Sin banner", intentar eliminar el campo
-                try {
-                    updateData.bannerId = null;
-                } catch (e) {
-                    console.error("Error al intentar eliminar bannerId:", e);
-                }
+                // Si seleccionó "Sin banner", eliminar el campo
+                updateData.bannerId = firebase.firestore.FieldValue.delete();
             } else {
                 updateData.bannerId = selectedBannerId;
             }
         }
         
-        // Si hay nueva foto de perfil, subirla
+        // Si hay nueva foto de perfil, procesarla
         if (newProfilePhoto) {
-            // Convertir a base64 para guardar directamente
-            updateData.photoURL = await readFileAsBase64(newProfilePhoto);
-            
-            // También actualizar en Auth
-            await currentUser.updateProfile({
-                displayName: updateData.nombre,
-                photoURL: updateData.photoURL
-            });
+            try {
+                // Convertir a base64 para guardar directamente
+                const base64Image = await readFileAsBase64(newProfilePhoto);
+                updateData.photoURL = base64Image;
+                
+                // También actualizar en Auth
+                await currentUser.updateProfile({
+                    displayName: updateData.nombre,
+                    photoURL: base64Image
+                });
+                
+                console.log("Foto y nombre actualizados en Auth");
+            } catch (photoError) {
+                console.error("Error al procesar la foto:", photoError);
+                mostrarNotificacion("Error al procesar la foto", "error");
+            }
         } else {
             // Solo actualizar el nombre en Auth
             await currentUser.updateProfile({
                 displayName: updateData.nombre
             });
+            console.log("Nombre actualizado en Auth");
         }
         
-        // Actualizar en Firestore
+        // Buscar si el usuario ya existe en Firestore
         const usersRef = collection(db, "usuarios");
         const q = query(usersRef, where("uid", "==", currentUser.uid));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-            await updateDoc(querySnapshot.docs[0].ref, updateData);
+            // Actualizar documento existente
+            await updateDoc(doc(db, "usuarios", querySnapshot.docs[0].id), updateData);
+            console.log("Perfil actualizado en Firestore");
         } else {
-            console.warn("No se encontró documento del usuario, creando uno nuevo");
-            
-            // Crear documento si no existe
+            // Crear documento nuevo
             const newUserData = {
                 uid: currentUser.uid,
                 nombre: updateData.nombre,
                 email: currentUser.email,
                 photoURL: updateData.photoURL || currentUser.photoURL,
                 bannerId: updateData.bannerId || null,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            await setDoc(doc(collection(db, "usuarios")), newUserData);
+            await addDoc(collection(db, "usuarios"), newUserData);
+            console.log("Nuevo perfil creado en Firestore");
         }
         
         // Mostrar mensaje de éxito
         mostrarNotificacion("Perfil actualizado correctamente", "success");
         
         // Cerrar modal
-        closeEditProfileModalFunc();
+        const editProfileModal = document.getElementById('editProfileModal');
+        if (editProfileModal) {
+            editProfileModal.classList.add('hidden');
+            editProfileModal.classList.remove('flex');
+        }
         
-        // Recargar perfil
+        // Recargar la página para reflejar los cambios
         setTimeout(() => {
-            loadProfile();
+            window.location.reload();
         }, 1000);
         
     } catch (error) {
@@ -939,7 +972,7 @@ async function handleProfileFormSubmit(event) {
             editProfileErrorMsg.classList.remove('hidden');
         }
         
-        mostrarNotificacion("Error al guardar cambios", "error");
+        mostrarNotificacion("Error al guardar cambios en el perfil", "error");
         
     } finally {
         // Restaurar botón
@@ -950,7 +983,7 @@ async function handleProfileFormSubmit(event) {
     }
 }
 
-// Función para mostrar notificaciones (ya proporcionada en utils.js o en window)
+// Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
     // Verificar si la función ya existe globalmente
     if (typeof window.mostrarNotificacion === 'function') {
@@ -1002,11 +1035,10 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }, 3000);
 }
 
-// Inicializar el modal al cargar la página
+// Inicializar el modal de edición de perfil cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar si está en la página de perfil
-    if (document.getElementById('editProfileBtn')) {
-        console.log("Página de perfil detectada, inicializando modal de edición");
-        initEditProfileModal();
-    }
+    console.log("DOM cargado, inicializando funcionalidades de perfil");
+    
+    // Inicializar modal de edición
+    initEditProfileModal();
 });
