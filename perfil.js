@@ -1140,6 +1140,7 @@ async function handleProfileFormSubmit(event) {
         }
     }
 }
+
 // Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
     // Verificar si la función ya existe globalmente
