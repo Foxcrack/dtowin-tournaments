@@ -8,11 +8,18 @@ import {
     where, 
     getDocs,
     orderBy,
-    limit 
+    limit,
+    updateDoc,
+    serverTimestamp,
+    FieldValue
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Variable para controlar si se está cargando el perfil
 let isLoadingProfile = false;
+
+// Variables globales para el modal de edición
+let selectedBannerId = null;
+let newProfilePhoto = null;
 
 // Función principal para cargar perfil
 export async function loadProfile() {
@@ -73,7 +80,7 @@ export async function loadProfile() {
         console.log("Datos del usuario:", userData);
         
         // Actualizar información del perfil
-        updateProfileInfo(userData);
+        await updateProfileInfo(userData);
         
         // Cargar badges del usuario
         await loadUserBadges(userData);
@@ -205,10 +212,10 @@ async function updateProfileInfo(userData) {
     // Actualizar banner si existe
     if (userData.bannerId) {
         try {
-            const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
-            const bannerSnap = await bannerRef.get();
+            const bannerRef = doc(db, "banners", userData.bannerId);
+            const bannerSnap = await getDoc(bannerRef);
             
-            if (bannerSnap.exists) {
+            if (bannerSnap.exists()) {
                 const bannerData = bannerSnap.data();
                 
                 // Obtener fuente de imagen del banner
@@ -541,9 +548,32 @@ function hideProfileOptions() {
     profileOptionsContainer.classList.add('hidden');
 }
 
-// Variables globales para el modal de edición
-let selectedBannerId = null;
-let newProfilePhoto = null;
+// Configurar botones del perfil
+function setupButtons() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    
+    // Configurar logout
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await logoutUser();
+                mostrarNotificacion("Has cerrado sesión correctamente", "success");
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                mostrarNotificacion("Error al cerrar sesión", "error");
+            }
+        });
+    }
+    
+    // Inicializar modal de edición de perfil
+    initEditProfileModal();
+}
+
+// NUEVAS FUNCIONES PARA EDICIÓN DE PERFIL
 
 // Función para inicializar el modal de edición de perfil
 function initEditProfileModal() {
@@ -584,14 +614,14 @@ function initEditProfileModal() {
     // Cerrar modal
     if (closeEditProfileModal) {
         closeEditProfileModal.addEventListener('click', () => {
-            closeEditProfileModal();
+            closeEditProfileModalFunc();
         });
     }
     
     // Cancelar edición
     if (cancelEditProfile) {
         cancelEditProfile.addEventListener('click', () => {
-            closeEditProfileModal();
+            closeEditProfileModalFunc();
         });
     }
     
@@ -607,7 +637,7 @@ function initEditProfileModal() {
 }
 
 // Función para cerrar el modal de edición
-function closeEditProfileModal() {
+function closeEditProfileModalFunc() {
     const editProfileModal = document.getElementById('editProfileModal');
     if (editProfileModal) {
         editProfileModal.classList.remove('flex');
@@ -631,15 +661,15 @@ async function loadCurrentProfileData() {
     
     try {
         // Obtener usuario actual
-        const currentUser = firebase.auth().currentUser;
+        const currentUser = auth.currentUser;
         if (!currentUser) {
             throw new Error("No hay usuario autenticado");
         }
         
         // Buscar perfil en Firestore
-        const usersRef = firebase.firestore().collection("usuarios");
-        const q = firebase.firestore().collection("usuarios").where("uid", "==", currentUser.uid);
-        const querySnapshot = await q.get();
+        const usersRef = collection(db, "usuarios");
+        const q = query(usersRef, where("uid", "==", currentUser.uid));
+        const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
             console.warn("No se encontró perfil del usuario en Firestore");
@@ -720,8 +750,8 @@ async function loadAvailableBanners() {
         bannerSelector.innerHTML = '<div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div><p class="text-gray-500 text-sm">Cargando banners...</p>';
         
         // Obtener banners visibles
-        const bannersRef = firebase.firestore().collection("banners");
-        const bannersSnapshot = await bannersRef.where("visible", "!=", false).orderBy("visible").orderBy("orden").get();
+        const bannersRef = collection(db, "banners");
+        const bannersSnapshot = await getDocs(query(bannersRef, where("visible", "!=", false), orderBy("visible"), orderBy("orden")));
         
         // Verificar si hay banners
         if (bannersSnapshot.empty) {
@@ -824,7 +854,7 @@ async function handleProfileFormSubmit(event) {
     
     try {
         // Obtener usuario actual
-        const currentUser = firebase.auth().currentUser;
+        const currentUser = auth.currentUser;
         if (!currentUser) {
             throw new Error("No hay usuario autenticado");
         }
@@ -832,12 +862,21 @@ async function handleProfileFormSubmit(event) {
         // Datos a actualizar
         const updateData = {
             nombre: editUsername.value.trim(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: serverTimestamp()
         };
         
         // Si hay un banner seleccionado, añadirlo
         if (selectedBannerId !== null) {
-            updateData.bannerId = selectedBannerId || firebase.firestore.FieldValue.delete();
+            if (selectedBannerId === "") {
+                // Si seleccionó "Sin banner", intentar eliminar el campo
+                try {
+                    updateData.bannerId = null;
+                } catch (e) {
+                    console.error("Error al intentar eliminar bannerId:", e);
+                }
+            } else {
+                updateData.bannerId = selectedBannerId;
+            }
         }
         
         // Si hay nueva foto de perfil, subirla
@@ -858,11 +897,12 @@ async function handleProfileFormSubmit(event) {
         }
         
         // Actualizar en Firestore
-        const userRef = firebase.firestore().collection("usuarios").where("uid", "==", currentUser.uid);
-        const querySnapshot = await userRef.get();
+        const usersRef = collection(db, "usuarios");
+        const q = query(usersRef, where("uid", "==", currentUser.uid));
+        const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-            await querySnapshot.docs[0].ref.update(updateData);
+            await updateDoc(querySnapshot.docs[0].ref, updateData);
         } else {
             console.warn("No se encontró documento del usuario, creando uno nuevo");
             
@@ -873,18 +913,18 @@ async function handleProfileFormSubmit(event) {
                 email: currentUser.email,
                 photoURL: updateData.photoURL || currentUser.photoURL,
                 bannerId: updateData.bannerId || null,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
             };
             
-            await firebase.firestore().collection("usuarios").add(newUserData);
+            await setDoc(doc(collection(db, "usuarios")), newUserData);
         }
         
         // Mostrar mensaje de éxito
         mostrarNotificacion("Perfil actualizado correctamente", "success");
         
         // Cerrar modal
-        closeEditProfileModal();
+        closeEditProfileModalFunc();
         
         // Recargar perfil
         setTimeout(() => {
@@ -909,3 +949,64 @@ async function handleProfileFormSubmit(event) {
         }
     }
 }
+
+// Función para mostrar notificaciones (ya proporcionada en utils.js o en window)
+function mostrarNotificacion(mensaje, tipo = "info") {
+    // Verificar si la función ya existe globalmente
+    if (typeof window.mostrarNotificacion === 'function') {
+        window.mostrarNotificacion(mensaje, tipo);
+        return;
+    }
+    
+    // Verificar si ya existe una notificación
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    
+    // Clases según el tipo de notificación
+    let bgColor = 'bg-blue-500';
+    let icon = 'info-circle';
+    
+    if (tipo === 'success') {
+        bgColor = 'bg-green-500';
+        icon = 'check-circle';
+    } else if (tipo === 'error') {
+        bgColor = 'bg-red-500';
+        icon = 'exclamation-circle';
+    } else if (tipo === 'warning') {
+        bgColor = 'bg-yellow-500';
+        icon = 'exclamation-triangle';
+    }
+    
+    // Estilos de la notificación
+    notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+    notification.innerHTML = `
+        <i class="fas fa-${icon} mr-2"></i>
+        <span>${mensaje}</span>
+    `;
+    
+    // Añadir al DOM
+    document.body.appendChild(notification);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        notification.classList.add('opacity-0');
+        notification.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+            notification.remove();
+        }, 500);
+    }, 3000);
+}
+
+// Inicializar el modal al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar si está en la página de perfil
+    if (document.getElementById('editProfileBtn')) {
+        console.log("Página de perfil detectada, inicializando modal de edición");
+        initEditProfileModal();
+    }
+});
