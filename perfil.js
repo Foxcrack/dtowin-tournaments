@@ -263,90 +263,90 @@ async function updateProfileInfo(userData) {
         console.log("No se encontró foto de perfil o elemento para actualizarla");
     }
     
-    // Actualizar TODOS los elementos con clase gradient-background
-    const allProfileHeaders = document.querySelectorAll('.gradient-background');
+    // Identificar SOLO la sección de perfil que debe tener el banner
+    // Busca específicamente el elemento que contiene el encabezado del perfil,
+    // no todos los elementos con la clase gradient-background
+    const profileHeader = document.querySelector('.bg-white.rounded-xl.shadow-lg .gradient-background');
     
-    // Actualizar banner si existe
-    if (userData.bannerId && userData.bannerId !== "null" && userData.bannerId !== "") {
-        try {
-            const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
-            const bannerSnap = await bannerRef.get();
-            
-            if (bannerSnap.exists) {
-                const bannerData = bannerSnap.data();
+    // Actualizar banner solo si se encuentra el elemento específico del perfil
+    if (profileHeader) {
+        // Actualizar banner si existe
+        if (userData.bannerId && userData.bannerId !== "null" && userData.bannerId !== "") {
+            try {
+                const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
+                const bannerSnap = await bannerRef.get();
                 
-                // Obtener fuente de imagen del banner
-                const bannerImageSource = bannerData.imageUrl || bannerData.imageData;
-                
-                // Actualizar TODOS los fondos de encabezado que tengan la clase gradient-background
-                if (bannerImageSource) {
-                    console.log("Aplicando banner a todos los headers:", bannerImageSource);
+                if (bannerSnap.exists) {
+                    const bannerData = bannerSnap.data();
                     
-                    allProfileHeaders.forEach(header => {
+                    // Obtener fuente de imagen del banner
+                    const bannerImageSource = bannerData.imageUrl || bannerData.imageData;
+                    
+                    if (bannerImageSource) {
+                        console.log("Aplicando banner a la sección del perfil:", bannerImageSource);
+                        
                         // Guardar las clases originales para poder restaurarlas si es necesario
-                        if (!header.dataset.originalClasses) {
-                            header.dataset.originalClasses = header.className;
+                        if (!profileHeader.dataset.originalClasses) {
+                            profileHeader.dataset.originalClasses = profileHeader.className;
                         }
                         
                         // Aplicar banner como fondo
-                        header.className = 'text-white p-4 shadow-md';
-                        header.style.backgroundImage = `url(${bannerImageSource})`;
-                        header.style.backgroundSize = 'cover';
-                        header.style.backgroundPosition = 'center';
+                        profileHeader.className = 'text-white p-8';
+                        profileHeader.style.backgroundImage = `url(${bannerImageSource})`;
+                        profileHeader.style.backgroundSize = 'cover';
+                        profileHeader.style.backgroundPosition = 'center';
                         
-                        // Añadir un overlay para mejorar la legibilidad del texto
-                        header.style.position = 'relative';
-                        
-                        // Verificar si ya existe un overlay
-                        let overlay = header.querySelector('.profile-banner-overlay');
-                        if (!overlay) {
-                            overlay = document.createElement('div');
-                            overlay.className = 'profile-banner-overlay absolute inset-0 bg-black bg-opacity-50';
-                            header.appendChild(overlay);
-                            
-                            // Mover el contenido al frente
-                            const headerContent = header.querySelector('.container');
-                            if (headerContent) {
-                                headerContent.style.position = 'relative';
-                                headerContent.style.zIndex = '1';
-                            }
-                        }
-                    });
+                        // NO añadir overlay para respetar la visibilidad del contenido
+                        // No queremos opacidad en el nombre y la foto de perfil
+                    }
                 }
+            } catch (error) {
+                console.error("Error al cargar banner:", error);
             }
-        } catch (error) {
-            console.error("Error al cargar banner:", error);
-        }
-    } else {
-        // Restaurar fondo original en TODOS los headers si no hay banner
-        console.log("Restaurando fondos originales (sin banner)");
-        
-        allProfileHeaders.forEach(header => {
-            if (header.dataset.originalClasses) {
-                header.className = header.dataset.originalClasses;
-                header.style.backgroundImage = '';
-                header.style.backgroundSize = '';
-                header.style.backgroundPosition = '';
-                header.style.position = '';
+        } else {
+            // Restaurar fondo original si no hay banner
+            console.log("Restaurando fondo original (sin banner)");
+            
+            if (profileHeader.dataset.originalClasses) {
+                profileHeader.className = profileHeader.dataset.originalClasses;
+                profileHeader.style.backgroundImage = '';
+                profileHeader.style.backgroundSize = '';
+                profileHeader.style.backgroundPosition = '';
+                profileHeader.style.position = '';
                 
                 // Eliminar overlay si existe
-                const overlay = header.querySelector('.profile-banner-overlay');
+                const overlay = profileHeader.querySelector('.profile-banner-overlay');
                 if (overlay) {
                     overlay.remove();
                 }
-                
-                // Restaurar contenido
-                const headerContent = header.querySelector('.container');
-                if (headerContent) {
-                    headerContent.style.position = '';
-                    headerContent.style.zIndex = '';
-                }
             }
-        });
+        }
+    } else {
+        console.log("No se encontró el encabezado del perfil para aplicar el banner");
     }
+    
+    // Asegurarse de que la navbar y footer mantienen su degradado original
+    preserveGradientInNavbarAndFooter();
     
     // Actualizar datos estadísticos
     updateProfileStats(userData);
+}
+
+// Función para asegurar que la navbar y footer mantienen su degradado original
+function preserveGradientInNavbarAndFooter() {
+    // Restaurar el degradado en la barra de navegación
+    const navbar = document.querySelector('nav.gradient-background');
+    if (navbar) {
+        navbar.style.backgroundImage = '';
+        navbar.style.background = 'linear-gradient(135deg, #0042ff, #ff3000)';
+    }
+    
+    // Restaurar el degradado en el footer
+    const footer = document.querySelector('footer.gradient-background');
+    if (footer) {
+        footer.style.backgroundImage = '';
+        footer.style.background = 'linear-gradient(135deg, #0042ff, #ff3000)';
+    }
 }
 
 // Actualizar estadísticas del perfil
