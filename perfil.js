@@ -105,6 +105,7 @@ async function loadProfile() {
                     email: currentUser.email,
                     photoURL: currentUser.photoURL || null,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                     puntos: 0,
                     victorias: 0,
                     torneos: []
@@ -254,13 +255,19 @@ async function updateProfileInfo(userData) {
     
     // Actualizar foto de perfil
     const profileAvatar = document.getElementById('profileAvatar');
-    if (profileAvatar) {
-        profileAvatar.src = userData.photoURL || 'dtowin.png';
+    if (profileAvatar && userData.photoURL) {
+        profileAvatar.src = userData.photoURL;
         profileAvatar.alt = userData.nombre || 'Usuario';
+        console.log("Foto de perfil actualizada:", userData.photoURL);
+    } else {
+        console.log("No se encontró foto de perfil o elemento para actualizarla");
     }
     
+    // Actualizar TODOS los elementos con clase gradient-background
+    const allProfileHeaders = document.querySelectorAll('.gradient-background');
+    
     // Actualizar banner si existe
-    if (userData.bannerId) {
+    if (userData.bannerId && userData.bannerId !== "null" && userData.bannerId !== "") {
         try {
             const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
             const bannerSnap = await bannerRef.get();
@@ -271,65 +278,71 @@ async function updateProfileInfo(userData) {
                 // Obtener fuente de imagen del banner
                 const bannerImageSource = bannerData.imageUrl || bannerData.imageData;
                 
-                // Actualizar el fondo del encabezado
-                const profileHeader = document.querySelector('.gradient-background');
-                if (profileHeader && bannerImageSource) {
-                    // Guardar las clases originales para poder restaurarlas si es necesario
-                    if (!profileHeader.dataset.originalClasses) {
-                        profileHeader.dataset.originalClasses = profileHeader.className;
-                    }
+                // Actualizar TODOS los fondos de encabezado que tengan la clase gradient-background
+                if (bannerImageSource) {
+                    console.log("Aplicando banner a todos los headers:", bannerImageSource);
                     
-                    // Aplicar banner como fondo
-                    profileHeader.className = 'text-white p-4 shadow-md';
-                    profileHeader.style.backgroundImage = `url(${bannerImageSource})`;
-                    profileHeader.style.backgroundSize = 'cover';
-                    profileHeader.style.backgroundPosition = 'center';
-                    
-                    // Añadir un overlay para mejorar la legibilidad del texto
-                    profileHeader.style.position = 'relative';
-                    
-                    // Verificar si ya existe un overlay
-                    let overlay = profileHeader.querySelector('.profile-banner-overlay');
-                    if (!overlay) {
-                        overlay = document.createElement('div');
-                        overlay.className = 'profile-banner-overlay absolute inset-0 bg-black bg-opacity-50';
-                        profileHeader.appendChild(overlay);
-                        
-                        // Mover el contenido al frente
-                        const headerContent = profileHeader.querySelector('.container');
-                        if (headerContent) {
-                            headerContent.style.position = 'relative';
-                            headerContent.style.zIndex = '1';
+                    allProfileHeaders.forEach(header => {
+                        // Guardar las clases originales para poder restaurarlas si es necesario
+                        if (!header.dataset.originalClasses) {
+                            header.dataset.originalClasses = header.className;
                         }
-                    }
+                        
+                        // Aplicar banner como fondo
+                        header.className = 'text-white p-4 shadow-md';
+                        header.style.backgroundImage = `url(${bannerImageSource})`;
+                        header.style.backgroundSize = 'cover';
+                        header.style.backgroundPosition = 'center';
+                        
+                        // Añadir un overlay para mejorar la legibilidad del texto
+                        header.style.position = 'relative';
+                        
+                        // Verificar si ya existe un overlay
+                        let overlay = header.querySelector('.profile-banner-overlay');
+                        if (!overlay) {
+                            overlay = document.createElement('div');
+                            overlay.className = 'profile-banner-overlay absolute inset-0 bg-black bg-opacity-50';
+                            header.appendChild(overlay);
+                            
+                            // Mover el contenido al frente
+                            const headerContent = header.querySelector('.container');
+                            if (headerContent) {
+                                headerContent.style.position = 'relative';
+                                headerContent.style.zIndex = '1';
+                            }
+                        }
+                    });
                 }
             }
         } catch (error) {
             console.error("Error al cargar banner:", error);
         }
     } else {
-        // Restaurar fondo original si no hay banner
-        const profileHeader = document.querySelector('.gradient-background');
-        if (profileHeader && profileHeader.dataset.originalClasses) {
-            profileHeader.className = profileHeader.dataset.originalClasses;
-            profileHeader.style.backgroundImage = '';
-            profileHeader.style.backgroundSize = '';
-            profileHeader.style.backgroundPosition = '';
-            profileHeader.style.position = '';
-            
-            // Eliminar overlay si existe
-            const overlay = profileHeader.querySelector('.profile-banner-overlay');
-            if (overlay) {
-                overlay.remove();
+        // Restaurar fondo original en TODOS los headers si no hay banner
+        console.log("Restaurando fondos originales (sin banner)");
+        
+        allProfileHeaders.forEach(header => {
+            if (header.dataset.originalClasses) {
+                header.className = header.dataset.originalClasses;
+                header.style.backgroundImage = '';
+                header.style.backgroundSize = '';
+                header.style.backgroundPosition = '';
+                header.style.position = '';
+                
+                // Eliminar overlay si existe
+                const overlay = header.querySelector('.profile-banner-overlay');
+                if (overlay) {
+                    overlay.remove();
+                }
+                
+                // Restaurar contenido
+                const headerContent = header.querySelector('.container');
+                if (headerContent) {
+                    headerContent.style.position = '';
+                    headerContent.style.zIndex = '';
+                }
             }
-            
-            // Restaurar contenido
-            const headerContent = profileHeader.querySelector('.container');
-            if (headerContent) {
-                headerContent.style.position = '';
-                headerContent.style.zIndex = '';
-            }
-        }
+        });
     }
     
     // Actualizar datos estadísticos
@@ -844,7 +857,7 @@ async function loadAvailableBanners() {
         
         // Verificar si hay banners
         if (bannersSnapshot.empty) {
-            bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
+            bannerSelector.innerHTML = '<p class="text-center text-gray-600 py-2">No hay banners disponibles</p>';
             return;
         }
         
@@ -914,123 +927,184 @@ async function loadAvailableBanners() {
     }
 }
 
-// Manejar cambio de foto de perfil - Versión simplificada
+// Manejar cambio de foto de perfil - Versión actualizada
 function handleProfilePhotoChange(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Verificar tipo de archivo
+    console.log("Archivo de foto seleccionado:", file.name);
+    
+    // Verificar que sea imagen
     if (!file.type.startsWith('image/')) {
-        alert("Por favor, selecciona una imagen válida");
+        mostrarNotificacion("El archivo debe ser una imagen", "error");
         event.target.value = '';
         return;
     }
     
-    // Verificar tamaño
-    if (file.size > 2 * 1024 * 1024) {
-        alert("La imagen es demasiado grande. El tamaño máximo es 2MB");
-        // Permitimos continuar a pesar del tamaño
+    // Verificar tamaño (max 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+        mostrarNotificacion("La imagen es demasiado grande. Máximo 2MB", "warning");
     }
     
-    // Guardar referencia global
+    // Guardar referencia al archivo
     newProfilePhoto = file;
     
-    // Mostrar vista previa simple
+    // Mostrar vista previa
     const photoPreview = document.getElementById('photoPreview');
     const photoPreviewContainer = document.getElementById('photoPreviewContainer');
     
     if (photoPreview && photoPreviewContainer) {
         const reader = new FileReader();
-        
         reader.onload = function(e) {
             photoPreview.src = e.target.result;
             photoPreviewContainer.classList.remove('hidden');
         };
-        
         reader.readAsDataURL(file);
     }
 }
 
-// Manejar envío del formulario - Versión simplificada
+// Manejar envío del formulario de edición - Versión actualizada
 async function handleProfileFormSubmit(event) {
     event.preventDefault();
+    console.log("Enviando formulario de edición de perfil");
     
-    // Referencias básicas
+    // Referencias a elementos
     const editUsername = document.getElementById('editUsername');
-    const saveBtn = document.getElementById('saveProfileChanges');
-    const errorMsg = document.getElementById('editProfileErrorMsg');
+    const saveProfileChanges = document.getElementById('saveProfileChanges');
+    const editProfileErrorMsg = document.getElementById('editProfileErrorMsg');
     
-    // Validación básica
+    // Validar datos
     if (!editUsername || !editUsername.value.trim()) {
-        alert("El nombre de usuario es obligatorio");
+        if (editProfileErrorMsg) {
+            editProfileErrorMsg.textContent = "El nombre de usuario es obligatorio";
+            editProfileErrorMsg.classList.remove('hidden');
+        }
+        mostrarNotificacion("El nombre de usuario es obligatorio", "error");
         return;
     }
     
-    // Deshabilitar botón
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = 'Guardando...';
+    // Ocultar mensaje de error si existe
+    if (editProfileErrorMsg) {
+        editProfileErrorMsg.textContent = "";
+        editProfileErrorMsg.classList.add('hidden');
+    }
+    
+    // Cambiar estado del botón
+    if (saveProfileChanges) {
+        saveProfileChanges.disabled = true;
+        saveProfileChanges.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white mr-2 inline-block"></div> Guardando...';
     }
     
     try {
+        // Obtener usuario actual
         const currentUser = firebase.auth().currentUser;
-        if (!currentUser) throw new Error("No hay usuario autenticado");
+        if (!currentUser) {
+            throw new Error("No hay usuario autenticado");
+        }
         
-        const username = editUsername.value.trim();
+        // Verificar duplicados de nombre
+        const nuevoNombre = editUsername.value.trim();
+        let esDuplicado = false;
         
-        // Construir datos básicos a actualizar
+        try {
+            const usersRef = firebase.firestore().collection("usuarios");
+            const querySnapshot = await usersRef.where("nombre", "==", nuevoNombre).get();
+            
+            querySnapshot.forEach(doc => {
+                if (doc.data().uid !== currentUser.uid) {
+                    esDuplicado = true;
+                }
+            });
+        } catch (error) {
+            console.error("Error al verificar duplicados:", error);
+        }
+        
+        if (esDuplicado) {
+            throw new Error("Este nombre de usuario ya está en uso");
+        }
+        
+        // Datos a actualizar
         const updateData = {
-            nombre: username,
+            nombre: nuevoNombre,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        // Procesar banner seleccionado
+        // Si hay un banner seleccionado, añadirlo
         if (selectedBannerId !== null) {
-            updateData.bannerId = (selectedBannerId === "") ? null : selectedBannerId;
+            if (selectedBannerId === "") {
+                // Si seleccionó "Sin banner", usar null explícitamente
+                updateData.bannerId = null;
+            } else {
+                updateData.bannerId = selectedBannerId;
+            }
         }
         
-        // Procesar foto si hay una nueva
+        console.log("Datos a actualizar:", updateData);
+        
+        // Si hay nueva foto de perfil, procesarla
         let photoURL = null;
         
         if (newProfilePhoto) {
-            // Usar Storage para la imagen
-            const fileRef = firebase.storage().ref().child(
-                `profiles/${currentUser.uid}/${Date.now()}_profile`
-            );
-            
-            // Subir archivo
-            await fileRef.put(newProfilePhoto);
-            
-            // Obtener URL
-            photoURL = await fileRef.getDownloadURL();
-            
-            // Añadir al objeto de actualización
-            updateData.photoURL = photoURL;
+            try {
+                console.log("Procesando nueva foto de perfil");
+                
+                // Generar un nombre único para la foto
+                const timestamp = Date.now();
+                const fileName = `profile_${currentUser.uid}_${timestamp}`;
+                
+                // Crear referencia en Storage
+                const storageRef = firebase.storage().ref();
+                const photoRef = storageRef.child(`profile_photos/${currentUser.uid}/${fileName}`);
+                
+                console.log("Subiendo imagen a:", `profile_photos/${currentUser.uid}/${fileName}`);
+                
+                // Subir la imagen
+                const uploadTask = await photoRef.put(newProfilePhoto);
+                console.log("Imagen subida correctamente");
+                
+                // Obtener URL de descarga
+                photoURL = await uploadTask.ref.getDownloadURL();
+                console.log("URL de foto obtenida:", photoURL);
+                
+                // Actualizar datos
+                updateData.photoURL = photoURL;
+                
+                // Actualizar en Auth directamente
+                await currentUser.updateProfile({
+                    displayName: nuevoNombre,
+                    photoURL: photoURL
+                });
+                
+                console.log("Perfil de Auth actualizado con nueva foto");
+            } catch (photoError) {
+                console.error("Error al procesar la foto:", photoError);
+                throw new Error("Error al procesar la foto: " + photoError.message);
+            }
+        } else {
+            // Solo actualizar el nombre en Auth
+            await currentUser.updateProfile({
+                displayName: nuevoNombre
+            });
+            console.log("Nombre actualizado en Auth");
         }
         
-        // Actualizar Auth primero (solo lo esencial)
-        const authUpdateData = { displayName: username };
-        if (photoURL) authUpdateData.photoURL = photoURL;
+        // Buscar documento del usuario en Firestore
+        const usersRef = firebase.firestore().collection("usuarios");
+        const userQuery = await usersRef.where("uid", "==", currentUser.uid).get();
         
-        await currentUser.updateProfile(authUpdateData);
-        
-        // Encontrar y actualizar documento en Firestore
-        const usersQuery = await firebase.firestore()
-            .collection("usuarios")
-            .where("uid", "==", currentUser.uid)
-            .limit(1)
-            .get();
-        
-        if (!usersQuery.empty) {
+        if (!userQuery.empty) {
             // Actualizar documento existente
-            await usersQuery.docs[0].ref.update(updateData);
+            const userDoc = userQuery.docs[0];
+            await userDoc.ref.update(updateData);
+            console.log("Documento de usuario actualizado:", userDoc.id);
         } else {
-            // Crear nuevo documento
+            // Crear nuevo documento de usuario
             const newUserData = {
                 uid: currentUser.uid,
-                nombre: username,
+                nombre: nuevoNombre,
                 email: currentUser.email,
-                photoURL: photoURL || currentUser.photoURL,
+                photoURL: photoURL || currentUser.photoURL || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 puntos: 0,
@@ -1038,39 +1112,45 @@ async function handleProfileFormSubmit(event) {
                 torneos: []
             };
             
-            if (selectedBannerId && selectedBannerId !== "") {
-                newUserData.bannerId = selectedBannerId;
+            // Añadir bannerId si existe
+            if (updateData.bannerId !== undefined) {
+                newUserData.bannerId = updateData.bannerId;
             }
             
-            await firebase.firestore().collection("usuarios").add(newUserData);
+            await usersRef.add(newUserData);
+            console.log("Nuevo perfil creado en Firestore");
         }
         
         // Mostrar éxito
-        alert("Perfil actualizado correctamente");
+        mostrarNotificacion("Perfil actualizado correctamente", "success");
         
-        // Cerrar modal
-        const modal = document.getElementById('editProfileModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+        // Cerrar modal y recargar
+        const editProfileModal = document.getElementById('editProfileModal');
+        if (editProfileModal) {
+            editProfileModal.classList.add('hidden');
+            editProfileModal.classList.remove('flex');
         }
         
-        // Recargar página
-        setTimeout(() => window.location.reload(), 500);
+        // Recargar página después de un momento
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
         
     } catch (error) {
-        console.error("Error:", error);
-        alert("Error al actualizar perfil: " + error.message);
+        console.error("Error al guardar cambios:", error);
         
-        if (errorMsg) {
-            errorMsg.textContent = "Error: " + error.message;
-            errorMsg.classList.remove('hidden');
+        if (editProfileErrorMsg) {
+            editProfileErrorMsg.textContent = "Error al guardar cambios: " + (error.message || "Error desconocido");
+            editProfileErrorMsg.classList.remove('hidden');
         }
+        
+        mostrarNotificacion("Error al guardar cambios en el perfil", "error");
+        
     } finally {
         // Restaurar botón
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = "Guardar Cambios";
+        if (saveProfileChanges) {
+            saveProfileChanges.disabled = false;
+            saveProfileChanges.textContent = "Guardar Cambios";
         }
     }
 }
