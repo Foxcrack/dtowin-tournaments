@@ -16,8 +16,58 @@ let isLoadingProfile = false;
 let selectedBannerId = null;
 let newProfilePhoto = null;
 
+// Esperar a que Firebase esté disponible globalmente
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM cargado, esperando a que Firebase esté disponible");
+    
+    // Verificar que Firebase está cargado antes de comenzar
+    if (typeof firebase !== 'undefined') {
+        console.log("Firebase ya está disponible, inicializando...");
+        initializeProfile();
+    } else {
+        console.log("Firebase no disponible todavía, configurando intervalo de verificación");
+        
+        // Comprobar cada 100ms si firebase ya está disponible
+        const checkFirebase = setInterval(() => {
+            if (typeof firebase !== 'undefined') {
+                console.log("Firebase disponible, inicializando...");
+                clearInterval(checkFirebase);
+                initializeProfile();
+            }
+        }, 100);
+        
+        // Parar después de 5 segundos para evitar un bucle infinito
+        setTimeout(() => {
+            clearInterval(checkFirebase);
+            console.error("Firebase no se pudo cargar después de 5 segundos");
+            mostrarNotificacion("Error: No se pudo cargar Firebase", "error");
+        }, 5000);
+    }
+});
+
+// Función principal para inicializar el perfil
+function initializeProfile() {
+    console.log("Inicializando perfil");
+    
+    // Inicializar el modal de edición
+    initEditProfileModal();
+    
+    // Verificar el estado de autenticación y cargar el perfil
+    firebase.auth().onAuthStateChanged(user => {
+        console.log("Estado de autenticación cambiado:", user ? "Autenticado" : "No autenticado");
+        if (user) {
+            console.log("Usuario autenticado:", user.uid);
+            renderProfileTemplate();
+            loadProfile();
+        } else {
+            console.log("No hay usuario autenticado");
+            showLoginRequired();
+        }
+    });
+}
+
 // Función principal para cargar perfil
-export async function loadProfile() {
+async function loadProfile() {
     try {
         // Evitar cargas múltiples
         if (isLoadingProfile) {
@@ -32,16 +82,8 @@ export async function loadProfile() {
         const urlParams = new URLSearchParams(window.location.search);
         const requestedUid = urlParams.get('uid');
         
-        // Esperar a que Firebase Auth esté inicializado
-        await new Promise(resolve => {
-            const unsubscribe = auth.onAuthStateChanged(user => {
-                unsubscribe();
-                resolve(user);
-            });
-        });
-        
         // Verificar si el usuario está autenticado
-        const currentUser = auth.currentUser;
+        const currentUser = firebase.auth().currentUser;
         console.log("Estado de autenticación:", currentUser ? "Autenticado" : "No autenticado");
         
         // Si hay un userId en la URL, cargamos ese perfil
@@ -59,15 +101,39 @@ export async function loadProfile() {
         console.log("Cargando perfil con UID:", uidToLoad);
         
         // Obtener datos del usuario
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", uidToLoad));
-        const querySnapshot = await getDocs(q);
+        const usersRef = firebase.firestore().collection("usuarios");
+        const q = usersRef.where("uid", "==", uidToLoad);
+        const querySnapshot = await q.get();
         
         if (querySnapshot.empty) {
-            console.error("No se encontró el perfil del usuario");
-            showProfileNotFound();
-            isLoadingProfile = false;
-            return;
+            console.warn("No se encontró el perfil del usuario, creando uno nuevo");
+            
+            // Si es el usuario actual, crear un perfil básico
+            if (currentUser && uidToLoad === currentUser.uid) {
+                const newUserData = {
+                    uid: currentUser.uid,
+                    nombre: currentUser.displayName || 'Usuario',
+                    email: currentUser.email,
+                    photoURL: currentUser.photoURL || null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    puntos: 0,
+                    victorias: 0,
+                    torneos: []
+                };
+                
+                // Crear nuevo documento
+                await firebase.firestore().collection("usuarios").add(newUserData);
+                console.log("Nuevo perfil creado");
+                
+                // Cargar el perfil recién creado
+                await loadProfile();
+                return;
+            } else {
+                // Si es otro usuario y no se encuentra, mostrar error
+                showProfileNotFound();
+                isLoadingProfile = false;
+                return;
+            }
         }
         
         // Obtener datos del perfil
@@ -75,13 +141,13 @@ export async function loadProfile() {
         console.log("Datos del usuario:", userData);
         
         // Actualizar información del perfil
-        await updateProfileInfo(userData);
+        updateProfileInfo(userData);
         
         // Cargar badges del usuario
-        await loadUserBadges(userData);
+        loadUserBadges(userData);
         
         // Cargar historial de torneos
-        await loadUserTournaments(userData);
+        loadUserTournaments(userData);
         
         // Si es el propio perfil del usuario, mostrar opciones adicionales
         if (!requestedUid && currentUser) {
@@ -123,10 +189,10 @@ function showLoginRequired() {
         
         if (loginPromptBtn) {
             loginPromptBtn.addEventListener('click', () => {
-                const loginBtn = document.querySelector('#loginModal');
-                if (loginBtn) {
-                    loginBtn.classList.remove('hidden');
-                    loginBtn.classList.add('flex');
+                const loginModal = document.querySelector('#loginModal');
+                if (loginModal) {
+                    loginModal.classList.remove('hidden');
+                    loginModal.classList.add('flex');
                 } else {
                     alert("Modal de inicio de sesión no encontrado");
                 }
@@ -207,10 +273,10 @@ async function updateProfileInfo(userData) {
     // Actualizar banner si existe
     if (userData.bannerId) {
         try {
-            const bannerRef = doc(db, "banners", userData.bannerId);
-            const bannerSnap = await getDoc(bannerRef);
+            const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
+            const bannerSnap = await bannerRef.get();
             
-            if (bannerSnap.exists()) {
+            if (bannerSnap.exists) {
                 const bannerData = bannerSnap.data();
                 
                 // Obtener fuente de imagen del banner
@@ -344,10 +410,10 @@ async function loadUserBadges(userData) {
         
         for (const badgeId of badgeIds) {
             try {
-                const badgeRef = doc(db, "badges", badgeId);
-                const badgeSnap = await getDoc(badgeRef);
+                const badgeRef = firebase.firestore().collection("badges").doc(badgeId);
+                const badgeSnap = await badgeRef.get();
                 
-                if (badgeSnap.exists()) {
+                if (badgeSnap.exists) {
                     const badgeData = badgeSnap.data();
                     
                     // Determinar la fuente de la imagen
@@ -421,10 +487,10 @@ async function loadUserTournaments(userData) {
         
         for (const torneoId of torneoIds) {
             try {
-                const torneoRef = doc(db, "torneos", torneoId);
-                const torneoSnap = await getDoc(torneoRef);
+                const torneoRef = firebase.firestore().collection("torneos").doc(torneoId);
+                const torneoSnap = await torneoRef.get();
                 
-                if (torneoSnap.exists()) {
+                if (torneoSnap.exists) {
                     torneosData.push({
                         id: torneoId,
                         ...torneoSnap.data()
@@ -543,16 +609,69 @@ function hideProfileOptions() {
     profileOptionsContainer.classList.add('hidden');
 }
 
+// Función para renderizar la plantilla de perfil
+function renderProfileTemplate() {
+    const template = document.getElementById('profileTemplate');
+    const profileContainer = document.getElementById('profileContainer');
+    
+    if (template && profileContainer) {
+        profileContainer.innerHTML = '';
+        const clone = document.importNode(template.content, true);
+        profileContainer.appendChild(clone);
+        
+        // Configurar pestañas después de renderizar
+        setupTabs();
+        
+        // Configurar botones después de renderizar
+        setupButtons();
+    }
+}
+
+// Configurar navegación por pestañas
+function setupTabs() {
+    const tabLinks = document.querySelectorAll('[href^="#"]');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabLinks.forEach(tabLink => {
+        tabLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Ocultar todos los contenidos
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Mostrar el contenido correspondiente
+            const targetId = tabLink.getAttribute('href').substring(1);
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.remove('hidden');
+            }
+            
+            // Desactivar todos los enlaces
+            tabLinks.forEach(link => {
+                link.classList.remove('text-blue-600', 'border-blue-600');
+                link.classList.add('text-gray-500', 'border-transparent');
+            });
+            
+            // Activar el enlace actual
+            tabLink.classList.remove('text-gray-500', 'border-transparent');
+            tabLink.classList.add('text-blue-600', 'border-blue-600');
+        });
+    });
+}
+
 // Configurar botones del perfil
 function setupButtons() {
     console.log("Configurando botones del perfil");
     const logoutBtn = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
     
-    // Configurar logout
+    // Configurar botón de cerrar sesión
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
-                await logoutUser();
+                await firebase.auth().signOut();
                 mostrarNotificacion("Has cerrado sesión correctamente", "success");
                 setTimeout(() => {
                     window.location.href = 'index.html';
@@ -563,23 +682,8 @@ function setupButtons() {
             }
         });
     }
-}
-
-// ----- FUNCIONES PARA EDICIÓN DE PERFIL -----
-
-// Función para inicializar el modal de edición de perfil
-function initEditProfileModal() {
-    console.log("Inicializando modal de edición de perfil");
     
-    // Referencias a elementos DOM
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const editProfileModal = document.getElementById('editProfileModal');
-    const closeEditProfileModal = document.getElementById('closeEditProfileModal');
-    const cancelEditProfile = document.getElementById('cancelEditProfile');
-    const editProfileForm = document.getElementById('editProfileForm');
-    const profilePhotoInput = document.getElementById('profilePhotoInput');
-    
-    // Configurar evento para abrir modal
+    // Configurar botón de editar perfil
     if (editProfileBtn) {
         console.log("Configurando botón editar perfil");
         editProfileBtn.addEventListener('click', async () => {
@@ -587,9 +691,14 @@ function initEditProfileModal() {
             
             try {
                 // Mostrar modal primero para que se vea la carga
+                const editProfileModal = document.getElementById('editProfileModal');
                 if (editProfileModal) {
                     editProfileModal.classList.remove('hidden');
                     editProfileModal.classList.add('flex');
+                } else {
+                    console.error("Modal de edición no encontrado");
+                    mostrarNotificacion("Error: Modal de edición no encontrado", "error");
+                    return;
                 }
                 
                 // Cargar datos actuales
@@ -604,10 +713,24 @@ function initEditProfileModal() {
             }
         });
     }
+}
+
+// ----- FUNCIONES PARA EDICIÓN DE PERFIL -----
+
+// Función para inicializar el modal de edición de perfil
+function initEditProfileModal() {
+    console.log("Inicializando modal de edición de perfil");
+    
+    // Referencias a elementos DOM
+    const closeEditProfileModal = document.getElementById('closeEditProfileModal');
+    const cancelEditProfile = document.getElementById('cancelEditProfile');
+    const editProfileForm = document.getElementById('editProfileForm');
+    const profilePhotoInput = document.getElementById('profilePhotoInput');
     
     // Cerrar modal
     if (closeEditProfileModal) {
         closeEditProfileModal.addEventListener('click', () => {
+            const editProfileModal = document.getElementById('editProfileModal');
             if (editProfileModal) {
                 editProfileModal.classList.remove('flex');
                 editProfileModal.classList.add('hidden');
@@ -628,6 +751,7 @@ function initEditProfileModal() {
     // Cancelar edición
     if (cancelEditProfile) {
         cancelEditProfile.addEventListener('click', () => {
+            const editProfileModal = document.getElementById('editProfileModal');
             if (editProfileModal) {
                 editProfileModal.classList.remove('flex');
                 editProfileModal.classList.add('hidden');
@@ -653,6 +777,8 @@ function initEditProfileModal() {
     // Manejar envío del formulario
     if (editProfileForm) {
         editProfileForm.addEventListener('submit', handleProfileFormSubmit);
+    } else {
+        console.error("Formulario de edición no encontrado");
     }
 }
 
@@ -662,15 +788,15 @@ async function loadCurrentProfileData() {
     
     try {
         // Obtener usuario actual
-        const currentUser = auth.currentUser;
+        const currentUser = firebase.auth().currentUser;
         if (!currentUser) {
             throw new Error("No hay usuario autenticado");
         }
         
         // Buscar perfil en Firestore
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", currentUser.uid));
-        const querySnapshot = await getDocs(q);
+        const usersRef = firebase.firestore().collection("usuarios");
+        const q = usersRef.where("uid", "==", currentUser.uid);
+        const querySnapshot = await q.get();
         
         // Datos del usuario (del Auth)
         let userData = {
@@ -724,9 +850,8 @@ async function loadAvailableBanners() {
         // Mostrar estado de carga
         bannerSelector.innerHTML = '<div class="flex justify-center items-center"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div><p class="text-gray-500 text-sm ml-2">Cargando banners...</p></div>';
         
-        // Obtener banners visibles
-        const bannersRef = collection(db, "banners");
-        const bannersSnapshot = await getDocs(bannersRef);
+        // Obtener banners
+        const bannersSnapshot = await firebase.firestore().collection("banners").get();
         
         // Verificar si hay banners
         if (bannersSnapshot.empty) {
@@ -746,12 +871,16 @@ async function loadAvailableBanners() {
             </div>
         `;
         
+        // Variable para contar banners válidos
+        let hasValidBanners = false;
+        
         // Añadir cada banner
         bannersSnapshot.forEach(doc => {
             const banner = doc.data();
             
             // Verificar si el banner tiene imageData o imageUrl y está visible
             if ((banner.imageData || banner.imageUrl) && banner.visible !== false) {
+                hasValidBanners = true;
                 const isSelected = selectedBannerId === doc.id;
                 
                 // Determinar fuente de imagen
@@ -765,8 +894,8 @@ async function loadAvailableBanners() {
             }
         });
         
-        // Si no se añadieron banners (todos ocultos o sin imagen)
-        if (html === '') {
+        // Si no hay banners válidos, mostrar mensaje
+        if (!hasValidBanners) {
             bannerSelector.innerHTML = '<p class="text-gray-500 text-center py-2">No hay banners disponibles</p>';
             return;
         }
@@ -863,6 +992,38 @@ async function handleProfileFormSubmit(event) {
         return;
     }
     
+    // Verificar que el nombre no esté duplicado
+    try {
+        const nuevoNombre = editUsername.value.trim();
+        const currentUser = firebase.auth().currentUser;
+        
+        // Buscar si ya existe un usuario con este nombre
+        const usersRef = firebase.firestore().collection("usuarios");
+        const querySnapshot = await usersRef.where("nombre", "==", nuevoNombre).get();
+        
+        // Si encontramos algún usuario con ese nombre que no sea el actual
+        if (!querySnapshot.empty) {
+            let esDuplicado = false;
+            
+            querySnapshot.forEach(doc => {
+                if (doc.data().uid !== currentUser.uid) {
+                    esDuplicado = true;
+                }
+            });
+            
+            if (esDuplicado) {
+                if (editProfileErrorMsg) {
+                    editProfileErrorMsg.textContent = "Este nombre de usuario ya está en uso";
+                    editProfileErrorMsg.classList.remove('hidden');
+                }
+                mostrarNotificacion("Este nombre de usuario ya está en uso", "error");
+                return;
+            }
+        }
+    } catch (error) {
+        console.error("Error al verificar duplicados:", error);
+    }
+    
     // Ocultar mensaje de error si existe
     if (editProfileErrorMsg) {
         editProfileErrorMsg.textContent = "";
@@ -877,7 +1038,7 @@ async function handleProfileFormSubmit(event) {
     
     try {
         // Obtener usuario actual
-        const currentUser = auth.currentUser;
+        const currentUser = firebase.auth().currentUser;
         if (!currentUser) {
             throw new Error("No hay usuario autenticado");
         }
@@ -925,13 +1086,13 @@ async function handleProfileFormSubmit(event) {
         }
         
         // Buscar si el usuario ya existe en Firestore
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", currentUser.uid));
-        const querySnapshot = await getDocs(q);
+        const usersRef = firebase.firestore().collection("usuarios");
+        const q = usersRef.where("uid", "==", currentUser.uid);
+        const querySnapshot = await q.get();
         
         if (!querySnapshot.empty) {
             // Actualizar documento existente
-            await updateDoc(doc(db, "usuarios", querySnapshot.docs[0].id), updateData);
+            await querySnapshot.docs[0].ref.update(updateData);
             console.log("Perfil actualizado en Firestore");
         } else {
             // Crear documento nuevo
@@ -942,10 +1103,13 @@ async function handleProfileFormSubmit(event) {
                 photoURL: updateData.photoURL || currentUser.photoURL,
                 bannerId: updateData.bannerId || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                puntos: 0,
+                victorias: 0,
+                torneos: []
             };
             
-            await addDoc(collection(db, "usuarios"), newUserData);
+            await usersRef.add(newUserData);
             console.log("Nuevo perfil creado en Firestore");
         }
         
@@ -1035,10 +1199,8 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }, 3000);
 }
 
-// Inicializar el modal de edición de perfil cuando se carga la página
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM cargado, inicializando funcionalidades de perfil");
-    
-    // Inicializar modal de edición
-    initEditProfileModal();
-});
+// Exponer funciones a nivel global
+window.loadProfile = loadProfile;
+window.renderProfileTemplate = renderProfileTemplate;
+window.mostrarNotificacion = mostrarNotificacion;
+window.initializeProfile = initializeProfile;
