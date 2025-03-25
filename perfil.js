@@ -914,188 +914,123 @@ async function loadAvailableBanners() {
     }
 }
 
-// Manejar cambio de foto de perfil
+// Manejar cambio de foto de perfil - Versión simplificada
 function handleProfilePhotoChange(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    console.log("Archivo de foto seleccionado:", file.name);
-    
-    // Verificar que sea imagen
+    // Verificar tipo de archivo
     if (!file.type.startsWith('image/')) {
-        mostrarNotificacion("El archivo debe ser una imagen", "error");
+        alert("Por favor, selecciona una imagen válida");
         event.target.value = '';
         return;
     }
     
-    // Verificar tamaño (max 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-    if (file.size > MAX_SIZE) {
-        mostrarNotificacion("La imagen es demasiado grande. Máximo 2MB", "warning");
+    // Verificar tamaño
+    if (file.size > 2 * 1024 * 1024) {
+        alert("La imagen es demasiado grande. El tamaño máximo es 2MB");
+        // Permitimos continuar a pesar del tamaño
     }
     
-    // Guardar referencia al archivo
+    // Guardar referencia global
     newProfilePhoto = file;
     
-    // Mostrar vista previa
+    // Mostrar vista previa simple
     const photoPreview = document.getElementById('photoPreview');
     const photoPreviewContainer = document.getElementById('photoPreviewContainer');
     
     if (photoPreview && photoPreviewContainer) {
         const reader = new FileReader();
+        
         reader.onload = function(e) {
             photoPreview.src = e.target.result;
             photoPreviewContainer.classList.remove('hidden');
         };
+        
         reader.readAsDataURL(file);
     }
 }
 
-// Leer archivo como base64
-function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-    });
-}
-
-// Manejar envío del formulario de edición
-// Manejar envío del formulario de edición
+// Manejar envío del formulario - Versión simplificada
 async function handleProfileFormSubmit(event) {
     event.preventDefault();
-    console.log("Enviando formulario de edición de perfil");
     
-    // Referencias a elementos
+    // Referencias básicas
     const editUsername = document.getElementById('editUsername');
-    const saveProfileChanges = document.getElementById('saveProfileChanges');
-    const editProfileErrorMsg = document.getElementById('editProfileErrorMsg');
+    const saveBtn = document.getElementById('saveProfileChanges');
+    const errorMsg = document.getElementById('editProfileErrorMsg');
     
-    // Ocultar mensaje de error inicialmente
-    if (editProfileErrorMsg) {
-        editProfileErrorMsg.textContent = "";
-        editProfileErrorMsg.classList.add('hidden');
-    }
-    
-    // Validar datos
+    // Validación básica
     if (!editUsername || !editUsername.value.trim()) {
-        if (editProfileErrorMsg) {
-            editProfileErrorMsg.textContent = "El nombre de usuario es obligatorio";
-            editProfileErrorMsg.classList.remove('hidden');
-        }
-        mostrarNotificacion("El nombre de usuario es obligatorio", "error");
+        alert("El nombre de usuario es obligatorio");
         return;
     }
     
-    // Cambiar estado del botón
-    if (saveProfileChanges) {
-        saveProfileChanges.disabled = true;
-        saveProfileChanges.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white mr-2 inline-block"></div> Guardando...';
+    // Deshabilitar botón
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = 'Guardando...';
     }
     
     try {
-        // Obtener usuario actual
         const currentUser = firebase.auth().currentUser;
-        if (!currentUser) {
-            throw new Error("No hay usuario autenticado");
-        }
+        if (!currentUser) throw new Error("No hay usuario autenticado");
         
-        // Verificar que el nombre no esté duplicado
-        const nuevoNombre = editUsername.value.trim();
-        let esDuplicado = false;
+        const username = editUsername.value.trim();
         
-        try {
-            const usersRef = firebase.firestore().collection("usuarios");
-            const querySnapshot = await usersRef.where("nombre", "==", nuevoNombre).get();
-            
-            querySnapshot.forEach(doc => {
-                if (doc.data().uid !== currentUser.uid) {
-                    esDuplicado = true;
-                }
-            });
-        } catch (error) {
-            console.error("Error al verificar duplicados:", error);
-        }
-        
-        if (esDuplicado) {
-            throw new Error("Este nombre de usuario ya está en uso");
-        }
-        
-        // Datos a actualizar
+        // Construir datos básicos a actualizar
         const updateData = {
-            nombre: nuevoNombre,
+            nombre: username,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
-        // Si hay un banner seleccionado, añadirlo
+        // Procesar banner seleccionado
         if (selectedBannerId !== null) {
-            if (selectedBannerId === "") {
-                // Si seleccionó "Sin banner", eliminar el campo
-                updateData.bannerId = firebase.firestore.FieldValue.delete();
-            } else {
-                updateData.bannerId = selectedBannerId;
-            }
+            updateData.bannerId = (selectedBannerId === "") ? null : selectedBannerId;
         }
         
-        // Si hay nueva foto de perfil, procesarla
+        // Procesar foto si hay una nueva
+        let photoURL = null;
+        
         if (newProfilePhoto) {
-            try {
-                // Validar tamaño de la imagen
-                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-                if (newProfilePhoto.size > MAX_SIZE) {
-                    throw new Error("La imagen es demasiado grande. Máximo 2MB");
-                }
-                
-                // Subir la imagen a Firebase Storage en lugar de usar base64
-                const storageRef = firebase.storage().ref();
-                const photoRef = storageRef.child(`profile_photos/${currentUser.uid}/${Date.now()}_${newProfilePhoto.name}`);
-                
-                // Subir el archivo
-                const uploadTask = await photoRef.put(newProfilePhoto);
-                
-                // Obtener la URL de descarga
-                const downloadURL = await uploadTask.ref.getDownloadURL();
-                
-                // Usar la URL en lugar del base64
-                updateData.photoURL = downloadURL;
-                
-                // Actualizar en Auth con la URL (no la data base64)
-                await currentUser.updateProfile({
-                    displayName: updateData.nombre,
-                    photoURL: downloadURL
-                });
-                
-                console.log("Foto y nombre actualizados en Auth");
-            } catch (photoError) {
-                console.error("Error al procesar la foto:", photoError);
-                throw new Error("Error al procesar la foto: " + (photoError.message || "Error desconocido"));
-            }
-        } else {
-            // Solo actualizar el nombre en Auth
-            await currentUser.updateProfile({
-                displayName: updateData.nombre
-            });
-            console.log("Nombre actualizado en Auth");
+            // Usar Storage para la imagen
+            const fileRef = firebase.storage().ref().child(
+                `profiles/${currentUser.uid}/${Date.now()}_profile`
+            );
+            
+            // Subir archivo
+            await fileRef.put(newProfilePhoto);
+            
+            // Obtener URL
+            photoURL = await fileRef.getDownloadURL();
+            
+            // Añadir al objeto de actualización
+            updateData.photoURL = photoURL;
         }
         
-        // Buscar si el usuario ya existe en Firestore
-        const usersRef = firebase.firestore().collection("usuarios");
-        const q = usersRef.where("uid", "==", currentUser.uid);
-        const querySnapshot = await q.get();
+        // Actualizar Auth primero (solo lo esencial)
+        const authUpdateData = { displayName: username };
+        if (photoURL) authUpdateData.photoURL = photoURL;
         
-        if (!querySnapshot.empty) {
+        await currentUser.updateProfile(authUpdateData);
+        
+        // Encontrar y actualizar documento en Firestore
+        const usersQuery = await firebase.firestore()
+            .collection("usuarios")
+            .where("uid", "==", currentUser.uid)
+            .limit(1)
+            .get();
+        
+        if (!usersQuery.empty) {
             // Actualizar documento existente
-            await querySnapshot.docs[0].ref.update(updateData);
-            console.log("Perfil actualizado en Firestore");
+            await usersQuery.docs[0].ref.update(updateData);
         } else {
-            // Crear documento nuevo
+            // Crear nuevo documento
             const newUserData = {
                 uid: currentUser.uid,
-                nombre: updateData.nombre,
+                nombre: username,
                 email: currentUser.email,
-                photoURL: updateData.photoURL || currentUser.photoURL,
-                bannerId: updateData.bannerId || null,
+                photoURL: photoURL || currentUser.photoURL,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 puntos: 0,
@@ -1103,40 +1038,39 @@ async function handleProfileFormSubmit(event) {
                 torneos: []
             };
             
-            await usersRef.add(newUserData);
-            console.log("Nuevo perfil creado en Firestore");
+            if (selectedBannerId && selectedBannerId !== "") {
+                newUserData.bannerId = selectedBannerId;
+            }
+            
+            await firebase.firestore().collection("usuarios").add(newUserData);
         }
         
-        // Mostrar mensaje de éxito
-        mostrarNotificacion("Perfil actualizado correctamente", "success");
+        // Mostrar éxito
+        alert("Perfil actualizado correctamente");
         
         // Cerrar modal
-        const editProfileModal = document.getElementById('editProfileModal');
-        if (editProfileModal) {
-            editProfileModal.classList.add('hidden');
-            editProfileModal.classList.remove('flex');
+        const modal = document.getElementById('editProfileModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
         
-        // Recargar la página para reflejar los cambios
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+        // Recargar página
+        setTimeout(() => window.location.reload(), 500);
         
     } catch (error) {
-        console.error("Error al guardar cambios:", error);
+        console.error("Error:", error);
+        alert("Error al actualizar perfil: " + error.message);
         
-        if (editProfileErrorMsg) {
-            editProfileErrorMsg.textContent = "Error al guardar cambios: " + (error.message || "Error desconocido");
-            editProfileErrorMsg.classList.remove('hidden');
+        if (errorMsg) {
+            errorMsg.textContent = "Error: " + error.message;
+            errorMsg.classList.remove('hidden');
         }
-        
-        mostrarNotificacion("Error al guardar cambios en el perfil: " + (error.message || "Error desconocido"), "error");
-        
     } finally {
         // Restaurar botón
-        if (saveProfileChanges) {
-            saveProfileChanges.disabled = false;
-            saveProfileChanges.textContent = "Guardar Cambios";
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Guardar Cambios";
         }
     }
 }
