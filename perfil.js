@@ -1,15 +1,4 @@
 // perfil.js - Script para la gestión del perfil de usuario
-import { auth, db } from './firebase.js';
-import { 
-    doc, 
-    getDoc, 
-    collection, 
-    query, 
-    where, 
-    getDocs,
-    orderBy,
-    limit 
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Variables globales
 let isLoadingProfile = false;
