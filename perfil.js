@@ -185,8 +185,10 @@ function showProfileError() {
     }
 }
 
-// Actualizar información del perfil
-function updateProfileInfo(userData) {
+// Función actualizada para mostrar información del perfil, incluido el banner
+async function updateProfileInfo(userData) {
+    console.log("Actualizando información del perfil", userData);
+    
     // Actualizar nombre de usuario
     const profileUsername = document.getElementById('profileUsername');
     if (profileUsername) {
@@ -198,6 +200,79 @@ function updateProfileInfo(userData) {
     if (profileAvatar) {
         profileAvatar.src = userData.photoURL || 'dtowin.png';
         profileAvatar.alt = userData.nombre || 'Usuario';
+    }
+    
+    // Actualizar banner si existe
+    if (userData.bannerId) {
+        try {
+            const bannerRef = firebase.firestore().collection("banners").doc(userData.bannerId);
+            const bannerSnap = await bannerRef.get();
+            
+            if (bannerSnap.exists) {
+                const bannerData = bannerSnap.data();
+                
+                // Obtener fuente de imagen del banner
+                const bannerImageSource = bannerData.imageUrl || bannerData.imageData;
+                
+                // Actualizar el fondo del encabezado
+                const profileHeader = document.querySelector('.gradient-background');
+                if (profileHeader && bannerImageSource) {
+                    // Guardar las clases originales para poder restaurarlas si es necesario
+                    if (!profileHeader.dataset.originalClasses) {
+                        profileHeader.dataset.originalClasses = profileHeader.className;
+                    }
+                    
+                    // Aplicar banner como fondo
+                    profileHeader.className = 'text-white p-4 shadow-md';
+                    profileHeader.style.backgroundImage = `url(${bannerImageSource})`;
+                    profileHeader.style.backgroundSize = 'cover';
+                    profileHeader.style.backgroundPosition = 'center';
+                    
+                    // Añadir un overlay para mejorar la legibilidad del texto
+                    profileHeader.style.position = 'relative';
+                    
+                    // Verificar si ya existe un overlay
+                    let overlay = profileHeader.querySelector('.profile-banner-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'profile-banner-overlay absolute inset-0 bg-black bg-opacity-50';
+                        profileHeader.appendChild(overlay);
+                        
+                        // Mover el contenido al frente
+                        const headerContent = profileHeader.querySelector('.container');
+                        if (headerContent) {
+                            headerContent.style.position = 'relative';
+                            headerContent.style.zIndex = '1';
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error al cargar banner:", error);
+        }
+    } else {
+        // Restaurar fondo original si no hay banner
+        const profileHeader = document.querySelector('.gradient-background');
+        if (profileHeader && profileHeader.dataset.originalClasses) {
+            profileHeader.className = profileHeader.dataset.originalClasses;
+            profileHeader.style.backgroundImage = '';
+            profileHeader.style.backgroundSize = '';
+            profileHeader.style.backgroundPosition = '';
+            profileHeader.style.position = '';
+            
+            // Eliminar overlay si existe
+            const overlay = profileHeader.querySelector('.profile-banner-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+            
+            // Restaurar contenido
+            const headerContent = profileHeader.querySelector('.container');
+            if (headerContent) {
+                headerContent.style.position = '';
+                headerContent.style.zIndex = '';
+            }
+        }
     }
     
     // Actualizar datos estadísticos
