@@ -323,6 +323,36 @@ async function updateProfileInfo(userData) {
     updateProfileStats(userData);
 }
 
+// Función para restaurar el degradado predeterminado
+function restoreDefaultGradient(element) {
+    if (!element) return;
+    
+    console.log("Restaurando degradado predeterminado");
+    
+    // Limpiar estilos inline
+    element.style.backgroundImage = '';
+    element.style.backgroundSize = '';
+    element.style.backgroundPosition = '';
+    element.style.position = '';
+    
+    // Restaurar clase original si existe
+    if (element.dataset.originalClasses) {
+        element.className = element.dataset.originalClasses;
+    } else {
+        // O aplicar la clase gradient-background si no hay clases originales guardadas
+        element.className = 'gradient-background text-white p-8';
+    }
+    
+    // Restaurar el degradado manualmente
+    element.style.background = 'linear-gradient(135deg, #0042ff, #ff3000)';
+    
+    // Eliminar overlay si existe
+    const overlay = element.querySelector('.profile-banner-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}
+
 // Función para asegurar que la navbar y footer mantienen su degradado original
 function preserveGradientInNavbarAndFooter() {
     // Restaurar el degradado en la barra de navegación
@@ -832,7 +862,7 @@ async function loadCurrentProfileData() {
     }
 }
 
-// Cargar banners disponibles
+// Función para la carga de banners disponibles - Versión mejorada
 async function loadAvailableBanners() {
     console.log("Cargando banners disponibles");
     
@@ -947,7 +977,7 @@ function handleProfilePhotoChange(event) {
     }
 }
 
-// Manejar envío del formulario de edición - Versión actualizada
+// Manejar envío del formulario de edición - Versión extremadamente simplificada
 async function handleProfileFormSubmit(event) {
     event.preventDefault();
     console.log("Enviando formulario de edición de perfil");
