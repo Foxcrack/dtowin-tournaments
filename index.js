@@ -2,6 +2,7 @@
 import { auth, db } from './firebase.js';
 import { loadTournaments } from './torneos.js';
 import { loadLeaderboard } from './leaderboard.js';
+import { initRegistrationModule } from './registration.js';
 
 // Inicializar la aplicación
 export async function initApp() {
