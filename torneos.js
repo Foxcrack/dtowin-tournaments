@@ -705,3 +705,340 @@ async function unregisterFromTournament(torneoId) {
         throw error;
     }
 }
+
+// Inserta este código al final de tu archivo torneos.js (o reemplázalo por completo)
+
+// Variables para evitar bucles infinitos
+let torneosCargados = false;
+
+// Función para cargar los torneos MODIFICADA para evitar bucles
+export async function loadTournaments() {
+    try {
+        console.log("Cargando torneos...");
+        
+        // Evitar cargar múltiples veces
+        if (torneosCargados) {
+            console.log("Los torneos ya están cargados. Omitiendo carga duplicada.");
+            return;
+        }
+        
+        // Contenedores para los diferentes tipos de torneos
+        const enProcesoContainer = document.getElementById('torneos-en-proceso');
+        const abiertosContainer = document.getElementById('torneos-abiertos');
+        const proximosContainer = document.getElementById('torneos-proximos');
+        
+        // Verificar si existen los contenedores
+        if (!enProcesoContainer && !abiertosContainer && !proximosContainer) {
+            console.log("No se encontraron los contenedores para torneos");
+            return;
+        }
+        
+        // Mostrar indicadores de carga
+        const loadingHTML = `
+            <div class="col-span-full flex justify-center items-center p-4">
+                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                <p class="ml-3 text-gray-600">Cargando torneos...</p>
+            </div>
+        `;
+        
+        if (enProcesoContainer) enProcesoContainer.innerHTML = loadingHTML;
+        if (abiertosContainer) abiertosContainer.innerHTML = loadingHTML;
+        if (proximosContainer) proximosContainer.innerHTML = loadingHTML;
+        
+        // Establecer un timeout para abortar en caso de problemas
+        const timeout = setTimeout(() => {
+            console.error("Tiempo de espera agotado al cargar torneos");
+            if (enProcesoContainer) enProcesoContainer.innerHTML = '<div class="text-center p-4"><p class="text-red-500">Error al cargar torneos: tiempo de espera agotado</p></div>';
+            if (abiertosContainer) abiertosContainer.innerHTML = '<div class="text-center p-4"><p class="text-red-500">Error al cargar torneos: tiempo de espera agotado</p></div>';
+            if (proximosContainer) proximosContainer.innerHTML = '<div class="text-center p-4"><p class="text-red-500">Error al cargar torneos: tiempo de espera agotado</p></div>';
+        }, 15000); // 15 segundos máximo
+        
+        try {
+            // Obtener todos los torneos visibles de Firebase directamente
+            const torneos = await firebase.firestore().collection('torneos')
+                .where("visible", "!=", false)
+                .get();
+            
+            // Limpiar el timeout ya que se completó la consulta
+            clearTimeout(timeout);
+            
+            // Clasificar torneos por estado
+            const torneosEnProceso = [];
+            const torneosAbiertos = [];
+            const torneosProximos = [];
+            
+            // Procesar los torneos
+            torneos.forEach(doc => {
+                const torneo = {
+                    id: doc.id,
+                    ...doc.data()
+                };
+                
+                // Clasificar según estado
+                if (torneo.estado === 'En Progreso') {
+                    torneosEnProceso.push(torneo);
+                } else if (torneo.estado === 'Abierto') {
+                    torneosAbiertos.push(torneo);
+                } else if (torneo.estado === 'Próximamente') {
+                    torneosProximos.push(torneo);
+                }
+            });
+            
+            // Mostrar torneos en cada contenedor
+            if (enProcesoContainer) {
+                enProcesoContainer.innerHTML = torneosEnProceso.length > 0 
+                    ? renderTorneos(torneosEnProceso) 
+                    : '<div class="text-center p-4"><p class="text-gray-500">No hay torneos en progreso actualmente</p></div>';
+            }
+            
+            if (abiertosContainer) {
+                abiertosContainer.innerHTML = torneosAbiertos.length > 0 
+                    ? renderTorneos(torneosAbiertos) 
+                    : '<div class="text-center p-4"><p class="text-gray-500">No hay torneos con inscripciones abiertas</p></div>';
+            }
+            
+            if (proximosContainer) {
+                proximosContainer.innerHTML = torneosProximos.length > 0 
+                    ? renderTorneos(torneosProximos) 
+                    : '<div class="text-center p-4"><p class="text-gray-500">No hay torneos próximamente</p></div>';
+            }
+            
+            // Configurar botones de inscripción (IMPORTANTE: fuera del sistema de observadores)
+            if (window.setupTournamentButtons) {
+                window.setupTournamentButtons();
+            } else {
+                setupStaticTournamentButtons();
+            }
+            
+            // Marcar como cargado para evitar cargas duplicadas
+            torneosCargados = true;
+            
+            console.log("Torneos cargados correctamente");
+            
+        } catch (error) {
+            // Limpiar el timeout si hay un error
+            clearTimeout(timeout);
+            
+            console.error("Error al cargar torneos:", error);
+            
+            // Mostrar mensaje de error
+            const errorMessage = error.message || "Error desconocido al cargar torneos";
+            if (enProcesoContainer) enProcesoContainer.innerHTML = `<div class="text-center p-4"><p class="text-red-500">${errorMessage}</p></div>`;
+            if (abiertosContainer) abiertosContainer.innerHTML = `<div class="text-center p-4"><p class="text-red-500">${errorMessage}</p></div>`;
+            if (proximosContainer) proximosContainer.innerHTML = `<div class="text-center p-4"><p class="text-red-500">${errorMessage}</p></div>`;
+        }
+        
+    } catch (error) {
+        console.error("Error general al cargar torneos:", error);
+    }
+}
+
+// Función para renderizar los torneos
+function renderTorneos(torneos) {
+    let html = '';
+    
+    torneos.forEach(torneo => {
+        // Formatear fecha
+        let fechaFormateada = 'Fecha no disponible';
+        if (torneo.fecha && torneo.fecha.seconds) {
+            const fecha = new Date(torneo.fecha.seconds * 1000);
+            fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                day: 'numeric', month: 'long', year: 'numeric'
+            });
+        }
+        
+        // Formatear hora
+        const horaFormateada = torneo.hora || 'Hora no especificada';
+        
+        // Calcular inscripciones y capacidad
+        const participants = torneo.participants || [];
+        const inscritos = participants.length;
+        const capacidad = torneo.capacidad || '∞';
+        const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
+        
+        // Verificar si el usuario actual está inscrito
+        const estaInscrito = isAuthenticated() && participants.includes(firebase.auth().currentUser.uid);
+        
+        // Determinar estado del botón de inscripción
+        let botonInscripcion = '';
+        
+        if (torneo.estado === 'Abierto') {
+            if (!isAuthenticated()) {
+                // Usuario no autenticado
+                botonInscripcion = `
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold register-btn">
+                        Registrarse para participar
+                    </button>
+                `;
+            } else if (estaInscrito) {
+                // Usuario autenticado e inscrito
+                botonInscripcion = `
+                    <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
+                        Desinscribirse
+                    </button>
+                `;
+            } else if (lleno) {
+                // Torneo lleno
+                botonInscripcion = `
+                    <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                        Cupos Agotados
+                    </button>
+                `;
+            } else {
+                // Usuario autenticado pero no inscrito
+                botonInscripcion = `
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" data-torneo-id="${torneo.id}">
+                        Inscribirse
+                    </button>
+                `;
+            }
+        } else if (torneo.estado === 'En Progreso') {
+            botonInscripcion = `
+                <button class="w-full bg-yellow-500 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                    En Progreso
+                </button>
+            `;
+        } else {
+            botonInscripcion = `
+                <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                    Próximamente
+                </button>
+            `;
+        }
+        
+        // Generar HTML para cada torneo
+        html += `
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
+                <img src="${torneo.imageUrl || torneo.bannerImageUrl || 'https://via.placeholder.com/400x200'}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
+                        <span class="bg-${getStatusColor(torneo.estado)} text-white text-xs px-2 py-1 rounded-full">${torneo.estado}</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">${torneo.descripcion || 'Sin descripción disponible.'}</p>
+                    <div class="flex items-center text-gray-500 text-sm mb-4">
+                        <i class="far fa-calendar-alt mr-2"></i>
+                        <span>${fechaFormateada}</span>
+                        <i class="far fa-clock ml-4 mr-2"></i>
+                        <span>${horaFormateada}</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-semibold text-gray-700">Participantes:</h4>
+                            <span class="text-sm font-medium ${lleno ? 'text-red-500' : 'text-green-500'}">${inscritos}/${capacidad}</span>
+                        </div>
+                        <div class="participants-list text-sm text-gray-600">
+                            <p class="text-center text-gray-500 text-xs">${inscritos > 0 ? `${inscritos} participantes inscritos` : 'No hay participantes inscritos'}</p>
+                        </div>
+                    </div>
+                    ${botonInscripcion}
+                </div>
+            </div>
+        `;
+    });
+    
+    return html;
+}
+
+// Configurar botones de inscripción de forma estática (sin observer)
+function setupStaticTournamentButtons() {
+    // Botones de inscripción
+    document.querySelectorAll('.inscribirse-btn').forEach(button => {
+        // Evitar configurar el mismo botón múltiples veces
+        if (button.dataset.configured === 'true') return;
+        button.dataset.configured = 'true';
+        
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Obtener ID del torneo
+            const torneoId = this.dataset.torneoId;
+            
+            // Verificar si el usuario está autenticado
+            if (!isAuthenticated()) {
+                mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
+                return;
+            }
+            
+            // Abrir el modal de inscripción si existe la función
+            if (typeof window.openTournamentRegistrationModal === 'function') {
+                window.openTournamentRegistrationModal(torneoId);
+            } else {
+                // Fallback al método antiguo si el nuevo no está disponible
+                registerForTournament(torneoId);
+            }
+        });
+    });
+    
+    // Botones de desinscripción
+    document.querySelectorAll('.desinscribirse-btn').forEach(button => {
+        // Evitar configurar el mismo botón múltiples veces
+        if (button.dataset.configured === 'true') return;
+        button.dataset.configured = 'true';
+        
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Obtener ID del torneo
+            const torneoId = this.dataset.torneoId;
+            
+            // Verificar si el usuario está autenticado
+            if (!isAuthenticated()) {
+                mostrarNotificacion("Debes iniciar sesión para desinscribirte", "error");
+                return;
+            }
+            
+            // Confirmar acción
+            if (confirm("¿Estás seguro que deseas desinscribirte de este torneo?")) {
+                unregisterFromTournament(torneoId);
+            }
+        });
+    });
+    
+    // Botones para usuarios no registrados
+    document.querySelectorAll('.register-btn').forEach(button => {
+        // Evitar configurar el mismo botón múltiples veces
+        if (button.dataset.configured === 'true') return;
+        button.dataset.configured = 'true';
+        
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Mostrar mensaje y redirigir a registro
+            mostrarNotificacion("Para participar en torneos, primero debes registrarte", "info");
+            
+            // Abrir modal de registro
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) {
+                setTimeout(() => {
+                    registerBtn.click();
+                }, 1000);
+            } else {
+                // Alternativa: abrir modal de login
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
+            }
+        });
+    });
+}
+
+// Verificar si el usuario está autenticado
+function isAuthenticated() {
+    return firebase.auth().currentUser !== null;
+}
+
+// Inicializar una sola vez al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    // Evitar ejecutarse si no estamos en una página con torneos
+    const hasTorneoContainers = 
+        document.getElementById('torneos-en-proceso') || 
+        document.getElementById('torneos-abiertos') || 
+        document.getElementById('torneos-proximos');
+    
+    if (hasTorneoContainers && !torneosCargados) {
+        // Cargar torneos
+        loadTournaments();
+    }
+});
