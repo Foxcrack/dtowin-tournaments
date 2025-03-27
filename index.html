@@ -61,6 +61,9 @@
                 <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <div id="admin-link" class="hidden">
+                    <a href="admin-panel.html" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition">Admin</a>
+                </div>
                 <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
             </div>
             <button class="md:hidden text-xl" id="mobileMenuBtn">
@@ -89,7 +92,7 @@
         </div>
     </section>
 
-    <!-- Leaderboard Section - MOVIDO AQUÍ -->
+    <!-- Leaderboard Section -->
     <section id="leaderboard" class="py-16 px-4 bg-gray-50">
         <div class="container mx-auto">
             <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global</h2>
@@ -113,7 +116,7 @@
         </div>
     </section>
 
-    <!-- Torneos Section - MOVIDO DESPUÉS DEL LEADERBOARD -->
+    <!-- Torneos Section -->
     <section id="torneos" class="py-16 px-4">
         <div class="container mx-auto">
             <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Torneos y Eventos</h2>
@@ -152,6 +155,59 @@
             </div>
         </div>
     </section>
+
+    <!-- Modal de Inscripción a Torneo (NUEVO) -->
+    <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeTournamentRegistrationModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800" id="tournamentRegistrationTitle">Inscripción al Torneo</h3>
+                <p class="text-gray-600" id="tournamentRegistrationDescription">Completa la información para inscribirte</p>
+            </div>
+            
+            <form id="tournamentRegistrationForm">
+                <input type="hidden" id="tournamentId">
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="tournamentNickname">
+                        Nombre de usuario en el torneo *
+                    </label>
+                    <input id="tournamentNickname" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu nickname para este torneo" required>
+                    <p class="text-xs text-gray-500 mt-1">Este es el nombre que se mostrará durante el torneo</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="discordUsername">
+                        Nombre de Discord (opcional)
+                    </label>
+                    <input id="discordUsername" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="usuario#0000">
+                    <p class="text-xs text-gray-500 mt-1">Para comunicación durante el torneo</p>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <h4 class="font-semibold text-gray-700 mb-2">Información del Torneo</h4>
+                        <div id="tournamentInfoSummary">
+                            <p class="text-sm text-gray-600"><span class="font-medium">Nombre:</span> <span id="summaryTournamentName">---</span></p>
+                            <p class="text-sm text-gray-600"><span class="font-medium">Fecha:</span> <span id="summaryTournamentDate">---</span></p>
+                            <p class="text-sm text-gray-600"><span class="font-medium">Hora:</span> <span id="summaryTournamentTime">---</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <button type="button" id="cancelRegistrationBtn" class="bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="confirmRegistrationBtn" class="dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Confirmar Inscripción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Registro Modal -->
     <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
@@ -202,59 +258,6 @@
             <p class="text-center text-gray-500 text-xs">
                 ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
             </p>
-        </div>
-    </div>
-
-    <!-- Modal de Inscripción a Torneo - NUEVO -->
-    <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeTournamentRegistrationModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800" id="tournamentRegistrationTitle">Inscripción al Torneo</h3>
-                <p class="text-gray-600" id="tournamentRegistrationDescription">Completa la información para inscribirte</p>
-            </div>
-            
-            <form id="tournamentRegistrationForm">
-                <input type="hidden" id="tournamentId">
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="tournamentNickname">
-                        Nombre de usuario en el torneo *
-                    </label>
-                    <input id="tournamentNickname" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu nickname para este torneo" required>
-                    <p class="text-xs text-gray-500 mt-1">Este es el nombre que se mostrará durante el torneo</p>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="discordUsername">
-                        Nombre de Discord (opcional)
-                    </label>
-                    <input id="discordUsername" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="usuario#0000">
-                    <p class="text-xs text-gray-500 mt-1">Para comunicación durante el torneo</p>
-                </div>
-                
-                <div class="mb-6">
-                    <div class="p-4 bg-gray-100 rounded-lg">
-                        <h4 class="font-semibold text-gray-700 mb-2">Información del Torneo</h4>
-                        <div id="tournamentInfoSummary">
-                            <p class="text-sm text-gray-600"><span class="font-medium">Nombre:</span> <span id="summaryTournamentName">---</span></p>
-                            <p class="text-sm text-gray-600"><span class="font-medium">Fecha:</span> <span id="summaryTournamentDate">---</span></p>
-                            <p class="text-sm text-gray-600"><span class="font-medium">Hora:</span> <span id="summaryTournamentTime">---</span></p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex items-center justify-between">
-                    <button type="button" id="cancelRegistrationBtn" class="bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="confirmRegistrationBtn" class="dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                        Confirmar Inscripción
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -320,9 +323,6 @@
     
     import { loadTournaments } from './torneos.js';
     import { loadLeaderboard } from './leaderboard.js';
-    
-    // Carga del código de registro a torneos
-    import './tournament-registration.js';
     
     // Referencias a elementos DOM
     const loginBtn = document.getElementById('loginBtn');
@@ -540,33 +540,21 @@
             // Verificar si el usuario es administrador
             const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
             const isAdmin = adminUIDs.includes(user.uid);
-            console.log("¿El usuario actual es admin?", isAdmin);
             
-            // Si el usuario es admin, mostrar el botón de Admin
+            // Si el usuario es admin, mostrar el elemento
             if (isAdmin) {
-                // Buscar el elemento de navegación donde queremos añadir el botón
-                const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+                const adminLink = document.getElementById('admin-link');
+                if (adminLink) {
+                    adminLink.classList.remove('hidden');
+                }
                 
-                if (navLinks) {
-                    // Crear el botón de Admin
-                    const adminButton = document.createElement("a");
-                    adminButton.href = "admin-panel.html";
-                    adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
-                    adminButton.textContent = "Admin";
-                    
-                    // Insertar antes del botón de "Mi Perfil" o al final si no existe
-                    const profileLink = navLinks.querySelector('a[href="perfil.html"]');
-                    if (profileLink) {
-                        navLinks.insertBefore(adminButton, profileLink.nextSibling);
-                    } else {
-                        navLinks.appendChild(adminButton);
-                    }
-                    
-                    // También agregar al menú móvil si existe
-                    const mobileMenu = document.getElementById("mobileMenu");
-                    if (mobileMenu) {
-                        const mobileMenuLinks = mobileMenu.querySelector("div");
-                        if (mobileMenuLinks) {
+                // También agregar al menú móvil si existe
+                const mobileMenu = document.getElementById("mobileMenu");
+                if (mobileMenu) {
+                    const mobileMenuLinks = mobileMenu.querySelector("div");
+                    if (mobileMenuLinks) {
+                        // Verificar si ya existe el enlace para evitar duplicados
+                        if (!mobileMenuLinks.querySelector('a[href="admin-panel.html"]')) {
                             const mobileAdminLink = document.createElement("a");
                             mobileAdminLink.href = "admin-panel.html";
                             mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
@@ -574,10 +562,6 @@
                             mobileMenuLinks.appendChild(mobileAdminLink);
                         }
                     }
-                    
-                    console.log("Botón de Admin añadido correctamente");
-                } else {
-                    console.error("No se pudo encontrar la barra de navegación");
                 }
             }
         } catch (error) {
@@ -603,34 +587,47 @@
     
     // Cargar torneos y leaderboard al iniciar la página
     document.addEventListener('DOMContentLoaded', async () => {
-        // Cargar torneos
-        await loadTournaments();
-        
-        // Cargar leaderboard
-        await loadLeaderboard();
-        
-        // Verificar si hay usuario autenticado
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                
-                // Actualizar UI para usuario logueado
-                try {
-                    await updateUIForLoggedInUser(user);
-                    
-                    // Verificar si es admin
-                    await checkAndShowAdminButton();
-                    
-                    // Recargar torneos para actualizar botones de inscripción
-                    await loadTournaments();
-                } catch (error) {
-                    console.error("Error al actualizar UI:", error);
-                }
-            } else {
-                console.log("No hay usuario autenticado");
+        try {
+            // Cargar leaderboard
+            if (typeof loadLeaderboard === 'function') {
+                await loadLeaderboard();
             }
-        });
+            
+            // Cargar torneos
+            if (typeof loadTournaments === 'function') {
+                await loadTournaments();
+            }
+            
+            // Verificar si hay usuario autenticado
+            auth.onAuthStateChanged(async user => {
+                if (user) {
+                    console.log("Usuario autenticado:", user.uid);
+                    
+                    // Actualizar UI para usuario logueado
+                    try {
+                        await updateUIForLoggedInUser(user);
+                        
+                        // Verificar si es admin
+                        await checkAndShowAdminButton();
+                        
+                        // Recargar torneos para actualizar botones de inscripción
+                        if (typeof loadTournaments === 'function') {
+                            await loadTournaments();
+                        }
+                    } catch (error) {
+                        console.error("Error al actualizar UI:", error);
+                    }
+                } else {
+                    console.log("No hay usuario autenticado");
+                }
+            });
+        } catch (error) {
+            console.error("Error al inicializar la página:", error);
+        }
     });
     </script>
+    
+    <!-- Script para las inscripciones a torneos -->
+    <script src="registration.js"></script>
 </body>
 </html>
