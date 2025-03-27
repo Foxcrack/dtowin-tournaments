@@ -1,11 +1,17 @@
-// torneos.js - Script completo para la gestión de torneos
-// Versión corregida para evitar bucles infinitos y problemas de carga
-
-import { auth } from './firebase.js';
-
-// Variables para prevenir cargas y configuraciones múltiples
-let torneosCargados = false;
-let botonesConfigurados = false;
+// Script para la gestión de torneos en la página principal
+import { auth, db, isAuthenticated } from './firebase.js';
+import { 
+    collection, 
+    getDocs, 
+    doc, 
+    getDoc, 
+    updateDoc, 
+    query, 
+    where, 
+    orderBy, 
+    limit,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Obtener color según el estado del torneo
 function getStatusColor(estado) {
@@ -45,7 +51,7 @@ function renderPuntosPosicion(puntosPosicion) {
 }
 
 // Mostrar mensaje de error
-function showErrorMessage(message = "Error al cargar torneos. Inténtalo de nuevo.") {
+function showErrorMessage() {
     const containers = [
         document.getElementById('torneos-en-proceso'),
         document.getElementById('torneos-abiertos'),
@@ -56,7 +62,7 @@ function showErrorMessage(message = "Error al cargar torneos. Inténtalo de nuev
         if (container) {
             container.innerHTML = `
                 <div class="col-span-full text-center p-4">
-                    <p class="text-red-500">${message}</p>
+                    <p class="text-red-500">Error al cargar torneos. Inténtalo de nuevo.</p>
                     <button class="text-blue-500 underline mt-2" onclick="window.location.reload()">
                         Recargar página
                     </button>
@@ -68,12 +74,6 @@ function showErrorMessage(message = "Error al cargar torneos. Inténtalo de nuev
 
 // Mostrar notificación
 function mostrarNotificacion(mensaje, tipo = "info") {
-    // Usar función global si está disponible
-    if (window.mostrarNotificacion) {
-        window.mostrarNotificacion(mensaje, tipo);
-        return;
-    }
-    
     // Verificar si ya existe una notificación
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
@@ -118,21 +118,58 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }, 3000);
 }
 
-// Verificar si el usuario está autenticado
-function isAuthenticated() {
-    return !!auth.currentUser;
+// Obtener datos del banner para un torneo
+async function getBannerForTournament(torneo) {
+    try {
+        // Si el torneo ya tiene una URL de imagen, usarla
+        if (torneo.imageUrl) {
+            return torneo.imageUrl;
+        }
+        
+        // Si el torneo tiene bannerId, obtener el banner correspondiente
+        if (torneo.bannerId) {
+            const bannerDoc = await getDoc(doc(db, "banners", torneo.bannerId));
+            
+            if (bannerDoc.exists()) {
+                const bannerData = bannerDoc.data();
+                // Usar imageData o imageUrl del banner
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        // Si el torneo tiene bannerRef, obtener el banner por referencia
+        if (torneo.bannerRef) {
+            const bannerDoc = await getDoc(torneo.bannerRef);
+            
+            if (bannerDoc.exists()) {
+                const bannerData = bannerDoc.data();
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        // Intentar buscar por nombre del torneo (solución de respaldo)
+        if (torneo.nombre) {
+            const bannersRef = collection(db, "banners");
+            const q = query(bannersRef, where("nombre", "==", torneo.nombre.split(' ')[0]), limit(1));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                const bannerData = querySnapshot.docs[0].data();
+                return bannerData.imageData || bannerData.imageUrl || null;
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.error("Error al obtener banner para torneo:", error);
+        return null;
+    }
 }
 
 // Función principal para cargar torneos
 export async function loadTournaments() {
     try {
-        console.log("Iniciando carga de torneos...");
-        
-        // Evitar cargar múltiples veces
-        if (torneosCargados) {
-            console.log("Los torneos ya están cargados. Omitiendo carga duplicada.");
-            return;
-        }
+        console.log("Cargando torneos...");
         
         // Contenedores para los diferentes tipos de torneos
         const enProcesoContainer = document.getElementById('torneos-en-proceso');
@@ -140,8 +177,8 @@ export async function loadTournaments() {
         const proximosContainer = document.getElementById('torneos-proximos');
         
         // Verificar si existen los contenedores
-        if (!enProcesoContainer && !abiertosContainer && !proximosContainer) {
-            console.log("No se encontraron contenedores para torneos en el DOM");
+        if (!enProcesoContainer || !abiertosContainer || !proximosContainer) {
+            console.error("No se encontraron los contenedores para torneos");
             return;
         }
         
@@ -149,52 +186,53 @@ export async function loadTournaments() {
         const loadingHTML = `
             <div class="col-span-full flex justify-center items-center p-4">
                 <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
-                <p class="ml-3 text-gray-600">Cargando torneos...</p>
             </div>
         `;
-        
-        if (enProcesoContainer) enProcesoContainer.innerHTML = loadingHTML;
-        if (abiertosContainer) abiertosContainer.innerHTML = loadingHTML;
-        if (proximosContainer) proximosContainer.innerHTML = loadingHTML;
-        
-        // Establecer un timeout para la carga
-        const loadingTimeout = setTimeout(() => {
-            console.error("Tiempo de espera agotado al cargar torneos");
-            showErrorMessage("Tiempo de espera agotado. Verifica tu conexión a internet y recarga la página.");
-        }, 15000); // 15 segundos máximo
+        enProcesoContainer.innerHTML = loadingHTML;
+        abiertosContainer.innerHTML = loadingHTML;
+        proximosContainer.innerHTML = loadingHTML;
         
         try {
-            // Obtener todos los torneos visibles de Firebase
-            const torneosSnapshot = await firebase.firestore().collection('torneos')
-                .where("visible", "!=", false)
-                .get();
-            
-            // Limpiar el timeout ya que se completó la consulta
-            clearTimeout(loadingTimeout);
+            // Obtener todos los torneos visibles
+            const torneosRef = collection(db, "torneos");
+            const q = query(torneosRef, where("visible", "!=", false));
+            const querySnapshot = await getDocs(q);
             
             // Clasificar torneos por estado
             const torneosEnProceso = [];
             const torneosAbiertos = [];
             const torneosProximos = [];
             
-            // Procesar los torneos
-            torneosSnapshot.forEach(doc => {
+            // Procesar cada torneo y obtener sus datos de banner
+            const torneoPromises = [];
+            
+            querySnapshot.forEach(docSnapshot => {
                 const torneo = {
-                    id: doc.id,
-                    ...doc.data()
+                    id: docSnapshot.id,
+                    ...docSnapshot.data()
                 };
                 
-                // Clasificar según estado
-                if (torneo.estado === 'En Progreso') {
-                    torneosEnProceso.push(torneo);
-                } else if (torneo.estado === 'Abierto') {
-                    torneosAbiertos.push(torneo);
-                } else if (torneo.estado === 'Próximamente') {
-                    torneosProximos.push(torneo);
-                }
+                // Agregar promesa para cargar el banner
+                torneoPromises.push(
+                    getBannerForTournament(torneo).then(bannerUrl => {
+                        if (bannerUrl) {
+                            torneo.bannerImageUrl = bannerUrl;
+                        }
+                        
+                        // Clasificar según estado
+                        if (torneo.estado === 'En Progreso') {
+                            torneosEnProceso.push(torneo);
+                        } else if (torneo.estado === 'Abierto') {
+                            torneosAbiertos.push(torneo);
+                        } else if (torneo.estado === 'Próximamente') {
+                            torneosProximos.push(torneo);
+                        }
+                    })
+                );
             });
             
-            console.log(`Torneos encontrados: ${torneosEnProceso.length} en progreso, ${torneosAbiertos.length} abiertos, ${torneosProximos.length} próximos`);
+            // Esperar a que todos los torneos se procesen
+            await Promise.all(torneoPromises);
             
             // Ordenar por fecha (más cercana primero)
             const sortByDate = (a, b) => {
@@ -207,262 +245,214 @@ export async function loadTournaments() {
             torneosAbiertos.sort(sortByDate);
             torneosProximos.sort(sortByDate);
             
-            // Renderizar torneos en cada contenedor
-            if (enProcesoContainer) {
-                if (torneosEnProceso.length > 0) {
-                    enProcesoContainer.innerHTML = renderTorneos(torneosEnProceso);
-                    document.getElementById('en-proceso-section').style.display = 'block';
-                } else {
-                    enProcesoContainer.innerHTML = '<div class="col-span-full text-center p-4"><p class="text-gray-500">No hay torneos en progreso actualmente</p></div>';
-                    document.getElementById('en-proceso-section').style.display = 'none';
-                }
-            }
+            // Renderizar torneos en sus respectivos contenedores
+            await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
+            await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
+            await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
             
-            if (abiertosContainer) {
-                if (torneosAbiertos.length > 0) {
-                    abiertosContainer.innerHTML = renderTorneos(torneosAbiertos);
-                    document.getElementById('abiertos-section').style.display = 'block';
-                } else {
-                    abiertosContainer.innerHTML = '<div class="col-span-full text-center p-4"><p class="text-gray-500">No hay torneos con inscripciones abiertas</p></div>';
-                    document.getElementById('abiertos-section').style.display = 'none';
-                }
-            }
-            
-            if (proximosContainer) {
-                if (torneosProximos.length > 0) {
-                    proximosContainer.innerHTML = renderTorneos(torneosProximos);
-                    document.getElementById('proximos-section').style.display = 'block';
-                } else {
-                    proximosContainer.innerHTML = '<div class="col-span-full text-center p-4"><p class="text-gray-500">No hay torneos próximamente</p></div>';
-                    document.getElementById('proximos-section').style.display = 'none';
-                }
-            }
-            
-            // Configurar botones de inscripción (sin observer)
+            // Configurar botones de inscripción/desinscripción
             setupTournamentButtons();
-            
-            // Marcar como cargado
-            torneosCargados = true;
             
             console.log("Torneos cargados correctamente");
             
         } catch (error) {
-            // Limpiar el timeout si hay un error
-            clearTimeout(loadingTimeout);
-            
-            console.error("Error al cargar torneos:", error);
-            showErrorMessage(error.message || "Error al cargar torneos. Inténtalo de nuevo.");
+            console.error("Error al consultar torneos:", error);
+            showErrorMessage();
         }
         
     } catch (error) {
-        console.error("Error general al cargar torneos:", error);
-        showErrorMessage("Error al inicializar la carga de torneos");
+        console.error("Error al cargar torneos:", error);
+        showErrorMessage();
     }
 }
 
-// Función para renderizar torneos
-function renderTorneos(torneosList) {
-    if (!torneosList || torneosList.length === 0) {
-        return '<div class="col-span-full text-center p-4"><p class="text-gray-500">No hay torneos disponibles</p></div>';
+// Renderizar sección de torneos
+async function renderTournamentSection(sectionId, containerId, torneos) {
+    const container = document.getElementById(containerId);
+    const section = document.getElementById(sectionId);
+    
+    if (!container || !section) return;
+    
+    // Mostrar u ocultar sección dependiendo si hay torneos
+    if (torneos.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center p-4">
+                <p class="text-gray-500">No hay torneos disponibles en esta categoría</p>
+            </div>
+        `;
+        section.classList.add('hidden');
+    } else {
+        section.classList.remove('hidden');
+        await renderTournaments(containerId, torneos);
     }
+}
+
+// Renderizar torneos en un contenedor
+async function renderTournaments(containerId, torneos) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
     
     let html = '';
     
-    torneosList.forEach(torneo => {
-        try {
-            // Formatear fecha
-            let fechaFormateada = 'Fecha no disponible';
-            if (torneo.fecha && torneo.fecha.seconds) {
-                const fecha = new Date(torneo.fecha.seconds * 1000);
-                fechaFormateada = fecha.toLocaleDateString('es-ES', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                });
-            }
-            
-            // Formatear hora
-            const horaFormateada = torneo.hora || 'Hora no especificada';
-            
-            // Calcular inscripciones y capacidad
-            const participants = torneo.participants || [];
-            const inscritos = participants.length;
-            const capacidad = torneo.capacidad || '∞';
-            const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
-            
-            // Verificar si el usuario actual está inscrito
-            const estaInscrito = isAuthenticated() && auth.currentUser && participants.includes(auth.currentUser.uid);
-            
-            // Determinar estado del botón de inscripción
-            let botonInscripcion = '';
-            
-            if (torneo.estado === 'Abierto') {
-                if (!isAuthenticated()) {
-                    // Usuario no autenticado
-                    botonInscripcion = `
-                        <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold register-btn">
-                            Registrarse para participar
-                        </button>
-                    `;
-                } else if (estaInscrito) {
-                    // Usuario inscrito
-                    botonInscripcion = `
-                        <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
-                            Desinscribirse
-                        </button>
-                    `;
-                } else if (lleno) {
-                    // Torneo lleno
-                    botonInscripcion = `
-                        <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
-                            Cupos Agotados
-                        </button>
-                    `;
-                } else {
-                    // Usuario puede inscribirse
-                    botonInscripcion = `
-                        <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" data-torneo-id="${torneo.id}">
-                            Inscribirse
-                        </button>
-                    `;
-                }
-            } else if (torneo.estado === 'En Progreso') {
+    // Verificar si el usuario está autenticado
+    const userAuthenticated = isAuthenticated();
+    
+    for (const torneo of torneos) {
+        // Formatear fecha
+        const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
+        const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        
+        // Formatear hora
+        const hora = torneo.hora || '00:00';
+        const horaFormateada = hora.substring(0, 5);
+        
+        // Calcular inscripciones y capacidad
+        const participants = torneo.participants || [];
+        const inscritos = participants.length;
+        const capacidad = torneo.capacidad || '∞';
+        const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
+        
+        // Verificar si el usuario actual está inscrito
+        const estaInscrito = userAuthenticated && auth.currentUser && participants.includes(auth.currentUser.uid);
+        
+        // Determinar estado del botón de inscripción
+        let botonInscripcion = '';
+        
+        if (torneo.estado === 'Abierto') {
+            if (!userAuthenticated) {
+                // Usuario no autenticado - Mostrar botón de registro
                 botonInscripcion = `
-                    <button class="w-full bg-yellow-500 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
-                        En Progreso
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold register-btn">
+                        Registrarse para participar
+                    </button>
+                `;
+            } else if (estaInscrito) {
+                // Usuario autenticado e inscrito - Mostrar botón de desinscripción
+                botonInscripcion = `
+                    <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
+                        Desinscribirse
+                    </button>
+                `;
+            } else if (lleno) {
+                // Torneo lleno
+                botonInscripcion = `
+                    <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                        Cupos Agotados
                     </button>
                 `;
             } else {
+                // Usuario autenticado pero no inscrito
                 botonInscripcion = `
-                    <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
-                        Próximamente
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" data-torneo-id="${torneo.id}">
+                        Inscribirse
                     </button>
                 `;
             }
-            
-            // Obtener imagen o placeholder
-            const imageSrc = torneo.imageUrl || torneo.bannerImageUrl || 'https://via.placeholder.com/400x200?text=Torneo+Dtowin';
-            
-            // Generar puntos por posición si existen
-            const puntosPosicionHTML = torneo.puntosPosicion ? renderPuntosPosicion(torneo.puntosPosicion) : '';
-            
-            // HTML para cada tarjeta de torneo
-            html += `
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
-                    <img src="${imageSrc}" alt="${torneo.nombre || 'Torneo'}" class="w-full h-48 object-cover">
-                    <div class="p-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
-                            <span class="bg-${getStatusColor(torneo.estado)} text-white text-xs px-2 py-1 rounded-full">${torneo.estado}</span>
-                        </div>
-                        
-                        <p class="text-gray-600 mb-4">${torneo.descripcion || 'Sin descripción disponible.'}</p>
-                        
-                        <div class="flex items-center text-gray-500 text-sm mb-4">
-                            <i class="far fa-calendar-alt mr-2"></i>
-                            <span>${fechaFormateada}</span>
-                            <i class="far fa-clock ml-4 mr-2"></i>
-                            <span>${horaFormateada}</span>
-                        </div>
-                        
-                        <div class="bg-gray-100 rounded-lg p-3 mb-4">
-                            <div class="flex justify-between items-center mb-2">
-                                <h4 class="font-semibold text-gray-700">Participantes:</h4>
-                                <span class="text-sm font-medium ${lleno ? 'text-red-500' : 'text-green-500'}">${inscritos}/${capacidad}</span>
-                            </div>
-                            <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto" id="participants-${torneo.id}">
-                                <p class="text-center text-gray-500 text-xs">${inscritos > 0 ? `${inscritos} participantes inscritos` : 'No hay participantes inscritos'}</p>
-                            </div>
-                        </div>
-                        
-                        ${puntosPosicionHTML ? `
-                        <div class="bg-gray-100 rounded-lg p-3 mb-4">
-                            <h4 class="font-semibold text-gray-700 mb-2">Puntos por posición:</h4>
-                            <div class="flex flex-wrap gap-2">
-                                ${puntosPosicionHTML}
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        ${botonInscripcion}
-                    </div>
-                </div>
+        } else if (torneo.estado === 'En Progreso') {
+            botonInscripcion = `
+                <button class="w-full bg-yellow-500 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                    En Progreso
+                </button>
             `;
-        } catch (err) {
-            console.error("Error al renderizar torneo:", err);
-            // Si hay error, mostrar una tarjeta de error
-            html += `
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="p-6">
-                        <p class="text-red-500">Error al mostrar este torneo</p>
-                    </div>
-                </div>
+        } else {
+            botonInscripcion = `
+                <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                    Próximamente
+                </button>
             `;
         }
-    });
+        
+        // Generar HTML para puntos por posición
+        const puntosPosicionHTML = renderPuntosPosicion(torneo.puntosPosicion);
+        
+        // Usar la imagen del banner si está disponible, de lo contrario usar imageUrl o fallback
+        const imageSrc = torneo.bannerImageUrl || torneo.imageUrl || 'https://via.placeholder.com/400x200';
+        
+        // HTML del torneo
+        html += `
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
+                <img src="${imageSrc}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
+                        <span class="bg-${getStatusColor(torneo.estado)} text-white text-xs px-2 py-1 rounded-full">${torneo.estado}</span>
+                    </div>
+                    <p class="text-gray-600 mb-4">${torneo.descripcion || 'Sin descripción disponible.'}</p>
+                    <div class="flex items-center text-gray-500 text-sm mb-4">
+                        <i class="far fa-calendar-alt mr-2"></i>
+                        <span>${fechaFormateada}</span>
+                        <i class="far fa-clock ml-4 mr-2"></i>
+                        <span>${horaFormateada}</span>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-semibold text-gray-700">Participantes:</h4>
+                            <span class="text-sm font-medium ${lleno ? 'text-red-500' : 'text-green-500'}">${inscritos}/${capacidad}</span>
+                        </div>
+                        <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto" id="participants-${torneo.id}">
+                            <p class="text-center text-gray-500 text-xs">Cargando participantes...</p>
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                        <h4 class="font-semibold text-gray-700 mb-2">Puntos por posición:</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${puntosPosicionHTML}
+                        </div>
+                    </div>
+                    ${botonInscripcion}
+                </div>
+            </div>
+        `;
+    }
     
-    return html;
+    container.innerHTML = html;
+    
+    // Cargar lista de participantes para cada torneo
+    for (const torneo of torneos) {
+        await loadParticipants(torneo.id, torneo.participants || []);
+    }
 }
 
-// Cargar la lista de participantes para un torneo específico
-async function loadParticipants(torneoId) {
+// Cargar participantes de un torneo
+async function loadParticipants(torneoId, participantIds) {
     const container = document.getElementById(`participants-${torneoId}`);
     if (!container) return;
     
+    if (!participantIds || participantIds.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 text-xs">No hay participantes inscritos</p>';
+        return;
+    }
+    
     try {
-        // Obtener datos del torneo
-        const torneoDoc = await firebase.firestore().collection('torneos').doc(torneoId).get();
-        
-        if (!torneoDoc.exists) {
-            container.innerHTML = '<p class="text-center text-gray-500 text-xs">Información no disponible</p>';
-            return;
-        }
-        
-        const torneoData = torneoDoc.data();
-        const participantIds = torneoData.participants || [];
-        const participantsData = torneoData.participantsData || {};
-        
-        if (participantIds.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500 text-xs">No hay participantes inscritos</p>';
-            return;
-        }
-        
-        // Mostrar máximo 5 participantes
-        const maxToShow = Math.min(5, participantIds.length);
         let html = '<ul class="space-y-1">';
+        const maxToShow = Math.min(5, participantIds.length); // Mostrar máximo 5 participantes
         
         for (let i = 0; i < maxToShow; i++) {
-            const uid = participantIds[i];
-            
-            // Usar nickname si está disponible en participantsData
-            let displayName = 'Participante';
-            
-            if (participantsData[uid] && participantsData[uid].nickname) {
-                displayName = participantsData[uid].nickname;
-            } else {
-                // Intenta buscar en la base de datos
-                try {
-                    const userQuery = await firebase.firestore().collection('usuarios')
-                        .where('uid', '==', uid)
-                        .limit(1)
-                        .get();
-                    
-                    if (!userQuery.empty) {
-                        const userData = userQuery.docs[0].data();
-                        displayName = userData.nombre || 'Participante';
-                    }
-                } catch (error) {
-                    console.warn("Error al buscar nombre de usuario:", error);
+            try {
+                const uid = participantIds[i];
+                const usersRef = collection(db, "usuarios");
+                const q = query(usersRef, where("uid", "==", uid), limit(1));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    html += `
+                        <li class="text-xs truncate">
+                            <i class="fas fa-user text-gray-400 mr-1"></i>
+                            ${userData.nombre || 'Usuario'}
+                        </li>
+                    `;
                 }
+            } catch (e) {
+                console.error(`Error al cargar participante individual:`, e);
             }
-            
-            html += `
-                <li class="text-xs truncate">
-                    <i class="fas fa-user text-gray-400 mr-1"></i>
-                    ${displayName}
-                </li>
-            `;
         }
         
-        // Si hay más participantes, mostrar cuántos más
+        // Si hay más participantes, mostrar cuántos más hay
         if (participantIds.length > maxToShow) {
             html += `
                 <li class="text-xs text-center text-gray-500 mt-1">
@@ -480,140 +470,126 @@ async function loadParticipants(torneoId) {
     }
 }
 
-// Configurar botones de inscripción
+// Configurar botones de inscripción/desinscripción
 function setupTournamentButtons() {
-    // Evitar configurar múltiples veces
-    if (botonesConfigurados) {
-        console.log("Botones ya configurados. Omitiendo.");
-        return;
-    }
-    
-    console.log("Configurando botones de inscripción...");
-    
-    try {
-        // Botones de inscripción
-        document.querySelectorAll('.inscribirse-btn').forEach(button => {
-            // Marcar como configurado para evitar duplicados
-            if (button.dataset.configured === 'true') return;
-            button.dataset.configured = 'true';
+    // Botones de inscripción
+    document.querySelectorAll('.inscribirse-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
             
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Obtener ID del torneo
-                const torneoId = this.dataset.torneoId;
-                
-                // Verificar si el usuario está autenticado
-                if (!isAuthenticated()) {
-                    mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
-                    // Abrir modal de login
-                    const loginBtn = document.getElementById('loginBtn');
-                    if (loginBtn) loginBtn.click();
-                    return;
-                }
-                
-                // Si existe el modal de inscripción personalizado, usarlo
-                if (typeof window.openTournamentRegistrationModal === 'function') {
-                    window.openTournamentRegistrationModal(torneoId);
-                } else {
-                    // Fallback: usar el método tradicional
-                    registerForTournament(torneoId);
-                }
-            });
-        });
-        
-        // Botones de desinscripción
-        document.querySelectorAll('.desinscribirse-btn').forEach(button => {
-            // Marcar como configurado para evitar duplicados
-            if (button.dataset.configured === 'true') return;
-            button.dataset.configured = 'true';
+            // Obtener ID del torneo
+            const torneoId = this.dataset.torneoId;
             
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Obtener ID del torneo
-                const torneoId = this.dataset.torneoId;
-                
-                // Verificar si el usuario está autenticado
-                if (!isAuthenticated()) {
-                    mostrarNotificacion("Debes iniciar sesión para desinscribirte", "error");
-                    return;
-                }
-                
-                // Confirmar acción
-                if (confirm("¿Estás seguro que deseas desinscribirte de este torneo?")) {
-                    unregisterFromTournament(torneoId);
-                }
-            });
-        });
-        
-        // Botones para usuarios no registrados
-        document.querySelectorAll('.register-btn').forEach(button => {
-            // Marcar como configurado para evitar duplicados
-            if (button.dataset.configured === 'true') return;
-            button.dataset.configured = 'true';
-            
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Mostrar mensaje y redirigir a registro
-                mostrarNotificacion("Para participar en torneos, primero debes registrarte", "info");
-                
-                // Abrir modal de registro
-                const registerBtn = document.getElementById('registerBtn');
-                if (registerBtn) {
-                    setTimeout(() => {
-                        registerBtn.click();
-                    }, 1000);
-                } else {
-                    // Alternativa: abrir modal de login
-                    const loginBtn = document.getElementById('loginBtn');
-                    if (loginBtn) loginBtn.click();
-                }
-            });
-        });
-        
-        // Cargar participantes para cada torneo visible
-        document.querySelectorAll('[id^="participants-"]').forEach(container => {
-            const torneoId = container.id.replace('participants-', '');
-            loadParticipants(torneoId);
-        });
-        
-        // Marcar como configurados
-        botonesConfigurados = true;
-        
-        console.log("Botones de inscripción configurados correctamente");
-        
-    } catch (error) {
-        console.error("Error al configurar botones:", error);
-    }
-}
-
-// Inscribir al usuario en un torneo
-async function registerForTournament(torneoId) {
-    try {
-        console.log("Inscribiendo al usuario en torneo:", torneoId);
-        
-        // Verificar si hay modal de inscripción personalizado
-        if (typeof window.registerTournamentWithNickname === 'function') {
-            // Si existe la función personalizada, mostrar modal primero
-            if (typeof window.openTournamentRegistrationModal === 'function') {
-                window.openTournamentRegistrationModal(torneoId);
+            // Verificar si el usuario está autenticado
+            if (!isAuthenticated()) {
+                mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
+                // Abrir modal de login
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
                 return;
             }
-        }
-        
-        // Método tradicional de inscripción (sin nickname/discord)
+            
+            // Cambiar estado del botón
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+            
+            try {
+                // Inscribir al usuario
+                await registerForTournament(torneoId);
+                mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
+                
+                // Recargar torneos para actualizar la UI
+                await loadTournaments();
+            } catch (error) {
+                console.error("Error al inscribirse:", error);
+                mostrarNotificacion(error.message || "Error al inscribirse al torneo", "error");
+                
+                // Restaurar botón
+                this.disabled = false;
+                this.textContent = originalText;
+            }
+        });
+    });
+    
+    // Botones de desinscripción
+    document.querySelectorAll('.desinscribirse-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Obtener ID del torneo
+            const torneoId = this.dataset.torneoId;
+            
+            // Verificar si el usuario está autenticado
+            if (!isAuthenticated()) {
+                mostrarNotificacion("Debes iniciar sesión para desinscribirte", "error");
+                return;
+            }
+            
+            // Confirmar acción
+            if (!confirm("¿Estás seguro que deseas desinscribirte de este torneo?")) {
+                return;
+            }
+            
+            // Cambiar estado del botón
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+            
+            try {
+                // Desinscribir al usuario
+                await unregisterFromTournament(torneoId);
+                mostrarNotificacion("Te has desinscrito del torneo correctamente", "success");
+                
+                // Recargar torneos para actualizar la UI
+                await loadTournaments();
+            } catch (error) {
+                console.error("Error al desinscribirse:", error);
+                mostrarNotificacion(error.message || "Error al desinscribirse del torneo", "error");
+                
+                // Restaurar botón
+                this.disabled = false;
+                this.textContent = originalText;
+            }
+        });
+    });
+    
+    // Botones de registro para usuarios no autenticados
+    document.querySelectorAll('.register-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Mostrar mensaje y redirigir a registro
+            mostrarNotificacion("Para participar en torneos, primero debes registrarte", "info");
+            
+            // Abrir modal de registro
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) {
+                setTimeout(() => {
+                    registerBtn.click();
+                }, 1000);
+            } else {
+                // Alternativa: abrir modal de login
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.click();
+            }
+        });
+    });
+}
+
+// Inscribir al usuario actual en un torneo
+async function registerForTournament(torneoId) {
+    try {
         const user = auth.currentUser;
         if (!user) {
             throw new Error("Debes iniciar sesión para inscribirte");
         }
         
         // Obtener documento del torneo
-        const torneoRef = firebase.firestore().doc(`torneos/${torneoId}`);
-        const torneoSnap = await torneoRef.get();
+        const torneoRef = doc(db, "torneos", torneoId);
+        const torneoSnap = await getDoc(torneoRef);
         
-        if (!torneoSnap.exists) {
+        if (!torneoSnap.exists()) {
             throw new Error("El torneo no existe");
         }
         
@@ -636,79 +612,50 @@ async function registerForTournament(torneoId) {
         }
         
         // Inscribir al usuario
-        await torneoRef.update({
+        await updateDoc(torneoRef, {
             participants: [...currentParticipants, user.uid],
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: serverTimestamp()
         });
         
         // También actualizar el usuario para registrar su participación
-        try {
-            const userQuery = await firebase.firestore().collection('usuarios')
-                .where('uid', '==', user.uid)
-                .limit(1)
-                .get();
+        const usersRef = collection(db, "usuarios");
+        const q = query(usersRef, where("uid", "==", user.uid));
+        const userQuerySnapshot = await getDocs(q);
+        
+        if (!userQuerySnapshot.empty) {
+            const userDoc = userQuerySnapshot.docs[0];
             
-            if (!userQuery.empty) {
-                const userDoc = userQuery.docs[0];
-                
-                // Añadir torneo a la lista de torneos del usuario
-                const userData = userDoc.data();
-                
-                if (Array.isArray(userData.torneos)) {
-                    if (!userData.torneos.includes(torneoId)) {
-                        await firebase.firestore().doc(`usuarios/${userDoc.id}`).update({
-                            torneos: [...userData.torneos, torneoId],
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                } else {
-                    // Si torneos es un objeto o no existe
-                    const userTorneos = userData.torneos || {};
-                    userTorneos[torneoId] = {
-                        registerDate: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    
-                    await firebase.firestore().doc(`usuarios/${userDoc.id}`).update({
-                        torneos: userTorneos,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
+            // Añadir torneo a la lista de torneos del usuario
+            const userTorneos = userDoc.data().torneos || [];
+            if (!userTorneos.includes(torneoId)) {
+                await updateDoc(doc(db, "usuarios", userDoc.id), {
+                    torneos: [...userTorneos, torneoId],
+                    updatedAt: serverTimestamp()
+                });
             }
-        } catch (userUpdateError) {
-            console.warn("No se pudo actualizar el usuario, pero la inscripción continúa:", userUpdateError);
         }
-        
-        // Mostrar mensaje de éxito
-        mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
-        
-        // Recargar torneos para actualizar la UI
-        torneosCargados = false; // Forzar recarga
-        await loadTournaments();
         
         return true;
         
     } catch (error) {
         console.error("Error al inscribirse al torneo:", error);
-        mostrarNotificacion(error.message || "Error al inscribirse al torneo", "error");
         throw error;
     }
 }
 
-// Desinscribir al usuario de un torneo
+// Desinscribir al usuario actual de un torneo
 async function unregisterFromTournament(torneoId) {
     try {
-        console.log("Desinscribiendo al usuario del torneo:", torneoId);
-        
         const user = auth.currentUser;
         if (!user) {
             throw new Error("Debes iniciar sesión para desinscribirte");
         }
         
         // Obtener documento del torneo
-        const torneoRef = firebase.firestore().doc(`torneos/${torneoId}`);
-        const torneoSnap = await torneoRef.get();
+        const torneoRef = doc(db, "torneos", torneoId);
+        const torneoSnap = await getDoc(torneoRef);
         
-        if (!torneoSnap.exists) {
+        if (!torneoSnap.exists()) {
             throw new Error("El torneo no existe");
         }
         
@@ -725,93 +672,36 @@ async function unregisterFromTournament(torneoId) {
             throw new Error("No estás inscrito en este torneo");
         }
         
-        // Usar arrayRemove para evitar problemas de concurrencia
-        await torneoRef.update({
-            participants: firebase.firestore.FieldValue.arrayRemove(user.uid),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        // Eliminar al usuario de la lista de participantes
+        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
+        
+        // Actualizar el documento del torneo
+        await updateDoc(torneoRef, {
+            participants: newParticipants,
+            updatedAt: serverTimestamp()
         });
         
-        // Si hay datos del participante, eliminarlos también
-        if (torneoData.participantsData && torneoData.participantsData[user.uid]) {
-            const participantsData = {...torneoData.participantsData};
-            delete participantsData[user.uid];
+        // También actualizar el usuario para eliminar su participación
+        const usersRef = collection(db, "usuarios");
+        const q = query(usersRef, where("uid", "==", user.uid));
+        const userQuerySnapshot = await getDocs(q);
+        
+        if (!userQuerySnapshot.empty) {
+            const userDoc = userQuerySnapshot.docs[0];
             
-            await torneoRef.update({
-                participantsData: participantsData
+            // Eliminar torneo de la lista de torneos del usuario
+            const userTorneos = userDoc.data().torneos || [];
+            const newUserTorneos = userTorneos.filter(id => id !== torneoId);
+            
+            await updateDoc(doc(db, "usuarios", userDoc.id), {
+                torneos: newUserTorneos,
+                updatedAt: serverTimestamp()
             });
         }
         
-        // También actualizar el usuario para eliminar su participación
-        try {
-            const userQuery = await firebase.firestore().collection('usuarios')
-                .where('uid', '==', user.uid)
-                .limit(1)
-                .get();
-            
-            if (!userQuery.empty) {
-                const userDoc = userQuery.docs[0];
-                const userData = userDoc.data();
-                
-                // Si torneos es un array
-                if (Array.isArray(userData.torneos)) {
-                    await firebase.firestore().doc(`usuarios/${userDoc.id}`).update({
-                        torneos: firebase.firestore.FieldValue.arrayRemove(torneoId),
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } 
-                // Si torneos es un objeto
-                else if (userData.torneos && userData.torneos[torneoId]) {
-                    const torneosUpdate = {...userData.torneos};
-                    delete torneosUpdate[torneoId];
-                    
-                    await firebase.firestore().doc(`usuarios/${userDoc.id}`).update({
-                        torneos: torneosUpdate,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-            }
-        } catch (userUpdateError) {
-            console.warn("No se pudo actualizar el usuario, pero la desinscripción continúa:", userUpdateError);
-        }
-        
-        // Mostrar mensaje de éxito
-        mostrarNotificacion("Te has desinscrito del torneo correctamente", "success");
-        
-        // Recargar torneos para actualizar la UI
-        torneosCargados = false; // Forzar recarga
-        await loadTournaments();
-        
         return true;
-        
     } catch (error) {
         console.error("Error al desinscribirse del torneo:", error);
-        mostrarNotificacion(error.message || "Error al desinscribirse del torneo", "error");
         throw error;
     }
 }
-
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificar si la función debe ejecutarse en esta página
-    const shouldLoadTournaments = 
-        document.getElementById('torneos-en-proceso') || 
-        document.getElementById('torneos-abiertos') || 
-        document.getElementById('torneos-proximos');
-    
-    if (shouldLoadTournaments && !torneosCargados) {
-        console.log("Página de torneos detectada, iniciando carga");
-        loadTournaments();
-    } else {
-        console.log("No es una página de torneos o ya se han cargado, omitiendo carga");
-    }
-});
-
-// Exportar funciones para uso en otros scripts
-export {
-    loadTournaments,
-    registerForTournament,
-    unregisterFromTournament,
-    isAuthenticated,
-    mostrarNotificacion,
-    setupTournamentButtons
-};
