@@ -1,4 +1,4 @@
-// Modified script for the management of tournaments on the main page
+// Script para la gestión de torneos en la página principal
 import { auth, db, isAuthenticated } from './firebase.js';
 import { 
     collection, 
@@ -223,7 +223,7 @@ async function getTournamentBadges(torneoId) {
 }
 
 // Main function to load tournaments
-export async function loadTournaments() {
+async function loadTournaments() {
     try {
         console.log("Loading tournaments...");
         
@@ -338,11 +338,20 @@ export async function loadTournaments() {
 // Preload participants info for all tournaments
 async function preloadAllParticipantsInfo(tournamentIds) {
     try {
+        if (!tournamentIds || tournamentIds.length === 0) {
+            return {};
+        }
+        
         // Query participant_info collection for all active entries
         const participantInfoRef = collection(db, "participant_info");
+        
+        // Firestore limits to 10 items in 'in' queries
+        // Handle this by processing in batches if needed
+        const firstBatch = tournamentIds.slice(0, Math.min(10, tournamentIds.length));
+        
         const q = query(
             participantInfoRef, 
-            where("tournamentId", "in", tournamentIds.slice(0, 10)), // Firestore limits to 10 items in 'in' queries
+            where("tournamentId", "in", firstBatch),
             where("active", "!=", false)
         );
         
@@ -800,7 +809,7 @@ function setupTournamentButtons() {
     });
 }
 
-// Export functions for use in other modules
+// Exportar funciones para uso en otros módulos
 export {
     loadTournaments,
     getTournamentBadges
