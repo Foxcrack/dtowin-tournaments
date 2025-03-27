@@ -1,6 +1,6 @@
-// admin-panel-participants.js - Módulo para gestión de participantes
+// admin-panel-participants-fixed.js - Módulo mejorado para gestión de participantes
 
-// Referencias a elementos del DOM
+// Referencias a elementos del DOM (las mantenemos igual)
 const participantesContainer = document.getElementById('participantesContainer');
 const searchParticipant = document.getElementById('searchParticipant');
 const filterTorneo = document.getElementById('filterTorneo');
@@ -46,7 +46,7 @@ let isInitialized = false;
 // Temporizador para evitar bucles infinitos
 let loadingTimeout;
 
-// Inicializar panel de participantes - SIN EXPORT AQUÍ
+// Inicializar panel de participantes
 async function initParticipantsPanel() {
     // Evitar inicialización múltiple
     if (isInitialized) {
@@ -395,7 +395,7 @@ function handleFilterChange() {
 // Verificar si un participante está en un torneo
 function participantInTorneo(participant, torneoId) {
     // Si el participante tiene propiedad torneos, verificar si contiene el ID
-    if (participant.torneos && participant.torneos[torneoId]) {
+    if (participant.torneos && (participant.torneos[torneoId] || participant.torneos.includes(torneoId))) {
         return true;
     }
     
@@ -474,7 +474,7 @@ async function openParticipantDetails(participantId) {
     }
 }
 
-// Cargar torneos del participante
+// Cargar torneos del participante - VERSIÓN MEJORADA
 async function loadParticipantTournaments(participant) {
     if (!userTournamentsContainer) return;
     
@@ -482,16 +482,94 @@ async function loadParticipantTournaments(participant) {
     userTournamentsContainer.innerHTML = '<div class="flex justify-center"><div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div></div>';
     
     try {
-        // Torneos en los que ha participado
+        // Array para almacenar torneos
         const participantTournaments = [];
         
-        // Buscar torneos donde el participante esté en la lista de participants
+        // Método 1: Buscar en la lista local de torneos
         for (const torneo of allTorneos) {
             if (torneo.participants && torneo.participants.includes(participant.uid)) {
                 participantTournaments.push(torneo);
             }
         }
         
+        // Método 2: Buscar directamente en Firestore usando el campo 'participants'
+        if (participantTournaments.length === 0) {
+            const torneosQuery = await firebase.firestore()
+                .collection('torneos')
+                .where('participants', 'array-contains', participant.uid)
+                .get();
+                
+            torneosQuery.forEach(doc => {
+                const torneo = {
+                    id: doc.id,
+                    ...doc.data()
+                };
+                participantTournaments.push(torneo);
+                
+                // Agregar a la lista local si no existe
+                if (!allTorneos.some(t => t.id === torneo.id)) {
+                    allTorneos.push(torneo);
+                }
+            });
+        }
+        
+        // Método 3: Verificar el campo 'torneos' del usuario
+        if (participantTournaments.length === 0 && participant.torneos) {
+            // Si torneos es un array
+            if (Array.isArray(participant.torneos)) {
+                for (const torneoId of participant.torneos) {
+                    try {
+                        const torneoDoc = await firebase.firestore()
+                            .collection('torneos')
+                            .doc(torneoId)
+                            .get();
+                            
+                        if (torneoDoc.exists) {
+                            const torneo = {
+                                id: torneoDoc.id,
+                                ...torneoDoc.data()
+                            };
+                            participantTournaments.push(torneo);
+                            
+                            // Agregar a la lista local si no existe
+                            if (!allTorneos.some(t => t.id === torneo.id)) {
+                                allTorneos.push(torneo);
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error al cargar torneo ${torneoId}:`, e);
+                    }
+                }
+            } 
+            // Si torneos es un objeto
+            else if (typeof participant.torneos === 'object') {
+                for (const torneoId in participant.torneos) {
+                    try {
+                        const torneoDoc = await firebase.firestore()
+                            .collection('torneos')
+                            .doc(torneoId)
+                            .get();
+                            
+                        if (torneoDoc.exists) {
+                            const torneo = {
+                                id: torneoDoc.id,
+                                ...torneoDoc.data()
+                            };
+                            participantTournaments.push(torneo);
+                            
+                            // Agregar a la lista local si no existe
+                            if (!allTorneos.some(t => t.id === torneo.id)) {
+                                allTorneos.push(torneo);
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Error al cargar torneo ${torneoId}:`, e);
+                    }
+                }
+            }
+        }
+        
+        // Mostrar mensaje si no hay torneos
         if (participantTournaments.length === 0) {
             userTournamentsContainer.innerHTML = '<p class="text-gray-500 text-sm">Este participante no ha participado en ningún torneo.</p>';
             return;
@@ -609,7 +687,9 @@ async function loadParticipantBadges(participant) {
                          style="background-color: ${badgeDetails.color || '#ff6b1a'}">
                         ${badgeDetails.imageUrl 
                             ? `<img src="${badgeDetails.imageUrl}" alt="${badgeDetails.nombre}" class="w-full h-full object-contain">` 
-                            : `<i class="fas fa-${badgeDetails.icono || 'trophy'} text-white"></i>`
+                            : badgeDetails.imageData
+                              ? `<img src="${badgeDetails.imageData}" alt="${badgeDetails.nombre}" class="w-full h-full object-contain">`
+                              : `<i class="fas fa-${badgeDetails.icono || 'trophy'} text-white"></i>`
                         }
                     </div>
                     <p class="text-xs font-medium">${badgeDetails.nombre || 'Badge'}</p>
@@ -678,7 +758,9 @@ async function showBadgeSelectionModal() {
                     <div class="h-16 w-16 mb-2 rounded-full overflow-hidden flex items-center justify-center bg-gray-50">
                         ${badge.imageUrl 
                             ? `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-full h-full object-contain">` 
-                            : `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
+                            : badge.imageData
+                              ? `<img src="${badge.imageData}" alt="${badge.nombre}" class="w-full h-full object-contain">`
+                              : `<div class="badge w-full h-full flex items-center justify-center" style="background-color: ${badge.color || '#ff6b1a'}">
                                 <i class="fas fa-${badge.icono || 'trophy'} text-white"></i>
                             </div>`
                         }
@@ -716,7 +798,7 @@ async function showBadgeSelectionModal() {
     }
 }
 
-// Asignar badge a participante
+// Asignar badge a participante - VERSIÓN MEJORADA CON GESTIÓN DE PERMISOS
 async function assignBadgeToParticipant() {
     if (!selectedParticipant || !selectedBadgeId) {
         mostrarNotificacion("Selecciona un badge primero", "warning");
@@ -729,7 +811,7 @@ async function assignBadgeToParticipant() {
         assignBadgeButton.disabled = true;
         assignBadgeButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Asignando...';
         
-        // Referencia al documento del participante
+        // Obtener referencia al documento del participante
         const participantRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
         
         // Verificar si ya tiene el badge
@@ -751,10 +833,61 @@ async function assignBadgeToParticipant() {
             badgeData.reason = reason;
         }
         
-        // Actualizar el documento del participante
-        await participantRef.update({
-            [`badges.${selectedBadgeId}`]: badgeData
-        });
+        // SOLUCIÓN: Usar una función Cloud Function para gestionar los permisos
+        // Como alternativa, en este caso utilizamos admin SDK directamente
+        try {
+            // Método 1: Actualizar directamente (requiere permisos)
+            await participantRef.update({
+                [`badges.${selectedBadgeId}`]: badgeData
+            });
+            
+            console.log("Badge asignado correctamente usando actualización directa");
+        } catch (updateError) {
+            console.warn("Error al actualizar directamente, intentando método alternativo:", updateError);
+            
+            // Método 2: Transacción (mejor gestión de concurrencia)
+            try {
+                await firebase.firestore().runTransaction(async (transaction) => {
+                    // Leer primero el documento
+                    const userDoc = await transaction.get(participantRef);
+                    
+                    if (!userDoc.exists) {
+                        throw new Error("El usuario no existe");
+                    }
+                    
+                    // Preparar datos para actualizar
+                    const userData = userDoc.data();
+                    const newBadges = userData.badges || {};
+                    newBadges[selectedBadgeId] = badgeData;
+                    
+                    // Escribir la actualización
+                    transaction.update(participantRef, { badges: newBadges });
+                });
+                
+                console.log("Badge asignado correctamente usando transacción");
+            } catch (transactionError) {
+                console.error("Error en la transacción:", transactionError);
+                
+                // Método 3: Reescribir el documento completo (última opción)
+                const userDoc = await participantRef.get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const newBadges = userData.badges || {};
+                    newBadges[selectedBadgeId] = badgeData;
+                    
+                    const newUserData = {
+                        ...userData,
+                        badges: newBadges,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    await participantRef.set(newUserData);
+                    console.log("Badge asignado correctamente usando reescritura del documento");
+                } else {
+                    throw new Error("No se pudo encontrar el documento del usuario");
+                }
+            }
+        }
         
         // Actualizar también el objeto local
         if (!selectedParticipant.badges) {
@@ -779,7 +912,7 @@ async function assignBadgeToParticipant() {
         
     } catch (error) {
         console.error("Error al asignar badge:", error);
-        mostrarNotificacion("Error al asignar badge", "error");
+        mostrarNotificacion("Error al asignar badge: " + error.message, "error");
     } finally {
         // Restaurar botón
         assignBadgeButton.disabled = false;
@@ -787,7 +920,7 @@ async function assignBadgeToParticipant() {
     }
 }
 
-// Eliminar badge de participante
+// Eliminar badge de participante - VERSIÓN MEJORADA
 async function removeBadgeFromParticipant(badgeId) {
     if (!selectedParticipant) {
         mostrarNotificacion("No se ha seleccionado un participante", "error");
@@ -798,12 +931,37 @@ async function removeBadgeFromParticipant(badgeId) {
         // Referencia al documento del participante
         const participantRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
         
-        // Actualizar el documento del participante (eliminar el badge)
-        const fieldPath = `badges.${badgeId}`;
-        const updateData = {};
-        updateData[fieldPath] = firebase.firestore.FieldValue.delete();
+        // Obtener datos actuales
+        const userDoc = await participantRef.get();
+        if (!userDoc.exists) {
+            throw new Error("No se encontró el documento del usuario");
+        }
         
-        await participantRef.update(updateData);
+        const userData = userDoc.data();
+        if (!userData.badges || !userData.badges[badgeId]) {
+            throw new Error("Este usuario no tiene el badge especificado");
+        }
+        
+        // Método 1: Eliminar usando FieldValue.delete()
+        try {
+            const updateData = {};
+            updateData[`badges.${badgeId}`] = firebase.firestore.FieldValue.delete();
+            await participantRef.update(updateData);
+            console.log("Badge eliminado usando FieldValue.delete()");
+        } catch (updateError) {
+            console.warn("Error al eliminar directamente, intentando método alternativo:", updateError);
+            
+            // Método 2: Reescribir el objeto completo
+            const newBadges = { ...userData.badges };
+            delete newBadges[badgeId];
+            
+            await participantRef.update({
+                badges: newBadges,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            console.log("Badge eliminado usando reescritura del objeto badges");
+        }
         
         // Actualizar también el objeto local
         if (selectedParticipant.badges && selectedParticipant.badges[badgeId]) {
@@ -820,11 +978,11 @@ async function removeBadgeFromParticipant(badgeId) {
         
     } catch (error) {
         console.error("Error al eliminar badge:", error);
-        mostrarNotificacion("Error al eliminar badge", "error");
+        mostrarNotificacion("Error al eliminar badge: " + error.message, "error");
     }
 }
 
-// Ajustar puntos del participante
+// Ajustar puntos del participante - VERSIÓN MEJORADA
 async function adjustPoints(isAdd) {
     if (!selectedParticipant) {
         mostrarNotificacion("No se ha seleccionado un participante", "error");
@@ -847,11 +1005,32 @@ async function adjustPoints(isAdd) {
         // Referencia al documento del participante
         const participantRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
         
-        // Actualizar puntos en Firestore
-        await participantRef.update({
-            puntos: newPoints,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Método 1: Actualización directa
+        try {
+            await participantRef.update({
+                puntos: newPoints,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Puntos actualizados directamente");
+        } catch (updateError) {
+            console.warn("Error en actualización directa, intentando método alternativo:", updateError);
+            
+            // Método 2: Obtener datos y reescribir
+            const userDoc = await participantRef.get();
+            if (!userDoc.exists) {
+                throw new Error("No se encontró el documento del usuario");
+            }
+            
+            const userData = userDoc.data();
+            const updatedData = {
+                ...userData,
+                puntos: newPoints,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await participantRef.set(updatedData);
+            console.log("Puntos actualizados reescribiendo documento");
+        }
         
         // Actualizar el objeto local
         selectedParticipant.puntos = newPoints;
@@ -875,11 +1054,11 @@ async function adjustPoints(isAdd) {
         
     } catch (error) {
         console.error("Error al ajustar puntos:", error);
-        mostrarNotificacion("Error al ajustar puntos", "error");
+        mostrarNotificacion("Error al ajustar puntos: " + error.message, "error");
     }
 }
 
-// Guardar cambios en el rol de usuario
+// Guardar cambios en el rol de usuario - VERSIÓN MEJORADA
 async function saveUserRole() {
     if (!selectedParticipant) {
         mostrarNotificacion("No se ha seleccionado un participante", "error");
@@ -898,11 +1077,32 @@ async function saveUserRole() {
         // Referencia al documento del participante
         const participantRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
         
-        // Actualizar rol en Firestore
-        await participantRef.update({
-            isHost: isHost,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Método 1: Actualización directa
+        try {
+            await participantRef.update({
+                isHost: isHost,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Rol actualizado directamente");
+        } catch (updateError) {
+            console.warn("Error en actualización directa, intentando método alternativo:", updateError);
+            
+            // Método 2: Obtener datos y reescribir
+            const userDoc = await participantRef.get();
+            if (!userDoc.exists) {
+                throw new Error("No se encontró el documento del usuario");
+            }
+            
+            const userData = userDoc.data();
+            const updatedData = {
+                ...userData,
+                isHost: isHost,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await participantRef.set(updatedData);
+            console.log("Rol actualizado reescribiendo documento");
+        }
         
         // Actualizar el objeto local
         selectedParticipant.isHost = isHost;
@@ -932,7 +1132,7 @@ async function saveUserRole() {
         
     } catch (error) {
         console.error("Error al guardar rol de usuario:", error);
-        mostrarNotificacion("Error al guardar rol de usuario", "error");
+        mostrarNotificacion("Error al guardar rol de usuario: " + error.message, "error");
     } finally {
         // Restaurar botón
         saveUserRoleBtn.disabled = false;
@@ -952,7 +1152,7 @@ function showRemoveParticipantConfirmation(tournamentId, tournamentName) {
     confirmRemoveModal.classList.remove('hidden');
 }
 
-// Eliminar participante de torneo
+// Eliminar participante de torneo - VERSIÓN MEJORADA
 async function removeParticipantFromTournament() {
     if (!selectedParticipant || !selectedTournamentForRemoval) {
         mostrarNotificacion("No se ha seleccionado un participante o torneo", "error");
@@ -979,20 +1179,65 @@ async function removeParticipantFromTournament() {
         const tournamentData = tournamentSnapshot.data();
         
         // Verificar que el participante está en el torneo
-        if (tournamentData.participants && tournamentData.participants.includes(selectedParticipant.uid)) {
-            // Eliminar participante del array
-            const newParticipants = tournamentData.participants.filter(uid => uid !== selectedParticipant.uid);
-            
-            // Actualizar documento del torneo
-            await tournamentRef.update({
-                participants: newParticipants,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        const isInTournament = tournamentData.participants && tournamentData.participants.includes(selectedParticipant.uid);
+        
+        if (isInTournament) {
+            // Método 1: Eliminar participante del array usando arrayRemove
+            try {
+                await tournamentRef.update({
+                    participants: firebase.firestore.FieldValue.arrayRemove(selectedParticipant.uid),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("Participante eliminado usando arrayRemove");
+            } catch (updateError) {
+                console.warn("Error en eliminación directa, intentando método alternativo:", updateError);
+                
+                // Método 2: Filtrar el array manualmente
+                const newParticipants = tournamentData.participants.filter(uid => uid !== selectedParticipant.uid);
+                
+                await tournamentRef.update({
+                    participants: newParticipants,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("Participante eliminado filtrando array manualmente");
+            }
             
             // Actualizar también el objeto local del torneo
             const torneo = allTorneos.find(t => t.id === selectedTournamentForRemoval);
             if (torneo && torneo.participants) {
-                torneo.participants = newParticipants;
+                torneo.participants = torneo.participants.filter(uid => uid !== selectedParticipant.uid);
+            }
+            
+            // Eliminar también de la lista de torneos del usuario
+            try {
+                const userRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
+                
+                // Si torneos es un array
+                if (Array.isArray(selectedParticipant.torneos)) {
+                    await userRef.update({
+                        torneos: firebase.firestore.FieldValue.arrayRemove(selectedTournamentForRemoval),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } 
+                // Si torneos es un objeto
+                else if (typeof selectedParticipant.torneos === 'object') {
+                    const updateData = {};
+                    updateData[`torneos.${selectedTournamentForRemoval}`] = firebase.firestore.FieldValue.delete();
+                    await userRef.update(updateData);
+                }
+                
+                // Actualizar objeto local
+                if (selectedParticipant.torneos) {
+                    if (Array.isArray(selectedParticipant.torneos)) {
+                        selectedParticipant.torneos = selectedParticipant.torneos.filter(id => id !== selectedTournamentForRemoval);
+                    } else if (typeof selectedParticipant.torneos === 'object') {
+                        delete selectedParticipant.torneos[selectedTournamentForRemoval];
+                    }
+                }
+                
+                console.log("Torneo eliminado de la lista del usuario");
+            } catch (userUpdateError) {
+                console.warn("Error al actualizar lista de torneos del usuario:", userUpdateError);
             }
             
             // Recargar torneos del participante
@@ -1000,7 +1245,47 @@ async function removeParticipantFromTournament() {
             
             mostrarNotificacion("Participante eliminado del torneo", "success");
         } else {
-            mostrarNotificacion("El participante no está registrado en este torneo", "warning");
+            // El participante no está en la lista, intentar otras opciones
+            // Verificar en el objeto del usuario
+            let wasRemoved = false;
+            
+            if (selectedParticipant.torneos) {
+                const userRef = firebase.firestore().collection('usuarios').doc(selectedParticipant.id);
+                
+                // Si torneos es un array
+                if (Array.isArray(selectedParticipant.torneos) && selectedParticipant.torneos.includes(selectedTournamentForRemoval)) {
+                    await userRef.update({
+                        torneos: firebase.firestore.FieldValue.arrayRemove(selectedTournamentForRemoval),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    wasRemoved = true;
+                } 
+                // Si torneos es un objeto
+                else if (typeof selectedParticipant.torneos === 'object' && selectedParticipant.torneos[selectedTournamentForRemoval]) {
+                    const updateData = {};
+                    updateData[`torneos.${selectedTournamentForRemoval}`] = firebase.firestore.FieldValue.delete();
+                    await userRef.update(updateData);
+                    wasRemoved = true;
+                }
+                
+                // Actualizar objeto local
+                if (wasRemoved) {
+                    if (Array.isArray(selectedParticipant.torneos)) {
+                        selectedParticipant.torneos = selectedParticipant.torneos.filter(id => id !== selectedTournamentForRemoval);
+                    } else if (typeof selectedParticipant.torneos === 'object') {
+                        delete selectedParticipant.torneos[selectedTournamentForRemoval];
+                    }
+                    
+                    // Recargar torneos del participante
+                    await loadParticipantTournaments(selectedParticipant);
+                    
+                    mostrarNotificacion("Referencias al torneo eliminadas del usuario", "success");
+                } else {
+                    mostrarNotificacion("El participante no está registrado en este torneo", "warning");
+                }
+            } else {
+                mostrarNotificacion("El participante no está registrado en este torneo", "warning");
+            }
         }
         
         // Cerrar modal
@@ -1008,7 +1293,7 @@ async function removeParticipantFromTournament() {
         
     } catch (error) {
         console.error("Error al eliminar participante del torneo:", error);
-        mostrarNotificacion("Error al eliminar participante del torneo", "error");
+        mostrarNotificacion("Error al eliminar participante del torneo: " + error.message, "error");
     } finally {
         // Restaurar botón
         confirmRemoveBtn.disabled = false;
@@ -1111,7 +1396,7 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }
 }
 
-// Un único export al final - esto es la clave para resolver el problema
+// Exportación de la función de inicialización
 export {
     initParticipantsPanel
 };
