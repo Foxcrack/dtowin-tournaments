@@ -8,6 +8,8 @@ import { initRegistrationModule } from './registration.js';
 export async function initApp() {
     try {
         console.log("Inicializando aplicación Dtowin...");
+        
+        // Inicializar módulo de registro
         initRegistrationModule();
         
         // Cargar componentes principales
@@ -94,6 +96,9 @@ export function showNotification(message, type = "info") {
         }, 500);
     }, 3000);
 }
+
+// Exponer función de notificación en el objeto window para acceso global
+window.mostrarNotificacion = showNotification;
 
 // Exportar funciones principales
 export {
