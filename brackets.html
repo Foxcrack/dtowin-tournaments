@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bracket de Torneo - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        
+        /* Bracket specific styles */
+        .bracket-container {
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+        
+        .bracket {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            min-width: max-content;
+        }
+        
+        .round {
+            display: flex;
+            flex-direction: column;
+            margin-right: 40px;
+        }
+        
+        .round-title {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .match {
+            width: 220px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .match-connector {
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            width: 40px;
+            height: 2px;
+            background-color: #ccc;
+        }
+        
+        .match-spacer {
+            height: 40px;
+        }
+        
+        .player {
+            padding: 8px 10px;
+            border: 1px solid #e5e5e5;
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            position: relative;
+        }
+        
+        .player-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+        
+        .player:last-child {
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .player.winner {
+            background-color: #e6f4ff;
+            border-left: 3px solid #0042ff;
+        }
+        
+        .player.loser {
+            background-color: #ffeaea;
+            border-left: 3px solid #ff3000;
+        }
+        
+        .player-score {
+            font-weight: bold;
+            min-width: 25px;
+            text-align: center;
+        }
+        
+        .player-score.winner {
+            background-color: #0042ff;
+            color: white;
+            border-radius: 4px;
+            padding: 0 6px;
+        }
+        
+        .player-score.loser {
+            background-color: #ff3000;
+            color: white;
+            border-radius: 4px;
+            padding: 0 6px;
+        }
+        
+        .discord-tooltip {
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+            white-space: nowrap;
+            display: none;
+        }
+        
+        .player:hover .discord-tooltip {
+            display: block;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .match {
+                width: 180px;
+            }
+            
+            .player-name {
+                max-width: 120px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Score Modal */
+        .score-modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            </div>
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tournament Info Header -->
+    <div class="gradient-background text-white py-6 px-4">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h2 id="tournament-name" class="text-3xl font-bold mb-2">Cargando torneo...</h2>
+                    <p id="tournament-status" class="text-xl opacity-90"></p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a href="index.html#torneos" class="bg-white text-blue-600 px-5 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver a Torneos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bracket Section -->
+    <section id="bracket-section" class="py-8 px-4">
+        <div class="container mx-auto">
+            <!-- Tournament Badges -->
+            <div id="tournament-badges" class="mb-8 bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Badges del Torneo</h3>
+                <div id="badges-container" class="flex flex-wrap gap-4">
+                    <p class="text-gray-500">Cargando badges...</p>
+                </div>
+            </div>
+            
+            <!-- Bracket Container -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 border-b">
+                    <h3 class="text-xl font-bold text-gray-800">Bracket del Torneo</h3>
+                    <p class="text-sm text-gray-600 mt-1">Desliza horizontalmente para ver todo el bracket</p>
+                </div>
+                
+                <div id="bracket-container" class="bracket-container">
+                    <!-- Loading spinner -->
+                    <div class="py-12 flex justify-center">
+                        <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Staff Controls (only visible for staff) -->
+            <div id="staff-controls" class="mt-8 bg-white rounded-lg shadow-md p-4 hidden">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Controles de Staff</h3>
+                <div class="space-y-4">
+                    <button id="update-bracket-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        Actualizar Bracket
+                    </button>
+                    <p class="text-sm text-gray-600">Haz clic en un partido para actualizar el resultado</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Score Update Modal -->
+    <div id="score-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50 score-modal">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="close-score-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Actualizar Resultado</h3>
+                <p id="match-info" class="text-gray-600">Partido</p>
+                <p id="score-error-msg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="score-update-form">
+                <div class="mb-4">
+                    <input type="hidden" id="match-id">
+                    <label id="player1-label" class="block text-gray-700 text-sm font-bold mb-2">Jugador 1</label>
+                    <input type="number" id="player1-score" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label id="player2-label" class="block text-gray-700 text-sm font-bold mb-2">Jugador 2</label>
+                    <input type="number" id="player2-score" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                
+                <div class="flex items-center justify-end">
+                    <button type="button" id="cancel-score-btn" class="text-gray-600 mr-4 hover:text-gray-800">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="submit-score-btn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                        Guardar Resultado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+                <p class="text-gray-600">Bienvenido de vuelta</p>
+                <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <div class="mb-6">
+                <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline hover:bg-gray-50 transition flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                    Continuar con Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-8 px-4 mt-12">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-8 h-8 rounded-full">
+                    <h3 class="text-lg font-bold">Dtowin Torneos</h3>
+                </div>
+                <div>
+                    <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Import necessary modules
+        import { auth, isAuthenticated } from './firebase.js';
+        import { getTournamentBracket, updateMatchResults, isUserTournamentStaff } from './brackets.js';
+        import { getTournamentParticipantsInfo } from './registration.js';
+        import { getTournamentBadges } from './badges.js';
+        
+        // Get tournament ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tournamentId = urlParams.get('id');
+        
+        // DOM References
+        const tournamentNameEl = document.getElementById('tournament-name');
+        const tournamentStatusEl = document.getElementById('tournament-status');
+        const bracketContainer = document.getElementById('bracket-container');
+        const badgesContainer = document.getElementById('badges-container');
+        const staffControls = document.getElementById('staff-controls');
+        const scoreModal = document.getElementById('score-modal');
+        const closeScoreModalBtn = document.getElementById('close-score-modal');
+        const cancelScoreBtn = document.getElementById('cancel-score-btn');
+        const scoreUpdateForm = document.getElementById('score-update-form');
+        const matchIdInput = document.getElementById('match-id');
+        const player1Label = document.getElementById('player1-label');
+        const player2Label = document.getElementById('player2-label');
+        const player1ScoreInput = document.getElementById('player1-score');
+        const player2ScoreInput = document.getElementById('player2-score');
+        const scoreErrorMsg = document.getElementById('score-error-msg');
+        
+        // Global bracket data
+        let bracketData = null;
+        let currentMatchId = null;
+        let isUserStaff = false;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!tournamentId) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Check authentication
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    console.log("Usuario autenticado:", user.uid);
+                    
+                    // Update UI for logged-in user
+                    updateAuthUI(user);
+                    
+                    // Check if user is tournament staff
+                    isUserStaff = await isUserTournamentStaff(user.uid, tournamentId);
+                    
+                    if (isUserStaff) {
+                        staffControls.classList.remove('hidden');
+                    }
+                } else {
+                    console.log("No hay usuario autenticado");
+                }
+                
+                // Load bracket data
+                await loadBracketData();
+                
+                // Load tournament badges
+                await loadTournamentBadges();
+            });
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+        
+        // Update UI based on authentication status
+        function updateAuthUI(user) {
+            const loginBtn = document.getElementById('loginBtn');
+            
+            if (loginBtn) {
+                if (user) {
+                    loginBtn.innerHTML = `
+                        <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                            <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                            <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
+                        </div>
+                    `;
+                    
+                    loginBtn.removeEventListener('click', showLoginModal);
+                    loginBtn.addEventListener('click', () => {
+                        window.location.href = 'perfil.html';
+                    });
+                } else {
+                    loginBtn.textContent = 'Iniciar Sesión';
+                    loginBtn.addEventListener('click', showLoginModal);
+                }
+            }
+        }
+        
+        // Load bracket data from Firebase
+        async function loadBracketData() {
+            try {
+                bracketContainer.innerHTML = `
+                    <div class="py-12 flex justify-center">
+                        <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                `;
+                
+                // Get bracket data
+                bracketData = await getTournamentBracket(tournamentId);
+                
+                if (!bracketData) {
+                    bracketContainer.innerHTML = `
+                        <div class="p-8 text-center">
+                            <p class="text-gray-600 mb-4">Este torneo aún no tiene un bracket generado.</p>
+                            <p class="text-sm text-gray-500">El bracket se generará cuando el torneo comience.</p>
+                        </div>
+                    `;
+                    
+                    // Update tournament name and status
+                    if (tournamentNameEl) {
+                        tournamentNameEl.textContent = 'Torneo sin bracket';
+                    }
+                    if (tournamentStatusEl) {
+                        tournamentStatusEl.textContent = 'Esperando inicio del torneo';
+                    }
+                    
+                    return;
+                }
+                
+                // Update tournament name and status
+                if (tournamentNameEl) {
+                    tournamentNameEl.textContent = bracketData.tournamentName || 'Bracket de Torneo';
+                }
+                if (tournamentStatusEl) {
+                    tournamentStatusEl.textContent = bracketData.status === 'active' ? 'En Progreso' : 'Finalizado';
+                }
+                
+                // Render bracket
+                renderBracket(bracketData);
+                
+            } catch (error) {
+                console.error("Error loading bracket data:", error);
+                bracketContainer.innerHTML = `
+                    <div class="p-8 text-center">
+                        <p class="text-red-500 mb-4">Error al cargar el bracket</p>
+                        <p class="text-gray-600">${error.message || 'Ha ocurrido un error desconocido'}</p>
+                        <button id="retry-btn" class="mt-4 dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            Intentar de nuevo
+                        </button>
+                    </div>
+                `;
+                
+                // Add retry button listener
+                const retryBtn = document.getElementById('retry-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', loadBracketData);
+                }
+            }
+        }
+        
+        // Render bracket from data
+        function renderBracket(data) {
+            if (!data || !data.rounds || !data.matches) {
+                return;
+            }
+            
+            // Create HTML for bracket
+            let html = '<div class="bracket">';
+            
+            // Generate rounds
+            data.rounds.forEach(round => {
+                // Filter matches for this round
+                const roundMatches = data.matches.filter(match => match.round === round.round);
+                
+                html += `
+                    <div class="round">
+                        <div class="round-title">${round.name}</div>
+                        <div class="matches">
+                `;
+                
+                // Add correct spacing between matches
+                const totalSpacing = Math.pow(2, round.round - 1) - 1;
+                
+                // Generate matches
+                roundMatches.forEach((match, index) => {
+                    const player1 = match.player1 || { name: "TBD", id: null };
+                    const player2 = match.player2 || { name: "TBD", id: null };
+                    
+                    const matchCompleted = match.status === 'completed';
+                    const player1Winner = matchCompleted && match.winner && player1.id === match.winner.id;
+                    const player2Winner = matchCompleted && match.winner && player2.id === match.winner.id;
+                    
+                    html += `<div class="match" data-match-id="${match.id}">`;
+                    
+                    // Player 1
+                    html += `
+                        <div class="player ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
+                            <div class="player-name">${player1.name}</div>
+                            <div class="player-score ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
+                                ${matchCompleted ? match.scores.player1 : ''}
+                            </div>
+                            ${player1.discord ? `<div class="discord-tooltip">Discord: ${player1.discord}</div>` : ''}
+                        </div>
+                    `;
+                    
+                    // Player 2
+                    html += `
+                        <div class="player ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
+                            <div class="player-name">${player2.name}</div>
+                            <div class="player-score ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
+                                ${matchCompleted ? match.scores.player2 : ''}
+                            </div>
+                            ${player2.discord ? `<div class="discord-tooltip">Discord: ${player2.discord}</div>` : ''}
+                        </div>
+                    `;
+                    
+                    // Add connector to next match if not the final match
+                    if (match.nextMatchId) {
+                        html += '<div class="match-connector"></div>';
+                    }
+                    
+                    html += '</div>';
+                    
+                    // Add spacers between matches in this round if needed
+                    if (index < roundMatches.length - 1 && round.round > 1) {
+                        const spacersToAdd = Math.pow(2, round.round - 1) - 1;
+                        
+                        for (let i = 0; i < spacersToAdd; i++) {
+                            html += '<div class="match-spacer"></div>';
+                        }
+                    }
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            // Render to container
+            bracketContainer.innerHTML = html;
+            
+            // Add click event to matches for staff members
+            if (isUserStaff) {
+                document.querySelectorAll('.match').forEach(matchElement => {
+                    matchElement.addEventListener('click', (e) => {
+                        const matchId = matchElement.dataset.matchId;
+                        const match = data.matches.find(m => m.id === matchId);
+                        
+                        if (match && match.player1 && match.player1.id && match.player2 && match.player2.id) {
+                            openScoreModal(match);
+                        } else {
+                            showNotification("No se puede actualizar este partido todavía", "warning");
+                        }
+                    });
+                });
+            }
+        }
+        
+        // Open score update modal
+        function openScoreModal(match) {
+            if (!match) return;
+            
+            currentMatchId = match.id;
+            
+            // Update modal with match info
+            matchIdInput.value = match.id;
+            
+            if (player1Label) {
+                player1Label.textContent = match.player1.name || 'Jugador 1';
+            }
+            
+            if (player2Label) {
+                player2Label.textContent = match.player2.name || 'Jugador 2';
+            }
+            
+            // Pre-fill scores if match is completed
+            if (match.status === 'completed' && match.scores) {
+                player1ScoreInput.value = match.scores.player1 || '';
+                player2ScoreInput.value = match.scores.player2 || '';
+            } else {
+                player1ScoreInput.value = '';
+                player2ScoreInput.value = '';
+            }
+            
+            // Clear error message
+            scoreErrorMsg.textContent = '';
+            
+            // Update match info text
+            const matchInfoEl = document.getElementById('match-info');
+            if (matchInfoEl) {
+                matchInfoEl.textContent = `${match.player1.name} vs ${match.player2.name}`;
+            }
+            
+            // Show modal
+            scoreModal.classList.remove('hidden');
+            scoreModal.classList.add('flex');
+        }
+        
+        // Close score modal
+        function closeScoreModal() {
+            scoreModal.classList.add('hidden');
+            scoreModal.classList.remove('flex');
+            currentMatchId = null;
+        }
+        
+        // Handle score update form submission
+        async function handleScoreUpdate(e) {
+            e.preventDefault();
+            
+            if (!currentMatchId || !bracketData) {
+                return;
+            }
+            
+            const player1Score = parseInt(player1ScoreInput.value);
+            const player2Score = parseInt(player2ScoreInput.value);
+            
+            // Validate scores
+            if (isNaN(player1Score) || isNaN(player2Score)) {
+                scoreErrorMsg.textContent = "Los puntajes deben ser números válidos";
+                return;
+            }
+            
+            if (player1Score < 0 || player2Score < 0) {
+                scoreErrorMsg.textContent = "Los puntajes no pueden ser negativos";
+                return;
+            }
+            
+            if (player1Score === player2Score) {
+                scoreErrorMsg.textContent = "Los puntajes no pueden ser iguales, debe haber un ganador";
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submit-score-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+            
+            try {
+                // Update match results
+                await updateMatchResults(bracketData.id, currentMatchId, player1Score, player2Score);
+                
+                // Close modal
+                closeScoreModal();
+                
+                // Show success message
+                showNotification("Resultado actualizado correctamente", "success");
+                
+                // Reload bracket data
+                await loadBracketData();
+                
+            } catch (error) {
+                console.error("Error updating match results:", error);
+                scoreErrorMsg.textContent = error.message || "Error al actualizar resultados";
+            } finally {
+                // Restore button
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Guardar Resultado";
+            }
+        }
+        
+        // Load tournament badges
+        async function loadTournamentBadges() {
+            try {
+                // Get badges for this tournament
+                const badges = await getTournamentBadges(tournamentId);
+                
+                if (!badges || badges.length === 0) {
+                    badgesContainer.innerHTML = '<p class="text-gray-500">No hay badges configurados para este torneo</p>';
+                    return;
+                }
+                
+                // Render badges
+                let html = '';
+                
+                badges.forEach(badgeAssignment => {
+                    const badge = badgeAssignment.badge;
+                    let positionText = '';
+                    
+                    switch (badgeAssignment.position) {
+                        case 'first':
+                            positionText = 'Primer lugar';
+                            break;
+                        case 'second':
+                            positionText = 'Segundo lugar';
+                            break;
+                        case 'top3':
+                            positionText = 'Top 3';
+                            break;
+                        case 'all':
+                            positionText = 'Todos los participantes';
+                            break;
+                        default:
+                            positionText = 'Premio';
+                    }
+                    
+                    html += `
+                        <div class="flex flex-col items-center p-3 border rounded-lg">
+                            <div class="mb-2">
+                                ${badge.imageUrl ? 
+                                    `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-16 h-16 object-contain">` : 
+                                    `<div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl" style="background-color: ${badge.color || '#ff6b1a'}">
+                                        <i class="fas fa-${badge.icono || 'trophy'}"></i>
+                                    </div>`
+                                }
+                            </div>
+                            <div class="text-center">
+                                <p class="font-semibold">${badge.nombre}</p>
+                                <p class="text-xs text-gray-600">${positionText}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                badgesContainer.innerHTML = html;
+                
+            } catch (error) {
+                console.error("Error loading tournament badges:", error);
+                badgesContainer.innerHTML = '<p class="text-red-500">Error al cargar badges</p>';
+            }
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Close and cancel buttons for score modal
+            if (closeScoreModalBtn) {
+                closeScoreModalBtn.addEventListener('click', closeScoreModal);
+            }
+            
+            if (cancelScoreBtn) {
+                cancelScoreBtn.addEventListener('click', closeScoreModal);
+            }
+            
+            // Score update form submission
+            if (scoreUpdateForm) {
+                scoreUpdateForm.addEventListener('submit', handleScoreUpdate);
+            }
+            
+            // Close modal when clicking outside
+            if (scoreModal) {
+                scoreModal.addEventListener('click', function(e) {
+                    if (e.target === scoreModal) {
+                        closeScoreModal();
+                    }
+                });
+            }
+            
+            // Update bracket button
+            const updateBracketBtn = document.getElementById('update-bracket-btn');
+            if (updateBracketBtn) {
+                updateBracketBtn.addEventListener('click', loadBracketData);
+            }
+            
+            // Mobile menu toggle
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    if (mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.remove('hidden');
+                        mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    } else {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+                });
+            }
+            
+            // Login modal
+            const loginBtn = document.getElementById('loginBtn');
+            const loginModal = document.getElementById('loginModal');
+            const closeLoginModalBtn = document.getElementById('closeLoginModal');
+            
+            if (loginBtn && !isAuthenticated()) {
+                loginBtn.addEventListener('click', showLoginModal);
+            }
+            
+            if (closeLoginModalBtn && loginModal) {
+                closeLoginModalBtn.addEventListener('click', () => {
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                });
+            }
+            
+            // Google login button
+            const googleLoginBtn = document.getElementById('googleLoginBtn');
+            if (googleLoginBtn) {
+                googleLoginBtn.addEventListener('click', async () => {
+                    try {
+                        // Show loading indicator
+                        googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                        googleLoginBtn.disabled = true;
+                        
+                        // Import firebase login function
+                        const { loginWithGoogle } = await import('./firebase.js');
+                        
+                        // Attempt login
+                        const user = await loginWithGoogle();
+                        console.log("Login successful:", user);
+                        
+                        // Close modal
+                        if (loginModal) {
+                            loginModal.classList.add('hidden');
+                            loginModal.classList.remove('flex');
+                        }
+                        
+                        // Update UI
+                        updateAuthUI(user);
+                        
+                        // Check if user is staff and refresh controls
+                        isUserStaff = await isUserTournamentStaff(user.uid, tournamentId);
+                        
+                        if (isUserStaff && staffControls) {
+                            staffControls.classList.remove('hidden');
+                        }
+                        
+                        // Show success message
+                        showNotification("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                        
+                    } catch (error) {
+                        console.error("Login error:", error);
+                        showNotification("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+                    } finally {
+                        // Restore button
+                        if (googleLoginBtn) {
+                            googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                            googleLoginBtn.disabled = false;
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Show login modal
+        function showLoginModal() {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = "info") {
+            // Check if notification function exists in window
+            if (typeof window.mostrarNotificacion === "function") {
+                window.mostrarNotificacion(message, type);
+                return;
+            }
+            
+            // If not, implement a simple notification
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            
+            // Classes based on notification type
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
+            
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (type === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Notification styles
+            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notification.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${message}</span>
+            `;
+            
+            // Add to DOM
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0');
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
