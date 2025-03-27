@@ -1,3 +1,6 @@
+// registration.js - Script para gestionar la inscripción a torneos con nickname y Discord
+// Versión corregida para evitar bucles infinitos
+
 // Referencias a elementos del DOM para el modal de inscripción
 const tournamentRegistrationModal = document.getElementById('tournamentRegistrationModal');
 const closeTournamentRegistrationModal = document.getElementById('closeTournamentRegistrationModal');
@@ -11,11 +14,20 @@ const summaryTournamentTime = document.getElementById('summaryTournamentTime');
 const cancelRegistrationBtn = document.getElementById('cancelRegistrationBtn');
 const confirmRegistrationBtn = document.getElementById('confirmRegistrationBtn');
 
+// Flag para evitar inicializaciones múltiples
+let isRegistrationSystemInitialized = false;
+
 // Variable para almacenar torneo actual
 let currentTournament = null;
 
 // Inicializar el sistema de inscripción una vez que el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
+    // Evitar inicialización múltiple
+    if (isRegistrationSystemInitialized) {
+        console.log("Sistema de inscripción ya inicializado");
+        return;
+    }
+    
     console.log("Inicializando sistema de inscripción a torneos");
     
     // Verificar que los elementos existen
@@ -37,54 +49,36 @@ document.addEventListener('DOMContentLoaded', function() {
         tournamentRegistrationForm.addEventListener('submit', handleTournamentRegistration);
     }
     
-    // Configurar los botones de inscripción existentes
+    // Configurar los botones de inscripción existentes (UNA SOLA VEZ)
     setupInscriptionButtons();
     
-    // Configurar observer para futuros botones
-    setupButtonObserver();
+    // Exponer la función para abrir el modal
+    window.openTournamentRegistrationModal = openTournamentModal;
+    
+    // Marcar como inicializado
+    isRegistrationSystemInitialized = true;
+    console.log("Sistema de inscripción configurado correctamente");
 });
 
-// Configurar un observer para detectar nuevos botones de inscripción
-function setupButtonObserver() {
-    // Crear un MutationObserver para detectar cambios en el DOM
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList' && mutation.addedNodes.length) {
-                // Si se han añadido nodos, buscar botones de inscripción
-                setupInscriptionButtons();
-            }
-        });
-    });
-    
-    // Observar cambios en los contenedores de torneos
-    const torneosContainers = [
-        document.getElementById('torneos-en-proceso'),
-        document.getElementById('torneos-abiertos'),
-        document.getElementById('torneos-proximos')
-    ];
-    
-    torneosContainers.forEach(container => {
-        if (container) {
-            observer.observe(container, { 
-                childList: true, 
-                subtree: true 
-            });
-        }
-    });
-}
-
-// Configurar botones de inscripción
+// Configurar botones de inscripción (versión simplificada, sin observer)
 function setupInscriptionButtons() {
-    // Buscar todos los botones de inscripción
+    console.log("Botones de inscripción configurados");
+    
+    // IMPORTANTE: No usamos un observer para evitar bucles infinitos
+    // En su lugar, esta función debe ser llamada después de que los torneos se cargan
+    
+    // Buscar todos los botones de inscripción actuales
     document.querySelectorAll('.inscribirse-btn').forEach(button => {
-        // Asegurarse de que no tiene ya un event listener (para evitar duplicados)
-        const newButton = button.cloneNode(true);
-        if (button.parentNode) {
-            button.parentNode.replaceChild(newButton, button);
+        // Verificar si el botón ya tiene un controlador para evitar duplicados
+        if (button.dataset.hasHandler === 'true') {
+            return; // Saltar si ya tiene un handler
         }
         
-        // Añadir el event listener al nuevo botón
-        newButton.addEventListener('click', function(event) {
+        // Marcar el botón como que ya tiene un handler
+        button.dataset.hasHandler = 'true';
+        
+        // Añadir el controlador de eventos
+        button.addEventListener('click', function(event) {
             event.preventDefault();
             
             // Verificar que el usuario está autenticado
@@ -114,8 +108,6 @@ function setupInscriptionButtons() {
             openTournamentModal(torneoId);
         });
     });
-    
-    console.log("Botones de inscripción configurados");
 }
 
 // Abrir el modal de inscripción con los datos del torneo
@@ -356,5 +348,6 @@ async function registerForTournament(torneoId, nickname, discord = null) {
     });
 }
 
-// Exponer la función para uso global
+// Exponer funciones globalmente
 window.registerTournamentWithNickname = registerForTournament;
+window.setupTournamentButtons = setupInscriptionButtons;
