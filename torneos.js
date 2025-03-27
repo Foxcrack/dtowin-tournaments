@@ -1,4 +1,4 @@
-// Script para la gestión de torneos en la página principal
+// Modified script for the management of tournaments on the main page
 import { auth, db, isAuthenticated } from './firebase.js';
 import { 
     collection, 
@@ -13,7 +13,18 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Obtener color según el estado del torneo
+// Import registration and brackets modules
+import { showRegistrationModal, unregisterFromTournament, getTournamentParticipantsInfo, hasUserRegisteredWithInfo, initRegistrationModule } from './registration.js';
+
+// Global variable to store participants info
+let participantsInfoCache = {};
+
+// Initialize registration module
+document.addEventListener('DOMContentLoaded', () => {
+    initRegistrationModule();
+});
+
+// Get color according to tournament status
 function getStatusColor(estado) {
     switch(estado) {
         case 'Abierto':
@@ -29,7 +40,7 @@ function getStatusColor(estado) {
     }
 }
 
-// Renderizar puntos por posición
+// Render points by position
 function renderPuntosPosicion(puntosPosicion) {
     if (!puntosPosicion) return 'No hay información de puntos';
     
@@ -50,7 +61,7 @@ function renderPuntosPosicion(puntosPosicion) {
     return html || 'No hay información de puntos';
 }
 
-// Mostrar mensaje de error
+// Show error message
 function showErrorMessage() {
     const containers = [
         document.getElementById('torneos-en-proceso'),
@@ -72,18 +83,24 @@ function showErrorMessage() {
     });
 }
 
-// Mostrar notificación
+// Show notification
 function mostrarNotificacion(mensaje, tipo = "info") {
-    // Verificar si ya existe una notificación
+    // Check if notification function exists in window
+    if (typeof window.mostrarNotificacion === "function") {
+        window.mostrarNotificacion(mensaje, tipo);
+        return;
+    }
+    
+    // Verify if a notification already exists
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
         existingNotification.remove();
     }
     
-    // Crear elemento de notificación
+    // Create notification element
     const notification = document.createElement('div');
     
-    // Clases según el tipo de notificación
+    // Classes based on notification type
     let bgColor = 'bg-blue-500';
     let icon = 'info-circle';
     
@@ -98,17 +115,17 @@ function mostrarNotificacion(mensaje, tipo = "info") {
         icon = 'exclamation-triangle';
     }
     
-    // Estilos de la notificación
+    // Notification styles
     notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
     notification.innerHTML = `
         <i class="fas fa-${icon} mr-2"></i>
         <span>${mensaje}</span>
     `;
     
-    // Añadir al DOM
+    // Add to DOM
     document.body.appendChild(notification);
     
-    // Eliminar después de 3 segundos
+    // Remove after 3 seconds
     setTimeout(() => {
         notification.classList.add('opacity-0');
         notification.style.transition = 'opacity 0.5s';
@@ -118,26 +135,26 @@ function mostrarNotificacion(mensaje, tipo = "info") {
     }, 3000);
 }
 
-// Obtener datos del banner para un torneo
+// Get banner data for a tournament
 async function getBannerForTournament(torneo) {
     try {
-        // Si el torneo ya tiene una URL de imagen, usarla
+        // If the tournament already has an image URL, use it
         if (torneo.imageUrl) {
             return torneo.imageUrl;
         }
         
-        // Si el torneo tiene bannerId, obtener el banner correspondiente
+        // If the tournament has a bannerId, get the corresponding banner
         if (torneo.bannerId) {
             const bannerDoc = await getDoc(doc(db, "banners", torneo.bannerId));
             
             if (bannerDoc.exists()) {
                 const bannerData = bannerDoc.data();
-                // Usar imageData o imageUrl del banner
+                // Use imageData or imageUrl from the banner
                 return bannerData.imageData || bannerData.imageUrl || null;
             }
         }
         
-        // Si el torneo tiene bannerRef, obtener el banner por referencia
+        // If the tournament has a bannerRef, get the banner by reference
         if (torneo.bannerRef) {
             const bannerDoc = await getDoc(torneo.bannerRef);
             
@@ -147,7 +164,7 @@ async function getBannerForTournament(torneo) {
             }
         }
         
-        // Intentar buscar por nombre del torneo (solución de respaldo)
+        // Try to search by tournament name (fallback solution)
         if (torneo.nombre) {
             const bannersRef = collection(db, "banners");
             const q = query(bannersRef, where("nombre", "==", torneo.nombre.split(' ')[0]), limit(1));
@@ -161,28 +178,67 @@ async function getBannerForTournament(torneo) {
         
         return null;
     } catch (error) {
-        console.error("Error al obtener banner para torneo:", error);
+        console.error("Error getting banner for tournament:", error);
         return null;
     }
 }
 
-// Función principal para cargar torneos
+// Get badges assigned to a tournament
+async function getTournamentBadges(torneoId) {
+    try {
+        if (!torneoId) {
+            throw new Error("Tournament ID is required");
+        }
+        
+        const tournamentBadgesCollection = collection(db, "tournament_badges");
+        const q = query(tournamentBadgesCollection, where("tournamentId", "==", torneoId));
+        const querySnapshot = await getDocs(q);
+        
+        // If no badges are assigned, return empty array
+        if (querySnapshot.empty) return [];
+        
+        // Get details of each badge
+        const badgesData = [];
+        for (const doc of querySnapshot.docs) {
+            const badgeAssignment = doc.data();
+            const badgeRef = await getDoc(doc(db, "badges", badgeAssignment.badgeId));
+            
+            if (badgeRef.exists()) {
+                badgesData.push({
+                    id: doc.id,
+                    ...badgeAssignment,
+                    badge: {
+                        id: badgeAssignment.badgeId,
+                        ...badgeRef.data()
+                    }
+                });
+            }
+        }
+        
+        return badgesData;
+    } catch (error) {
+        console.error("Error getting tournament badges:", error);
+        return [];
+    }
+}
+
+// Main function to load tournaments
 export async function loadTournaments() {
     try {
-        console.log("Cargando torneos...");
+        console.log("Loading tournaments...");
         
-        // Contenedores para los diferentes tipos de torneos
+        // Containers for different types of tournaments
         const enProcesoContainer = document.getElementById('torneos-en-proceso');
         const abiertosContainer = document.getElementById('torneos-abiertos');
         const proximosContainer = document.getElementById('torneos-proximos');
         
-        // Verificar si existen los contenedores
+        // Verify if containers exist
         if (!enProcesoContainer || !abiertosContainer || !proximosContainer) {
-            console.error("No se encontraron los contenedores para torneos");
+            console.error("Containers for tournaments not found");
             return;
         }
         
-        // Mostrar indicadores de carga
+        // Show loading indicators
         const loadingHTML = `
             <div class="col-span-full flex justify-center items-center p-4">
                 <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
@@ -193,18 +249,24 @@ export async function loadTournaments() {
         proximosContainer.innerHTML = loadingHTML;
         
         try {
-            // Obtener todos los torneos visibles
+            // Get all visible tournaments
             const torneosRef = collection(db, "torneos");
             const q = query(torneosRef, where("visible", "!=", false));
             const querySnapshot = await getDocs(q);
             
-            // Clasificar torneos por estado
+            // Classify tournaments by status
             const torneosEnProceso = [];
             const torneosAbiertos = [];
             const torneosProximos = [];
             
-            // Procesar cada torneo y obtener sus datos de banner
+            // Process each tournament and get its banner data
             const torneoPromises = [];
+            
+            // Clear participants cache
+            participantsInfoCache = {};
+            
+            // Preload participants info for all tournaments
+            const allParticipantsPromise = preloadAllParticipantsInfo(querySnapshot.docs.map(doc => doc.id));
             
             querySnapshot.forEach(docSnapshot => {
                 const torneo = {
@@ -212,29 +274,36 @@ export async function loadTournaments() {
                     ...docSnapshot.data()
                 };
                 
-                // Agregar promesa para cargar el banner
+                // Add promise to load the banner
                 torneoPromises.push(
                     getBannerForTournament(torneo).then(bannerUrl => {
                         if (bannerUrl) {
                             torneo.bannerImageUrl = bannerUrl;
                         }
                         
-                        // Clasificar según estado
-                        if (torneo.estado === 'En Progreso') {
-                            torneosEnProceso.push(torneo);
-                        } else if (torneo.estado === 'Abierto') {
-                            torneosAbiertos.push(torneo);
-                        } else if (torneo.estado === 'Próximamente') {
-                            torneosProximos.push(torneo);
-                        }
+                        // Add promise to load tournament badges
+                        return getTournamentBadges(torneo.id).then(badges => {
+                            if (badges && badges.length > 0) {
+                                torneo.badges = badges;
+                            }
+                            
+                            // Classify by status
+                            if (torneo.estado === 'En Progreso') {
+                                torneosEnProceso.push(torneo);
+                            } else if (torneo.estado === 'Abierto') {
+                                torneosAbiertos.push(torneo);
+                            } else if (torneo.estado === 'Próximamente') {
+                                torneosProximos.push(torneo);
+                            }
+                        });
                     })
                 );
             });
             
-            // Esperar a que todos los torneos se procesen
-            await Promise.all(torneoPromises);
+            // Wait for all tournaments to be processed
+            await Promise.all([...torneoPromises, allParticipantsPromise]);
             
-            // Ordenar por fecha (más cercana primero)
+            // Sort by date (closest first)
             const sortByDate = (a, b) => {
                 const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date();
                 const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date();
@@ -245,35 +314,101 @@ export async function loadTournaments() {
             torneosAbiertos.sort(sortByDate);
             torneosProximos.sort(sortByDate);
             
-            // Renderizar torneos en sus respectivos contenedores
+            // Render tournaments in their respective containers
             await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
             await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
             await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
             
-            // Configurar botones de inscripción/desinscripción
+            // Configure registration/unregistration buttons
             setupTournamentButtons();
             
-            console.log("Torneos cargados correctamente");
+            console.log("Tournaments loaded successfully");
             
         } catch (error) {
-            console.error("Error al consultar torneos:", error);
+            console.error("Error querying tournaments:", error);
             showErrorMessage();
         }
         
     } catch (error) {
-        console.error("Error al cargar torneos:", error);
+        console.error("Error loading tournaments:", error);
         showErrorMessage();
     }
 }
 
-// Renderizar sección de torneos
+// Preload participants info for all tournaments
+async function preloadAllParticipantsInfo(tournamentIds) {
+    try {
+        // Query participant_info collection for all active entries
+        const participantInfoRef = collection(db, "participant_info");
+        const q = query(
+            participantInfoRef, 
+            where("tournamentId", "in", tournamentIds.slice(0, 10)), // Firestore limits to 10 items in 'in' queries
+            where("active", "!=", false)
+        );
+        
+        const snapshot = await getDocs(q);
+        
+        // Organize by tournament ID
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (!participantsInfoCache[data.tournamentId]) {
+                participantsInfoCache[data.tournamentId] = {};
+            }
+            
+            participantsInfoCache[data.tournamentId][data.userId] = {
+                id: doc.id,
+                playerName: data.playerName,
+                discordUsername: data.discordUsername,
+                ...data
+            };
+        });
+        
+        // If more than 10 tournaments, process them in batches
+        if (tournamentIds.length > 10) {
+            // Process remaining tournaments in batches of 10
+            for (let i = 10; i < tournamentIds.length; i += 10) {
+                const batch = tournamentIds.slice(i, i + 10);
+                if (batch.length === 0) break;
+                
+                const batchQuery = query(
+                    participantInfoRef, 
+                    where("tournamentId", "in", batch),
+                    where("active", "!=", false)
+                );
+                
+                const batchSnapshot = await getDocs(batchQuery);
+                
+                batchSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!participantsInfoCache[data.tournamentId]) {
+                        participantsInfoCache[data.tournamentId] = {};
+                    }
+                    
+                    participantsInfoCache[data.tournamentId][data.userId] = {
+                        id: doc.id,
+                        playerName: data.playerName,
+                        discordUsername: data.discordUsername,
+                        ...data
+                    };
+                });
+            }
+        }
+        
+        return participantsInfoCache;
+    } catch (error) {
+        console.error("Error preloading participants info:", error);
+        return {};
+    }
+}
+
+// Render tournament section
 async function renderTournamentSection(sectionId, containerId, torneos) {
     const container = document.getElementById(containerId);
     const section = document.getElementById(sectionId);
     
     if (!container || !section) return;
     
-    // Mostrar u ocultar sección dependiendo si hay torneos
+    // Show or hide section depending if there are tournaments
     if (torneos.length === 0) {
         container.innerHTML = `
             <div class="col-span-full text-center p-4">
@@ -287,18 +422,19 @@ async function renderTournamentSection(sectionId, containerId, torneos) {
     }
 }
 
-// Renderizar torneos en un contenedor
+// Render tournaments in a container
 async function renderTournaments(containerId, torneos) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
     let html = '';
     
-    // Verificar si el usuario está autenticado
+    // Check if user is authenticated
     const userAuthenticated = isAuthenticated();
+    const currentUser = auth.currentUser;
     
     for (const torneo of torneos) {
-        // Formatear fecha
+        // Format date
         const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
         const fechaFormateada = fecha.toLocaleDateString('es-ES', {
             day: 'numeric',
@@ -306,57 +442,66 @@ async function renderTournaments(containerId, torneos) {
             year: 'numeric'
         });
         
-        // Formatear hora
+        // Format time
         const hora = torneo.hora || '00:00';
         const horaFormateada = hora.substring(0, 5);
         
-        // Calcular inscripciones y capacidad
+        // Calculate registrations and capacity
         const participants = torneo.participants || [];
         const inscritos = participants.length;
         const capacidad = torneo.capacidad || '∞';
         const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
         
-        // Verificar si el usuario actual está inscrito
-        const estaInscrito = userAuthenticated && auth.currentUser && participants.includes(auth.currentUser.uid);
+        // Check if current user is registered
+        const estaInscrito = userAuthenticated && currentUser && participants.includes(currentUser.uid);
         
-        // Determinar estado del botón de inscripción
+        // Check if user has registered with additional info
+        let hasAdditionalInfo = false;
+        if (estaInscrito && currentUser) {
+            hasAdditionalInfo = participantsInfoCache[torneo.id] && 
+                                participantsInfoCache[torneo.id][currentUser.uid];
+        }
+        
+        // Determine registration button state
         let botonInscripcion = '';
         
         if (torneo.estado === 'Abierto') {
             if (!userAuthenticated) {
-                // Usuario no autenticado - Mostrar botón de registro
+                // User not authenticated - Show registration button
                 botonInscripcion = `
                     <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold register-btn">
                         Registrarse para participar
                     </button>
                 `;
             } else if (estaInscrito) {
-                // Usuario autenticado e inscrito - Mostrar botón de desinscripción
+                // User authenticated and registered - Show unregistration button
                 botonInscripcion = `
                     <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
                         Desinscribirse
                     </button>
                 `;
             } else if (lleno) {
-                // Torneo lleno
+                // Tournament full
                 botonInscripcion = `
                     <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
                         Cupos Agotados
                     </button>
                 `;
             } else {
-                // Usuario autenticado pero no inscrito
+                // User authenticated but not registered
                 botonInscripcion = `
-                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" data-torneo-id="${torneo.id}">
+                    <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" 
+                            data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre || 'Torneo'}">
                         Inscribirse
                     </button>
                 `;
             }
         } else if (torneo.estado === 'En Progreso') {
+            // Tournament in progress - Show bracket button
             botonInscripcion = `
-                <button class="w-full bg-yellow-500 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
-                    En Progreso
-                </button>
+                <a href="bracket.html?id=${torneo.id}" class="block w-full bg-yellow-500 text-white py-2 rounded-lg font-semibold text-center hover:bg-yellow-600 transition">
+                    Ver Bracket
+                </a>
             `;
         } else {
             botonInscripcion = `
@@ -366,13 +511,79 @@ async function renderTournaments(containerId, torneos) {
             `;
         }
         
-        // Generar HTML para puntos por posición
+        // Generate HTML for points by position
         const puntosPosicionHTML = renderPuntosPosicion(torneo.puntosPosicion);
         
-        // Usar la imagen del banner si está disponible, de lo contrario usar imageUrl o fallback
+        // Generate HTML for badges if available
+        let badgesHTML = '';
+        if (torneo.badges && torneo.badges.length > 0) {
+            badgesHTML = `
+                <div class="bg-gray-100 rounded-lg p-3 mb-4">
+                    <h4 class="font-semibold text-gray-700 mb-2">Badges del torneo:</h4>
+                    <div class="flex flex-wrap gap-2">
+            `;
+            
+            // Add up to 3 badges with tooltips
+            torneo.badges.slice(0, 3).forEach(badgeAssignment => {
+                const badge = badgeAssignment.badge;
+                let positionText = '';
+                
+                switch (badgeAssignment.position) {
+                    case 'first':
+                        positionText = 'Primer lugar';
+                        break;
+                    case 'second':
+                        positionText = 'Segundo lugar';
+                        break;
+                    case 'top3':
+                        positionText = 'Top 3';
+                        break;
+                    case 'all':
+                        positionText = 'Todos los participantes';
+                        break;
+                    default:
+                        positionText = 'Premio';
+                }
+                
+                badgesHTML += `
+                    <div class="relative group">
+                        ${badge.imageUrl ? 
+                            `<img src="${badge.imageUrl}" alt="${badge.nombre}" class="w-8 h-8 object-contain" title="${badge.nombre}">` : 
+                            `<div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs" style="background-color: ${badge.color || '#ff6b1a'}" title="${badge.nombre}">
+                                <i class="fas fa-${badge.icono || 'trophy'}"></i>
+                            </div>`
+                        }
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 w-max">
+                            ${badge.nombre} - ${positionText}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // If there are more badges, show a counter
+            if (torneo.badges.length > 3) {
+                badgesHTML += `
+                    <div class="relative group">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs bg-gray-500">
+                            +${torneo.badges.length - 3}
+                        </div>
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 w-max">
+                            ${torneo.badges.length - 3} badges más
+                        </div>
+                    </div>
+                `;
+            }
+            
+            badgesHTML += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Use banner image if available, otherwise use imageUrl or fallback
         const imageSrc = torneo.bannerImageUrl || torneo.imageUrl || 'https://via.placeholder.com/400x200';
         
-        // HTML del torneo
+        // Tournament HTML
         html += `
             <div class="bg-white rounded-xl shadow-lg overflow-hidden tournament-card transition duration-300" data-torneo-id="${torneo.id}">
                 <img src="${imageSrc}" alt="${torneo.nombre}" class="w-full h-48 object-cover">
@@ -388,6 +599,9 @@ async function renderTournaments(containerId, torneos) {
                         <i class="far fa-clock ml-4 mr-2"></i>
                         <span>${horaFormateada}</span>
                     </div>
+                    
+                    ${badgesHTML}
+                    
                     <div class="bg-gray-100 rounded-lg p-3 mb-4">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-semibold text-gray-700">Participantes:</h4>
@@ -411,13 +625,13 @@ async function renderTournaments(containerId, torneos) {
     
     container.innerHTML = html;
     
-    // Cargar lista de participantes para cada torneo
+    // Load participant list for each tournament
     for (const torneo of torneos) {
         await loadParticipants(torneo.id, torneo.participants || []);
     }
 }
 
-// Cargar participantes de un torneo
+// Load participants for a tournament
 async function loadParticipants(torneoId, participantIds) {
     const container = document.getElementById(`participants-${torneoId}`);
     if (!container) return;
@@ -429,30 +643,56 @@ async function loadParticipants(torneoId, participantIds) {
     
     try {
         let html = '<ul class="space-y-1">';
-        const maxToShow = Math.min(5, participantIds.length); // Mostrar máximo 5 participantes
+        const maxToShow = Math.min(5, participantIds.length); // Show maximum 5 participants
+        
+        // Check if we have cached participants info
+        const tournamentParticipantsInfo = participantsInfoCache[torneoId] || {};
         
         for (let i = 0; i < maxToShow; i++) {
             try {
                 const uid = participantIds[i];
-                const usersRef = collection(db, "usuarios");
-                const q = query(usersRef, where("uid", "==", uid), limit(1));
-                const querySnapshot = await getDocs(q);
                 
-                if (!querySnapshot.empty) {
-                    const userData = querySnapshot.docs[0].data();
-                    html += `
-                        <li class="text-xs truncate">
-                            <i class="fas fa-user text-gray-400 mr-1"></i>
-                            ${userData.nombre || 'Usuario'}
-                        </li>
-                    `;
+                // Try to get player name from cache
+                let playerName = null;
+                let discordUsername = null;
+                
+                if (tournamentParticipantsInfo[uid]) {
+                    playerName = tournamentParticipantsInfo[uid].playerName;
+                    discordUsername = tournamentParticipantsInfo[uid].discordUsername;
                 }
+                
+                // If not in cache, try to get from users collection
+                if (!playerName) {
+                    const usersRef = collection(db, "usuarios");
+                    const q = query(usersRef, where("uid", "==", uid), limit(1));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        const userData = querySnapshot.docs[0].data();
+                        playerName = userData.nombre || 'Usuario';
+                    } else {
+                        playerName = 'Usuario';
+                    }
+                }
+                
+                // Add participant to list
+                html += `
+                    <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
+                        <i class="fas fa-user text-gray-400 mr-1"></i>
+                        ${playerName}
+                        ${discordUsername ? `
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
+                                Discord: ${discordUsername}
+                            </div>
+                        ` : ''}
+                    </li>
+                `;
             } catch (e) {
-                console.error(`Error al cargar participante individual:`, e);
+                console.error(`Error loading individual participant:`, e);
             }
         }
         
-        // Si hay más participantes, mostrar cuántos más hay
+        // If there are more participants, show how many more
         if (participantIds.length > maxToShow) {
             html += `
                 <li class="text-xs text-center text-gray-500 mt-1">
@@ -465,111 +705,94 @@ async function loadParticipants(torneoId, participantIds) {
         container.innerHTML = html;
         
     } catch (error) {
-        console.error(`Error al cargar participantes para torneo ${torneoId}:`, error);
+        console.error(`Error loading participants for tournament ${torneoId}:`, error);
         container.innerHTML = '<p class="text-center text-gray-500 text-xs">Error al cargar participantes</p>';
     }
 }
 
-// Configurar botones de inscripción/desinscripción
+// Configure registration/unregistration buttons
 function setupTournamentButtons() {
-    // Botones de inscripción
+    // Registration buttons
     document.querySelectorAll('.inscribirse-btn').forEach(button => {
         button.addEventListener('click', async function(e) {
             e.preventDefault();
             
-            // Obtener ID del torneo
+            // Get tournament ID and name
             const torneoId = this.dataset.torneoId;
+            const torneoNombre = this.dataset.torneoNombre;
             
-            // Verificar si el usuario está autenticado
+            // Check if user is authenticated
             if (!isAuthenticated()) {
                 mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
-                // Abrir modal de login
+                // Open login modal
                 const loginBtn = document.getElementById('loginBtn');
                 if (loginBtn) loginBtn.click();
                 return;
             }
             
-            // Cambiar estado del botón
-            this.disabled = true;
-            const originalText = this.textContent;
-            this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
-            
-            try {
-                // Inscribir al usuario
-                await registerForTournament(torneoId);
-                mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
-                
-                // Recargar torneos para actualizar la UI
-                await loadTournaments();
-            } catch (error) {
-                console.error("Error al inscribirse:", error);
-                mostrarNotificacion(error.message || "Error al inscribirse al torneo", "error");
-                
-                // Restaurar botón
-                this.disabled = false;
-                this.textContent = originalText;
-            }
+            // Show registration form modal
+            showRegistrationModal(torneoId, torneoNombre);
         });
     });
     
-    // Botones de desinscripción
+    // Unregistration buttons
     document.querySelectorAll('.desinscribirse-btn').forEach(button => {
         button.addEventListener('click', async function(e) {
             e.preventDefault();
             
-            // Obtener ID del torneo
+            // Get tournament ID
             const torneoId = this.dataset.torneoId;
             
-            // Verificar si el usuario está autenticado
+            // Check if user is authenticated
             if (!isAuthenticated()) {
                 mostrarNotificacion("Debes iniciar sesión para desinscribirte", "error");
                 return;
             }
             
-            // Confirmar acción
+            // Confirm action
             if (!confirm("¿Estás seguro que deseas desinscribirte de este torneo?")) {
                 return;
             }
             
-            // Cambiar estado del botón
+            // Change button state
             this.disabled = true;
             const originalText = this.textContent;
             this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
             
             try {
-                // Desinscribir al usuario
+                // Unregister user
                 await unregisterFromTournament(torneoId);
                 mostrarNotificacion("Te has desinscrito del torneo correctamente", "success");
                 
-                // Recargar torneos para actualizar la UI
+                // Reload tournaments to update UI
                 await loadTournaments();
             } catch (error) {
-                console.error("Error al desinscribirse:", error);
+                console.error("Error unregistering:", error);
                 mostrarNotificacion(error.message || "Error al desinscribirse del torneo", "error");
                 
-                // Restaurar botón
+                // Restore button
                 this.disabled = false;
                 this.textContent = originalText;
             }
         });
     });
     
-    // Botones de registro para usuarios no autenticados
+    // Registration buttons for non-authenticated users
     document.querySelectorAll('.register-btn').forEach(button => {
         button.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Mostrar mensaje y redirigir a registro
+            // Show message and redirect to registration
             mostrarNotificacion("Para participar en torneos, primero debes registrarte", "info");
             
-            // Abrir modal de registro
+            // Open registration modal
             const registerBtn = document.getElementById('registerBtn');
             if (registerBtn) {
                 setTimeout(() => {
                     registerBtn.click();
                 }, 1000);
             } else {
-                // Alternativa: abrir modal de login
+                // Alternative: open login modal
                 const loginBtn = document.getElementById('loginBtn');
                 if (loginBtn) loginBtn.click();
             }
@@ -577,131 +800,8 @@ function setupTournamentButtons() {
     });
 }
 
-// Inscribir al usuario actual en un torneo
-async function registerForTournament(torneoId) {
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error("Debes iniciar sesión para inscribirte");
-        }
-        
-        // Obtener documento del torneo
-        const torneoRef = doc(db, "torneos", torneoId);
-        const torneoSnap = await getDoc(torneoRef);
-        
-        if (!torneoSnap.exists()) {
-            throw new Error("El torneo no existe");
-        }
-        
-        const torneoData = torneoSnap.data();
-        
-        // Verificar que el torneo esté abierto
-        if (torneoData.estado !== 'Abierto') {
-            throw new Error("Este torneo no está abierto para inscripciones");
-        }
-        
-        // Verificar si hay cupos disponibles
-        const currentParticipants = torneoData.participants || [];
-        if (torneoData.capacidad && currentParticipants.length >= torneoData.capacidad) {
-            throw new Error("No hay cupos disponibles para este torneo");
-        }
-        
-        // Verificar si el usuario ya está inscrito
-        if (currentParticipants.includes(user.uid)) {
-            throw new Error("Ya estás inscrito en este torneo");
-        }
-        
-        // Inscribir al usuario
-        await updateDoc(torneoRef, {
-            participants: [...currentParticipants, user.uid],
-            updatedAt: serverTimestamp()
-        });
-        
-        // También actualizar el usuario para registrar su participación
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", user.uid));
-        const userQuerySnapshot = await getDocs(q);
-        
-        if (!userQuerySnapshot.empty) {
-            const userDoc = userQuerySnapshot.docs[0];
-            
-            // Añadir torneo a la lista de torneos del usuario
-            const userTorneos = userDoc.data().torneos || [];
-            if (!userTorneos.includes(torneoId)) {
-                await updateDoc(doc(db, "usuarios", userDoc.id), {
-                    torneos: [...userTorneos, torneoId],
-                    updatedAt: serverTimestamp()
-                });
-            }
-        }
-        
-        return true;
-        
-    } catch (error) {
-        console.error("Error al inscribirse al torneo:", error);
-        throw error;
-    }
-}
-
-// Desinscribir al usuario actual de un torneo
-async function unregisterFromTournament(torneoId) {
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error("Debes iniciar sesión para desinscribirte");
-        }
-        
-        // Obtener documento del torneo
-        const torneoRef = doc(db, "torneos", torneoId);
-        const torneoSnap = await getDoc(torneoRef);
-        
-        if (!torneoSnap.exists()) {
-            throw new Error("El torneo no existe");
-        }
-        
-        const torneoData = torneoSnap.data();
-        
-        // Verificar que el torneo esté aún abierto o en proceso
-        if (torneoData.estado !== 'Abierto' && torneoData.estado !== 'En Progreso') {
-            throw new Error("No puedes desinscribirte de este torneo");
-        }
-        
-        // Verificar si el usuario está inscrito
-        const currentParticipants = torneoData.participants || [];
-        if (!currentParticipants.includes(user.uid)) {
-            throw new Error("No estás inscrito en este torneo");
-        }
-        
-        // Eliminar al usuario de la lista de participantes
-        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
-        
-        // Actualizar el documento del torneo
-        await updateDoc(torneoRef, {
-            participants: newParticipants,
-            updatedAt: serverTimestamp()
-        });
-        
-        // También actualizar el usuario para eliminar su participación
-        const usersRef = collection(db, "usuarios");
-        const q = query(usersRef, where("uid", "==", user.uid));
-        const userQuerySnapshot = await getDocs(q);
-        
-        if (!userQuerySnapshot.empty) {
-            const userDoc = userQuerySnapshot.docs[0];
-            
-            // Eliminar torneo de la lista de torneos del usuario
-            const userTorneos = userDoc.data().torneos || [];
-            const newUserTorneos = userTorneos.filter(id => id !== torneoId);
-            
-            await updateDoc(doc(db, "usuarios", userDoc.id), {
-                torneos: newUserTorneos,
-                updatedAt: serverTimestamp()
-            });
-        }
-        
-        return true;
-    } catch (error) {
-        console.error("Error al desinscribirse del torneo:", error);
-        throw error;
-    }
-}
+// Export functions for use in other modules
+export {
+    loadTournaments,
+    getTournamentBadges
+};
