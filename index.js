@@ -8,6 +8,7 @@ import { initRegistrationModule } from './registration.js';
 export async function initApp() {
     try {
         console.log("Inicializando aplicación Dtowin...");
+        initRegistrationModule();
         
         // Cargar componentes principales
         await Promise.all([
