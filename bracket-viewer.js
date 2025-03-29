@@ -11,6 +11,11 @@ const closeScoreModalBtn = document.getElementById('close-score-modal');
 const cancelScoreBtn = document.getElementById('cancel-score-btn');
 const scoreUpdateForm = document.getElementById('score-update-form');
 
+// Modal de añadir participante
+const addParticipantModal = document.getElementById('add-participant-modal');
+const closeAddParticipantModalBtn = document.getElementById('close-add-participant-modal');
+const addParticipantForm = document.getElementById('add-participant-form');
+
 // Variables globales
 let bracketData = null;
 let currentMatchId = null;
@@ -42,6 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (isUserStaff) {
                 staffControls.classList.remove('hidden');
+                
+                // Añadir controles adicionales para staff
+                await addStaffControls();
             }
         }
         
@@ -63,6 +71,223 @@ function updateUserProfileUI(user) {
                 <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
             </div>
         `;
+    }
+}
+
+// Añadir controles adicionales para staff
+async function addStaffControls() {
+    if (!staffControls) return;
+    
+    // Obtener referencias a funciones desde module
+    const { resetTournamentBracket, addParticipantManually } = await import('./brackets.js');
+    
+    // Verificar estado del torneo
+    const tournamentRef = await db.collection("torneos").doc(tournamentId).get();
+    const tournamentData = tournamentRef.data();
+    const tournamentState = tournamentData?.estado || '';
+    
+    // Añadir controles para administradores
+    staffControls.innerHTML += `
+        <div class="space-y-3 mt-4">
+            <button id="add-participant-btn" class="w-full bg-blue-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-blue-600 transition">
+                <i class="fas fa-user-plus mr-2"></i> Añadir Participante
+            </button>
+            
+            <button id="reset-bracket-btn" class="w-full bg-red-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
+                <i class="fas fa-redo-alt mr-2"></i> Reiniciar Bracket
+            </button>
+        </div>
+    `;
+    
+    // Configurar listeners para los nuevos botones
+    setupStaffControlListeners();
+}
+
+// Configurar listeners para controles de staff
+function setupStaffControlListeners() {
+    const addParticipantBtn = document.getElementById('add-participant-btn');
+    const resetBracketBtn = document.getElementById('reset-bracket-btn');
+    
+    if (addParticipantBtn) {
+        addParticipantBtn.addEventListener('click', showAddParticipantModal);
+    }
+    
+    if (resetBracketBtn) {
+        resetBracketBtn.addEventListener('click', confirmResetBracket);
+    }
+}
+
+// Mostrar modal para añadir participante
+function showAddParticipantModal() {
+    // Crear modal si no existe
+    if (!document.getElementById('add-participant-modal')) {
+        createAddParticipantModal();
+    }
+    
+    // Mostrar modal
+    const modal = document.getElementById('add-participant-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Limpiar formulario
+    const form = document.getElementById('add-participant-form');
+    if (form) form.reset();
+    
+    // Limpiar mensajes de error
+    const errorMsg = document.getElementById('add-participant-error');
+    if (errorMsg) errorMsg.textContent = '';
+}
+
+// Crear modal para añadir participante
+function createAddParticipantModal() {
+    const modalHTML = `
+        <div id="add-participant-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                <button id="close-add-participant-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">Añadir Participante</h3>
+                    <p class="text-gray-600">Añade un nuevo participante al torneo</p>
+                    <p id="add-participant-error" class="text-red-500 mt-2 text-sm"></p>
+                </div>
+                
+                <form id="add-participant-form">
+                    <div class="mb-4">
+                        <label for="manual-player-name" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                        <input type="text" id="manual-player-name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usará en el torneo" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="manual-player-email" class="block text-gray-700 text-sm font-bold mb-2">Correo Electrónico *</label>
+                        <input type="email" id="manual-player-email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="ejemplo@gmail.com" required>
+                        <p class="text-xs text-gray-500 mt-1">Necesario para vincularlo con una cuenta</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="manual-discord-username" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                        <input type="text" id="manual-discord-username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Usuario de Discord">
+                    </div>
+                    
+                    <div class="flex items-center justify-end">
+                        <button type="button" id="cancel-add-participant-btn" class="text-gray-600 mr-4 hover:text-gray-800">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="submit-add-participant-btn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                            Añadir Participante
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    // Añadir al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar event listeners
+    const modal = document.getElementById('add-participant-modal');
+    const closeBtn = document.getElementById('close-add-participant-modal');
+    const cancelBtn = document.getElementById('cancel-add-participant-btn');
+    const form = document.getElementById('add-participant-form');
+    
+    // Cerrar modal
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+    
+    // Manejar envío del formulario
+    form.addEventListener('submit', handleAddParticipant);
+}
+
+// Manejar envío del formulario de añadir participante
+async function handleAddParticipant(e) {
+    e.preventDefault();
+    
+    // Obtener valores del formulario
+    const playerName = document.getElementById('manual-player-name').value.trim();
+    const playerEmail = document.getElementById('manual-player-email').value.trim();
+    const discordUsername = document.getElementById('manual-discord-username').value.trim();
+    const errorMsg = document.getElementById('add-participant-error');
+    const submitBtn = document.getElementById('submit-add-participant-btn');
+    
+    // Validar campos
+    if (!playerName || !playerEmail) {
+        errorMsg.textContent = "El nombre y correo electrónico son obligatorios";
+        return;
+    }
+    
+    // Mostrar estado de carga
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+    
+    try {
+        // Importar función desde módulo de brackets
+        const { addParticipantManually } = await import('./brackets.js');
+        
+        // Añadir participante
+        await addParticipantManually(tournamentId, playerName, discordUsername, playerEmail);
+        
+        // Cerrar modal
+        const modal = document.getElementById('add-participant-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // Mostrar mensaje de éxito
+        window.mostrarNotificacion("Participante añadido correctamente", "success");
+        
+        // Recargar datos del bracket
+        await loadBracketData();
+        
+    } catch (error) {
+        console.error("Error al añadir participante:", error);
+        errorMsg.textContent = error.message || "Error al añadir participante";
+    } finally {
+        // Restaurar botón
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Añadir Participante';
+    }
+}
+
+// Confirmar reinicio del bracket
+function confirmResetBracket() {
+    if (confirm("¿Estás seguro de reiniciar el bracket? Esta acción generará un nuevo bracket con los participantes que hicieron check-in. Los resultados actuales se perderán.")) {
+        resetBracket();
+    }
+}
+
+// Reiniciar bracket
+async function resetBracket() {
+    try {
+        // Mostrar estado de carga
+        bracketContainer.innerHTML = `
+            <div class="py-12 flex justify-center">
+                <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full mr-3"></div>
+                <p class="text-gray-600">Reiniciando bracket...</p>
+            </div>
+        `;
+        
+        // Importar función desde módulo de brackets
+        const { resetTournamentBracket } = await import('./brackets.js');
+        
+        // Reiniciar bracket
+        await resetTournamentBracket(tournamentId);
+        
+        // Mostrar mensaje de éxito
+        window.mostrarNotificacion("Bracket reiniciado correctamente", "success");
+        
+        // Recargar datos del bracket
+        await loadBracketData();
+        
+    } catch (error) {
+        console.error("Error al reiniciar bracket:", error);
+        showError("Error al reiniciar bracket: " + error.message);
     }
 }
 
@@ -207,9 +432,6 @@ function renderBracket(data) {
             .sort((a, b) => a.position - b.position);
     });
     
-    // Calcular la altura máxima necesaria para cada ronda
-    const totalRounds = data.rounds.length;
-    
     // Generar rondas
     data.rounds.forEach(round => {
         const roundMatches = matchesByRound[round.round];
@@ -336,6 +558,11 @@ function addConnectorLines() {
                 
                 // Aplicar clase para estilo
                 connector.classList.add(connectorClass);
+                
+                // Si el partido es ganador, destacar el conector
+                if (match.winner) {
+                    connector.classList.add('winner-path');
+                }
                 
                 // Establecer posición y tamaño
                 connector.style.left = `${startX}px`;
@@ -468,61 +695,11 @@ async function handleScoreUpdate(e) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
         
-        // Encontrar el partido a actualizar
-        const match = bracketData.matches.find(m => m.id === currentMatchId);
+        // Importar función de actualización
+        const { updateMatchResults } = await import('./brackets.js');
         
-        // Determinar ganador
-        const isPlayer1Winner = player1Score > player2Score;
-        const winnerId = isPlayer1Winner ? match.player1.id : match.player2.id;
-        const winnerName = isPlayer1Winner ? match.player1.name : match.player2.name;
-        const winnerInfo = isPlayer1Winner ? match.player1 : match.player2;
-        
-        // Actualizar partido
-        match.status = 'completed';
-        match.scores = {
-            player1: player1Score,
-            player2: player2Score
-        };
-        match.winner = winnerInfo;
-        
-        // Actualizar partido siguiente si existe
-        if (match.nextMatchId) {
-            const nextMatch = bracketData.matches.find(m => m.id === match.nextMatchId);
-            
-            if (nextMatch) {
-                // Determinar si el ganador va a la posición 1 o 2 del siguiente partido
-                // Este cálculo depende de si la posición es par o impar
-                const isOddPosition = match.position % 2 !== 0;
-                
-                if (isOddPosition) {
-                    // Las posiciones impares van al jugador 1 del siguiente partido
-                    nextMatch.player1 = {
-                        ...winnerInfo
-                    };
-                } else {
-                    // Las posiciones pares van al jugador 2 del siguiente partido
-                    nextMatch.player2 = {
-                        ...winnerInfo
-                    };
-                }
-            }
-        }
-        
-        // Guardar cambios en la base de datos
-        await db.collection("brackets").doc(bracketData.id).update({
-            matches: bracketData.matches,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        // Si es el partido final, actualizar el ganador del torneo
-        const isFinalMatch = !match.nextMatchId;
-        if (isFinalMatch) {
-            await db.collection("torneos").doc(tournamentId).update({
-                ganador: winnerId,
-                estado: 'Finalizado',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
+        // Actualizar resultados
+        await updateMatchResults(bracketData.id, currentMatchId, player1Score, player2Score);
         
         // Cerrar modal
         closeScoreModal();
@@ -663,75 +840,11 @@ async function generateBracket(tournamentId) {
             </div>
         `;
         
-        // Obtener datos del torneo
-        const tournamentRef = await db.collection("torneos").doc(tournamentId).get();
+        // Importar función para generar bracket
+        const { generateBracket } = await import('./brackets.js');
         
-        if (!tournamentRef.exists) {
-            throw new Error("El torneo no existe");
-        }
-        
-        const tournamentData = tournamentRef.data();
-        
-        // Verificar que el torneo tenga participantes
-        const participants = tournamentData.participants || [];
-        
-        if (participants.length < 2) {
-            throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
-        }
-        
-        // Obtener información de participantes
-        const participantInfoRef = await db.collection("participant_info")
-            .where("tournamentId", "==", tournamentId)
-            .get();
-        
-        // Mapear información de participantes
-        const participantsInfo = {};
-        participantInfoRef.forEach(doc => {
-            const data = doc.data();
-            participantsInfo[data.userId] = {
-                playerName: data.playerName,
-                discordUsername: data.discordUsername
-            };
-        });
-        
-        // Crear estructura del bracket
-        const rounds = [];
-        const numParticipants = participants.length;
-        const numRounds = Math.ceil(Math.log2(numParticipants));
-        
-        // Definir rondas
-        for (let i = 1; i <= numRounds; i++) {
-            rounds.push({
-                round: i,
-                name: getRoundName(i, numRounds)
-            });
-        }
-        
-        // Mezclar participantes para seeding aleatorio
-        const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-        
-        // Llamar a las funciones de brackets.js para generar el bracket balanceado
-        const bracketData = createBalancedBracketStructure(shuffledParticipants, numParticipants, numRounds, participantsInfo);
-        
-        // Guardar bracket en la base de datos
-        const bracketsRef = await db.collection("brackets").add({
-            tournamentId: tournamentId,
-            name: tournamentData.nombre || "Tournament Bracket",
-            rounds: bracketData.rounds,
-            matches: bracketData.matches,
-            participants: participants.length,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "active",
-            createdBy: auth.currentUser ? auth.currentUser.uid : null
-        });
-        
-        // Actualizar torneo con referencia al bracket
-        await db.collection("torneos").doc(tournamentId).update({
-            bracketId: bracketsRef.id,
-            estado: "En Progreso",
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Generar bracket
+        await generateBracket(tournamentId);
         
         // Mostrar mensaje de éxito
         window.mostrarNotificacion("Bracket generado correctamente", "success");
@@ -742,165 +855,6 @@ async function generateBracket(tournamentId) {
     } catch (error) {
         console.error("Error al generar bracket:", error);
         showError("Error al generar bracket: " + error.message);
-    }
-}
-
-// Función auxiliar para crear una estructura balanceada de bracket
-function createBalancedBracketStructure(participants, numParticipants, numRounds, participantsInfo) {
-    // Calcular el número perfecto de participantes (siguiente potencia de 2)
-    const perfectSize = Math.pow(2, numRounds);
-    
-    // Crear rondas
-    const rounds = [];
-    for (let i = 1; i <= numRounds; i++) {
-        rounds.push({
-            round: i,
-            name: getRoundName(i, numRounds),
-            matchCount: perfectSize / Math.pow(2, i)
-        });
-    }
-    
-    // Crear matches utilizando el algoritmo mejorado
-    const matches = [];
-    
-    // Calcular byes
-    const numByes = perfectSize - numParticipants;
-    
-    // Crear seeding balanceado
-    const seeds = [];
-    for (let i = 0; i < perfectSize; i++) {
-        seeds.push(i < numParticipants ? i : null);
-    }
-    
-    // Distribuir byes de manera óptima
-    seeds.sort((a, b) => {
-        if (a === null && b === null) return 0;
-        if (a === null) return 1;
-        if (b === null) return -1;
-        return a - b;
-    });
-    
-    // Crear matches de primera ronda
-    for (let i = 0; i < perfectSize / 2; i++) {
-        const player1Index = seeds[i * 2];
-        const player2Index = seeds[i * 2 + 1];
-        
-        let player1 = null;
-        let player2 = null;
-        
-        if (player1Index !== null) {
-            player1 = {
-                id: participants[player1Index],
-                name: participantsInfo[participants[player1Index]]?.playerName || "TBD",
-                discord: participantsInfo[participants[player1Index]]?.discordUsername || null,
-                seed: player1Index + 1
-            };
-        }
-        
-        if (player2Index !== null) {
-            player2 = {
-                id: participants[player2Index],
-                name: participantsInfo[participants[player2Index]]?.playerName || "TBD",
-                discord: participantsInfo[participants[player2Index]]?.discordUsername || null,
-                seed: player2Index + 1
-            };
-        }
-        
-        const position = i + 1;
-        const nextMatchPosition = Math.ceil(position / 2);
-        
-        matches.push({
-            id: `1-${position}`,
-            round: 1,
-            position: position,
-            player1: player1,
-            player2: player2,
-            winner: null,
-            scores: {},
-            status: "pending",
-            nextMatchId: numRounds > 1 ? `2-${nextMatchPosition}` : null
-        });
-    }
-    
-    // Crear matches para las demás rondas
-    for (let round = 2; round <= numRounds; round++) {
-        const matchesInRound = perfectSize / Math.pow(2, round);
-        
-        for (let i = 0; i < matchesInRound; i++) {
-            const position = i + 1;
-            const nextMatchPosition = Math.ceil(position / 2);
-            
-            matches.push({
-                id: `${round}-${position}`,
-                round: round,
-                position: position,
-                player1: null,
-                player2: null,
-                winner: null,
-                scores: {},
-                status: "pending",
-                nextMatchId: round < numRounds ? `${round + 1}-${nextMatchPosition}` : null
-            });
-        }
-    }
-    
-    // Auto-avanzar byes
-    const byeMatches = matches.filter(match => 
-        (match.player1 && !match.player2) || (!match.player1 && match.player2)
-    );
-    
-    // Procesar matches con bye
-    byeMatches.forEach(match => {
-        const winner = match.player1 || match.player2;
-        
-        // Marcar match como completado
-        match.winner = winner;
-        match.status = "completed";
-        match.scores = {
-            player1: match.player1 ? 1 : 0,
-            player2: match.player2 ? 1 : 0
-        };
-        
-        // Avanzar jugador al siguiente match
-        if (match.nextMatchId) {
-            const nextMatch = matches.find(m => m.id === match.nextMatchId);
-            
-            if (nextMatch) {
-                const isOddPosition = match.position % 2 !== 0;
-                
-                if (isOddPosition) {
-                    nextMatch.player1 = winner;
-                } else {
-                    nextMatch.player2 = winner;
-                }
-            }
-        }
-    });
-    
-    // Ordenar matches por ronda y posición
-    matches.sort((a, b) => {
-        if (a.round !== b.round) {
-            return a.round - b.round;
-        }
-        return a.position - b.position;
-    });
-    
-    return {
-        rounds: rounds,
-        matches: matches
-    };
-}
-
-// Helper function for round names
-function getRoundName(roundNumber, totalRounds) {
-    if (roundNumber === totalRounds) {
-        return "Final";
-    } else if (roundNumber === totalRounds - 1) {
-        return "Semifinales";
-    } else if (roundNumber === totalRounds - 2 && totalRounds > 2) {
-        return "Cuartos de Final";
-    } else {
-        return `Ronda ${roundNumber}`;
     }
 }
 
