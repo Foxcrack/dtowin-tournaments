@@ -68,7 +68,8 @@ function showErrorMessage() {
     const containers = [
         document.getElementById('torneos-en-proceso'),
         document.getElementById('torneos-abiertos'),
-        document.getElementById('torneos-proximos')
+        document.getElementById('torneos-proximos'),
+        document.getElementById('torneos-checkin') // Añadir contenedor de check-in
     ];
     
     containers.forEach(container => {
@@ -224,6 +225,77 @@ async function getTournamentBadges(torneoId) {
     }
 }
 
+// Función para realizar check-in en un torneo
+async function realizarCheckIn(torneoId) {
+    try {
+        // Verificar si el usuario está autenticado
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para hacer check-in");
+        }
+        
+        const user = auth.currentUser;
+        
+        // Verificar si el usuario está inscrito en el torneo
+        const torneoRef = doc(db, "torneos", torneoId);
+        const torneoSnap = await getDoc(torneoRef);
+        
+        if (!torneoSnap.exists()) {
+            throw new Error("El torneo no existe");
+        }
+        
+        const torneoData = torneoSnap.data();
+        const participants = torneoData.participants || [];
+        
+        if (!participants.includes(user.uid)) {
+            throw new Error("No estás inscrito en este torneo");
+        }
+        
+        // Verificar si el torneo está en estado de check-in
+        if (torneoData.estado !== 'Check In') {
+            throw new Error("Este torneo no está en período de check-in");
+        }
+        
+        // Verificar si el usuario ya hizo check-in
+        const checkedInParticipants = torneoData.checkedInParticipants || [];
+        if (checkedInParticipants.includes(user.uid)) {
+            throw new Error("Ya has confirmado tu asistencia a este torneo");
+        }
+        
+        // Actualizar el documento con el estado de check-in
+        await updateDoc(torneoRef, {
+            checkedInParticipants: [...checkedInParticipants, user.uid],
+            updatedAt: serverTimestamp()
+        });
+        
+        // También actualizar la información en participant_info si existe
+        const participantInfoRef = collection(db, "participant_info");
+        const q = query(
+            participantInfoRef, 
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", torneoId),
+            where("active", "!=", false)
+        );
+        
+        const infoSnapshot = await getDocs(q);
+        
+        if (!infoSnapshot.empty) {
+            await updateDoc(doc(db, "participant_info", infoSnapshot.docs[0].id), {
+                checkedIn: true,
+                checkedInAt: serverTimestamp()
+            });
+        }
+        
+        console.log("Check-in realizado correctamente");
+        mostrarNotificacion("Has confirmado tu asistencia correctamente", "success");
+        return true;
+        
+    } catch (error) {
+        console.error("Error al hacer check-in:", error);
+        mostrarNotificacion(`Error: ${error.message}`, "error");
+        throw error;
+    }
+}
+
 // Main function to load tournaments
 async function loadTournaments() {
     try {
@@ -233,22 +305,25 @@ async function loadTournaments() {
         const enProcesoContainer = document.getElementById('torneos-en-proceso');
         const abiertosContainer = document.getElementById('torneos-abiertos');
         const proximosContainer = document.getElementById('torneos-proximos');
+        const checkInContainer = document.getElementById('torneos-checkin'); // Nuevo contenedor para check-in
         
         // Verify if containers exist
-        if (!enProcesoContainer || !abiertosContainer || !proximosContainer) {
+        if (!enProcesoContainer && !abiertosContainer && !proximosContainer && !checkInContainer) {
             console.error("Containers for tournaments not found");
             return;
         }
         
-        // Show loading indicators
+        // Show loading indicators for containers that exist
         const loadingHTML = `
             <div class="col-span-full flex justify-center items-center p-4">
                 <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
             </div>
         `;
-        enProcesoContainer.innerHTML = loadingHTML;
-        abiertosContainer.innerHTML = loadingHTML;
-        proximosContainer.innerHTML = loadingHTML;
+        
+        if (enProcesoContainer) enProcesoContainer.innerHTML = loadingHTML;
+        if (abiertosContainer) abiertosContainer.innerHTML = loadingHTML;
+        if (proximosContainer) proximosContainer.innerHTML = loadingHTML;
+        if (checkInContainer) checkInContainer.innerHTML = loadingHTML;
         
         try {
             // Get all visible tournaments
@@ -260,6 +335,7 @@ async function loadTournaments() {
             const torneosEnProceso = [];
             const torneosAbiertos = [];
             const torneosProximos = [];
+            const torneosCheckIn = []; // Nuevo array para torneos en check-in
             
             // Process each tournament and get its banner data
             const torneoPromises = [];
@@ -269,6 +345,9 @@ async function loadTournaments() {
             
             // Preload participants info for all tournaments
             const allParticipantsPromise = preloadAllParticipantsInfo(querySnapshot.docs.map(doc => doc.id));
+            
+            // Get current user for filtering
+            const currentUser = auth.currentUser;
             
             querySnapshot.forEach(docSnapshot => {
                 const torneo = {
@@ -296,6 +375,14 @@ async function loadTournaments() {
                                 torneosAbiertos.push(torneo);
                             } else if (torneo.estado === 'Próximamente') {
                                 torneosProximos.push(torneo);
+                            } else if (torneo.estado === 'Check In') {
+                                // Mostrar torneos en check-in solo si el usuario está autenticado y está inscrito
+                                const participants = torneo.participants || [];
+                                
+                                if (currentUser && participants.includes(currentUser.uid)) {
+                                    torneosCheckIn.push(torneo);
+                                }
+                                // No añadir a torneosCheckIn si el usuario no está inscrito
                             }
                         });
                     })
@@ -315,11 +402,25 @@ async function loadTournaments() {
             torneosEnProceso.sort(sortByDate);
             torneosAbiertos.sort(sortByDate);
             torneosProximos.sort(sortByDate);
+            torneosCheckIn.sort(sortByDate);
             
-            // Render tournaments in their respective containers
-            await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
-            await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
-            await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
+            // Render tournaments in their respective containers if they exist
+            if (enProcesoContainer) {
+                await renderTournamentSection('en-proceso-section', 'torneos-en-proceso', torneosEnProceso);
+            }
+            
+            if (abiertosContainer) {
+                await renderTournamentSection('abiertos-section', 'torneos-abiertos', torneosAbiertos);
+            }
+            
+            if (proximosContainer) {
+                await renderTournamentSection('proximos-section', 'torneos-proximos', torneosProximos);
+            }
+            
+            // Render check-in tournaments if container exists
+            if (checkInContainer) {
+                await renderTournamentSection('checkin-section', 'torneos-checkin', torneosCheckIn);
+            }
             
             // Configure registration/unregistration buttons
             setupTournamentButtons();
@@ -370,6 +471,7 @@ async function preloadAllParticipantsInfo(tournamentIds) {
                 id: doc.id,
                 playerName: data.playerName,
                 discordUsername: data.discordUsername,
+                checkedIn: data.checkedIn || false, // Añadir estado de check-in
                 ...data
             };
         });
@@ -399,6 +501,7 @@ async function preloadAllParticipantsInfo(tournamentIds) {
                         id: doc.id,
                         playerName: data.playerName,
                         discordUsername: data.discordUsername,
+                        checkedIn: data.checkedIn || false, // Añadir estado de check-in
                         ...data
                     };
                 });
@@ -517,7 +620,10 @@ async function renderTournaments(containerId, torneos) {
                 `;
             } else if (estaInscrito) {
                 // Usuario inscrito - Verificar si ya hizo check-in
-                const yaHizoCheckIn = torneo.checkedInParticipants && torneo.checkedInParticipants.includes(currentUser.uid);
+                const yaHizoCheckIn = (torneo.checkedInParticipants && torneo.checkedInParticipants.includes(currentUser.uid)) ||
+                                     (participantsInfoCache[torneo.id] && 
+                                      participantsInfoCache[torneo.id][currentUser.uid] && 
+                                      participantsInfoCache[torneo.id][currentUser.uid].checkedIn);
         
                 if (yaHizoCheckIn) {
                     // Ya hizo check-in
@@ -532,6 +638,7 @@ async function renderTournaments(containerId, torneos) {
                         <button class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition font-semibold checkin-btn" data-torneo-id="${torneo.id}">
                             <i class="fas fa-clipboard-check mr-2"></i> Hacer Check-In
                         </button>
+                        <p class="text-xs text-gray-500 mt-1 text-center">Confirma tu asistencia para ser incluido en el bracket</p>
                     `;
                 }
             } else {
@@ -701,10 +808,12 @@ async function loadParticipants(torneoId, participantIds) {
                 // Try to get player name from cache
                 let playerName = null;
                 let discordUsername = null;
+                let checkedIn = false;
                 
                 if (tournamentParticipantsInfo[uid]) {
                     playerName = tournamentParticipantsInfo[uid].playerName;
                     discordUsername = tournamentParticipantsInfo[uid].discordUsername;
+                    checkedIn = tournamentParticipantsInfo[uid].checkedIn || false;
                 }
                 
                 // If not in cache, try to get from users collection
@@ -721,11 +830,12 @@ async function loadParticipants(torneoId, participantIds) {
                     }
                 }
                 
-                // Add participant to list
+                // Add participant to list with check-in status indicator
                 html += `
                     <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
                         <i class="fas fa-user text-gray-400 mr-1"></i>
                         ${playerName}
+                        ${checkedIn ? '<i class="fas fa-check-circle text-green-500 ml-1" title="Check-in completado"></i>' : ''}
                         ${discordUsername ? `
                             <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
                                 Discord: ${discordUsername}
@@ -819,6 +929,52 @@ function setupTournamentButtons() {
                 // Restore button
                 this.disabled = false;
                 this.textContent = originalText;
+            }
+        });
+    });
+    
+    // Check-in buttons
+    document.querySelectorAll('.checkin-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Get tournament ID
+            const torneoId = this.dataset.torneoId;
+            
+            // Check if user is authenticated
+            if (!isAuthenticated()) {
+                mostrarNotificacion("Debes iniciar sesión para hacer check-in", "error");
+                return;
+            }
+            
+            // Confirm action
+            if (!confirm("¿Confirmas tu asistencia a este torneo? Esta acción es necesaria para participar en el bracket.")) {
+                return;
+            }
+            
+            // Change button state
+            this.disabled = true;
+            const originalText = this.textContent;
+            this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+            
+            try {
+                // Realizar check-in
+                await realizarCheckIn(torneoId);
+                
+                // Cambiar el estado del botón a confirmado
+                this.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Check-In Completado';
+                this.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                this.classList.add('bg-purple-700', 'cursor-not-allowed');
+                this.disabled = true;
+                
+                // No es necesario recargar toda la página, ya actualizamos el botón manualmente
+            } catch (error) {
+                console.error("Error en check-in:", error);
+                mostrarNotificacion(error.message || "Error al confirmar asistencia", "error");
+                
+                // Restore button
+                this.disabled = false;
+                this.innerHTML = originalText;
             }
         });
     });
