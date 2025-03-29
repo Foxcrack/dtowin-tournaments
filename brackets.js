@@ -125,24 +125,8 @@ function createBalancedBracketStructure(participants, participantsInfo) {
     
     const perfectBracketSize = Math.pow(2, numRounds);
     
-    // Create rounds array first, it will be passed separately
-    const rounds = [];
-    for (let i = 1; i <= numRounds; i++) {
-        rounds.push({
-            round: i,
-            name: getRoundName(i, numRounds),
-            matchCount: perfectBracketSize / Math.pow(2, i)
-        });
-    }
-    
-    // Get matches structure
-    const result = generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, perfectBracketSize);
-    
-    // Always make sure we return both rounds and matches
-    return {
-        rounds: rounds,
-        matches: result.matches
-    };
+    // Determine byes and create the bracket structure
+    return generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, perfectBracketSize);
 }
 
 // Determine the name of each round (R1, R2, Semis, Final, etc.)
@@ -273,15 +257,6 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
         }
     });
     
-    // Add empty matches for rounds with odd number of participants
-    const roundsWithOddParticipants = {};
-    matches.forEach(match => {
-        if (match.round > 1 && 
-            ((match.player1 && !match.player2) || (!match.player1 && match.player2))) {
-            roundsWithOddParticipants[match.round] = true;
-        }
-    });
-    
     // Sort matches by round and position
     matches.sort((a, b) => {
         if (a.round !== b.round) {
@@ -293,7 +268,7 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     // Make sure we have a clear final match
     ensureFinalMatchExists(matches, numRounds);
     
-    // Create rounds array here
+    // Create rounds array
     const rounds = [];
     for (let i = 1; i <= numRounds; i++) {
         rounds.push({
@@ -304,6 +279,7 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     }
     
     return {
+        rounds: rounds,
         matches: matches
     };
 }
@@ -482,7 +458,12 @@ export async function resetTournamentBracket(tournamentId) {
 // Add participant manually to tournament
 export async function addParticipantManually(tournamentId, playerName, discordUsername, email) {
     try {
-        if (!isAuthenticated() || !isUserTournamentStaff(auth.currentUser.uid, tournamentId)) {
+        if (!auth.currentUser) {
+            throw new Error("No tienes permiso para añadir participantes");
+        }
+        
+        const userIsStaff = await isUserTournamentStaff(auth.currentUser.uid, tournamentId);
+        if (!userIsStaff) {
             throw new Error("No tienes permiso para añadir participantes");
         }
         
@@ -873,9 +854,3 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
         console.error("Error awarding tournament badges:", error);
     }
 }
-
-// Export necesario de funciones
-export {
-    resetTournamentBracket,
-    addParticipantManually
-};
