@@ -70,33 +70,38 @@ export async function generateBracket(tournamentId) {
                 where("checkedIn", "==", true)
             );
             
-            const checkedInSnapshot = await getDocs(checkedInQuery);
-            
-            if (checkedInSnapshot.size >= 2) {
-                // Si hay suficientes con check-in en participant_info, usar esos
-                const checkedInParticipantsIds = [];
-                checkedInSnapshot.forEach(doc => {
-                    checkedInParticipantsIds.push(doc.data().userId);
-                });
+            try {
+                const checkedInSnapshot = await getDocs(checkedInQuery);
                 
-                participantsToUse = checkedInParticipantsIds;
-                console.log(`Found ${participantsToUse.length} checked-in participants in participant_info`);
-                
-                // Actualizar el documento del torneo también
-                await updateDoc(tournamentRef, {
-                    checkedInParticipants: checkedInParticipantsIds
-                });
+                if (checkedInSnapshot.size >= 2) {
+                    // Si hay suficientes con check-in en participant_info, usar esos
+                    const checkedInParticipantsIds = [];
+                    checkedInSnapshot.forEach(doc => {
+                        checkedInParticipantsIds.push(doc.data().userId);
+                    });
+                    
+                    participantsToUse = checkedInParticipantsIds;
+                    console.log(`Found ${participantsToUse.length} checked-in participants in participant_info`);
+                    
+                    // Actualizar el documento del torneo también
+                    await updateDoc(tournamentRef, {
+                        checkedInParticipants: checkedInParticipantsIds
+                    });
+                }
+            } catch (indexError) {
+                console.warn("Error al consultar participantes con check-in. Probablemente falta un índice:", indexError);
+                // Continuamos con todos los participantes si hay un error de índice
             }
         }
         
         // Get participant info with names
         const participantsInfo = await getTournamentParticipantsInfo(tournamentId);
         
-        // Shuffle participants for random seeding
+        // Shuffle participants for random seeding (opcional, puede comentarse para mantener el orden original)
         const shuffledParticipants = shuffleArray([...participantsToUse]);
         
-        // Generate bracket structure
-        const bracketData = createBracketStructure(shuffledParticipants, participantsInfo);
+        // Generate bracket structure with improved balancing
+        const bracketData = createBalancedBracketStructure(shuffledParticipants, participantsInfo);
         
         // Save bracket to database
         const newBracketRef = await addDoc(bracketsRef, {
@@ -137,12 +142,17 @@ export async function generateBracket(tournamentId) {
     }
 }
 
-// Create bracket structure from list of participants
-function createBracketStructure(participants, participantsInfo) {
+// Create a balanced bracket structure from list of participants
+function createBalancedBracketStructure(participants, participantsInfo) {
     const numParticipants = participants.length;
     
     // Calculate the number of rounds needed
-    const numRounds = Math.ceil(Math.log2(numParticipants));
+    // Find the smallest power of 2 that is greater than or equal to the number of participants
+    let numRounds = 1;
+    while (Math.pow(2, numRounds) < numParticipants) {
+        numRounds++;
+    }
+    
     const perfectBracketSize = Math.pow(2, numRounds);
     
     // Create rounds array
@@ -150,88 +160,171 @@ function createBracketStructure(participants, participantsInfo) {
     for (let i = 1; i <= numRounds; i++) {
         rounds.push({
             round: i,
-            name: `Round ${i}`,
+            name: getRoundName(i, numRounds),
             matchCount: perfectBracketSize / Math.pow(2, i)
         });
     }
     
-    // Create matches array
+    // Determine byes and create the bracket structure
+    return determineByesAndCreateMatches(participants, participantsInfo, numParticipants, perfectBracketSize, numRounds);
+}
+
+// Determine the name of each round (R1, R2, Semis, Final, etc.)
+function getRoundName(roundNumber, totalRounds) {
+    // For tournaments with many rounds
+    if (totalRounds > 4) {
+        if (roundNumber === totalRounds) {
+            return "Final";
+        } else if (roundNumber === totalRounds - 1) {
+            return "Semifinales";
+        } else if (roundNumber === totalRounds - 2) {
+            return "Cuartos de Final";
+        } else {
+            return `Ronda ${roundNumber}`;
+        }
+    } 
+    // For smaller tournaments
+    else {
+        if (roundNumber === totalRounds) {
+            return "Final";
+        } else if (roundNumber === totalRounds - 1 && totalRounds > 1) {
+            return "Semifinales";
+        } else {
+            return `Ronda ${roundNumber}`;
+        }
+    }
+}
+
+// Determine byes and create matches for balanced bracket
+function determineByesAndCreateMatches(participants, participantsInfo, numParticipants, perfectBracketSize, numRounds) {
     const matches = [];
+    const numByes = perfectBracketSize - numParticipants;
     
-    // First round matches
-    const firstRoundMatchCount = Math.ceil(numParticipants / 2);
-    const byeCount = firstRoundMatchCount * 2 - numParticipants;
+    // Distribute byes optimally by calculating positions
+    // This creates a better balanced bracket
+    const positions = createBalancedPositions(perfectBracketSize, numByes);
     
-    // Determine which players get byes (usually the top seeds)
-    // For simplicity, we'll give byes to the last players in our shuffled array
-    const playersWithMatches = participants.slice(0, participants.length - byeCount);
-    const playersWithByes = participants.slice(participants.length - byeCount);
+    // Sort positions
+    positions.sort((a, b) => a.seed - b.seed);
     
-    // Create first round matches
-    for (let i = 0; i < playersWithMatches.length; i += 2) {
-        if (i + 1 < playersWithMatches.length) {
-            // Regular match with two players
-            matches.push({
-                id: `1-${i/2 + 1}`,
-                round: 1,
-                position: i/2 + 1,
-                player1: {
-                    id: playersWithMatches[i],
-                    name: participantsInfo[playersWithMatches[i]]?.playerName || "TBD",
-                    discord: participantsInfo[playersWithMatches[i]]?.discordUsername || null,
-                    seed: i + 1
-                },
-                player2: {
-                    id: playersWithMatches[i + 1],
-                    name: participantsInfo[playersWithMatches[i + 1]]?.playerName || "TBD",
-                    discord: participantsInfo[playersWithMatches[i + 1]]?.discordUsername || null,
-                    seed: i + 2
-                },
-                winner: null,
-                scores: {},
-                status: "pending",
-                nextMatchId: calculateNextMatchId(1, i/2 + 1, firstRoundMatchCount)
-            });
+    // First round matches with proper seeding
+    const firstRoundMatches = positions.filter(p => p.round === 1);
+    for (let i = 0; i < firstRoundMatches.length; i += 2) {
+        if (i + 1 < firstRoundMatches.length) {
+            const pos1 = firstRoundMatches[i];
+            const pos2 = firstRoundMatches[i + 1];
+            
+            if (pos1.participantIndex < participants.length && pos2.participantIndex < participants.length) {
+                // Both positions have participants (normal match)
+                matches.push({
+                    id: `1-${(i/2) + 1}`,
+                    round: 1,
+                    position: (i/2) + 1,
+                    player1: {
+                        id: participants[pos1.participantIndex],
+                        name: participantsInfo[participants[pos1.participantIndex]]?.playerName || "TBD",
+                        discord: participantsInfo[participants[pos1.participantIndex]]?.discordUsername || null,
+                        seed: pos1.seed
+                    },
+                    player2: {
+                        id: participants[pos2.participantIndex],
+                        name: participantsInfo[participants[pos2.participantIndex]]?.playerName || "TBD",
+                        discord: participantsInfo[participants[pos2.participantIndex]]?.discordUsername || null,
+                        seed: pos2.seed
+                    },
+                    winner: null,
+                    scores: {},
+                    status: "pending",
+                    nextMatchId: `2-${Math.ceil((i/2 + 1)/2)}`
+                });
+            }
         }
     }
     
-    // Create subsequent round matches (empty until winners advance)
-    let matchesInCurrentRound = firstRoundMatchCount;
-    
+    // Create matches for rounds with byes (participants that don't play first round)
+    const advancingPlayers = positions.filter(p => p.round > 1);
     for (let round = 2; round <= numRounds; round++) {
-        matchesInCurrentRound = Math.ceil(matchesInCurrentRound / 2);
+        const roundMatches = Math.pow(2, numRounds - round);
         
-        for (let position = 1; position <= matchesInCurrentRound; position++) {
-            // Check if any players have byes and should be placed directly into this round
-            // (only applies to round 2)
-            let player1 = null;
-            let player2 = null;
+        // Matches that are created due to byes
+        const byeMatchesThisRound = advancingPlayers.filter(p => p.round === round);
+        
+        // Create matches from bye entries
+        for (let i = 0; i < byeMatchesThisRound.length; i += 2) {
+            const pos1 = byeMatchesThisRound[i];
+            let pos2 = null;
             
-            if (round === 2 && playersWithByes.length > 0) {
-                // For each match in round 2, check if we should place a bye player
-                const byeIndex = position - 1;
-                if (byeIndex < playersWithByes.length) {
-                    // Place bye player in position 1 of the match
-                    const byePlayer = playersWithByes[byeIndex];
-                    player1 = {
-                        id: byePlayer,
-                        name: participantsInfo[byePlayer]?.playerName || "TBD",
-                        discord: participantsInfo[byePlayer]?.discordUsername || null,
-                        seed: numParticipants - byeIndex
-                    };
-                }
+            if (i + 1 < byeMatchesThisRound.length) {
+                pos2 = byeMatchesThisRound[i + 1];
             }
             
+            const matchId = `${round}-${Math.ceil((pos1.position)/2)}`;
+            const nextMatchId = round < numRounds ? `${round+1}-${Math.ceil(pos1.position/4)}` : null;
+            
+            if (pos2) {
+                // Both players from byes
+                matches.push({
+                    id: matchId,
+                    round: round,
+                    position: Math.ceil(pos1.position/2),
+                    player1: {
+                        id: participants[pos1.participantIndex],
+                        name: participantsInfo[participants[pos1.participantIndex]]?.playerName || "TBD",
+                        discord: participantsInfo[participants[pos1.participantIndex]]?.discordUsername || null,
+                        seed: pos1.seed
+                    },
+                    player2: {
+                        id: participants[pos2.participantIndex],
+                        name: participantsInfo[participants[pos2.participantIndex]]?.playerName || "TBD",
+                        discord: participantsInfo[participants[pos2.participantIndex]]?.discordUsername || null,
+                        seed: pos2.seed
+                    },
+                    winner: null,
+                    scores: {},
+                    status: "pending",
+                    nextMatchId: nextMatchId
+                });
+            } else {
+                // Single player from bye
+                matches.push({
+                    id: matchId,
+                    round: round,
+                    position: Math.ceil(pos1.position/2),
+                    player1: {
+                        id: participants[pos1.participantIndex],
+                        name: participantsInfo[participants[pos1.participantIndex]]?.playerName || "TBD",
+                        discord: participantsInfo[participants[pos1.participantIndex]]?.discordUsername || null,
+                        seed: pos1.seed
+                    },
+                    player2: null, // Will be determined by previous round
+                    winner: null,
+                    scores: {},
+                    status: "pending",
+                    nextMatchId: nextMatchId
+                });
+            }
+        }
+        
+        // Create additional empty matches for this round if needed
+        const byeMatchesCreated = byeMatchesThisRound.length / 2;
+        const totalMatchesNeeded = roundMatches;
+        const emptyMatchesNeeded = totalMatchesNeeded - byeMatchesCreated;
+        
+        for (let i = 0; i < emptyMatchesNeeded; i++) {
+            const position = byeMatchesCreated + i + 1;
+            const matchId = `${round}-${position}`;
+            const nextMatchId = round < numRounds ? `${round+1}-${Math.ceil(position/2)}` : null;
+            
             matches.push({
-                id: `${round}-${position}`,
+                id: matchId,
                 round: round,
                 position: position,
-                player1: player1, // Will be null or a player with a bye
-                player2: player2, // Will be null or a player with a bye
+                player1: null, // Will be determined by previous round
+                player2: null, // Will be determined by previous round
                 winner: null,
                 scores: {},
                 status: "pending",
-                nextMatchId: round < numRounds ? calculateNextMatchId(round, position, matchesInCurrentRound) : null
+                nextMatchId: nextMatchId
             });
         }
     }
@@ -242,12 +335,43 @@ function createBracketStructure(participants, participantsInfo) {
     };
 }
 
-// Calculate the ID of the next match in the bracket
-function calculateNextMatchId(currentRound, currentPosition, matchesInCurrentRound) {
-    const nextRound = currentRound + 1;
-    const nextPosition = Math.ceil(currentPosition / 2);
+// Create balanced positions for bracket
+function createBalancedPositions(bracketSize, numByes) {
+    const positions = [];
+    const totalParticipants = bracketSize - numByes;
     
-    return `${nextRound}-${nextPosition}`;
+    // Create a position for each seed
+    for (let seed = 1; seed <= bracketSize; seed++) {
+        // Calculate the initial position in first round (1-indexed)
+        let position;
+        
+        // Use standard bracket positioning (1 vs last, 2 vs second-to-last, etc.)
+        if (seed % 2 === 1) {
+            position = Math.ceil(seed / 2);
+        } else {
+            position = bracketSize / 2 + Math.ceil(seed / 2);
+        }
+        
+        // Determine if this position gets a bye
+        let round = 1;
+        let participantIndex = seed - 1;
+        
+        // If this seed is beyond our actual participants, it's a bye
+        if (seed > totalParticipants) {
+            participantIndex = null; // No participant
+        }
+        
+        // Create the position object
+        positions.push({
+            seed,
+            position,
+            round,
+            participantIndex
+        });
+    }
+    
+    // Return sorted by position
+    return positions.sort((a, b) => a.position - b.position);
 }
 
 // Shuffle array randomly (Fisher-Yates algorithm)
@@ -374,6 +498,11 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
         
         const match = matches[matchIndex];
         
+        // Validate both players exist
+        if (!match.player1 || !match.player2) {
+            throw new Error("Este partido no tiene dos jugadores asignados");
+        }
+        
         // Validate scores
         if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
             throw new Error("Los puntajes deben ser números");
@@ -388,10 +517,11 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
         }
         
         // Determine winner
-        const winnerId = player1Score > player2Score ? match.player1.id : match.player2.id;
-        const winnerName = player1Score > player2Score ? match.player1.name : match.player2.name;
-        const winnerDiscord = player1Score > player2Score ? match.player1.discord : match.player2.discord;
-        const winnerSeed = player1Score > player2Score ? match.player1.seed : match.player2.seed;
+        const isPlayer1Winner = player1Score > player2Score;
+        const winnerId = isPlayer1Winner ? match.player1.id : match.player2.id;
+        const winnerName = isPlayer1Winner ? match.player1.name : match.player2.name;
+        const winnerDiscord = isPlayer1Winner ? match.player1.discord : match.player2.discord;
+        const winnerSeed = isPlayer1Winner ? match.player1.seed : match.player2.seed;
         
         // Update match
         const updatedMatch = {
@@ -425,8 +555,8 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
                 // This depends on the current match position
                 const isEvenPosition = match.position % 2 === 0;
                 
-                // For even positions, winner goes to player2 slot
                 // For odd positions, winner goes to player1 slot
+                // For even positions, winner goes to player2 slot
                 if (isEvenPosition) {
                     updatedMatches[nextMatchIndex] = {
                         ...nextMatch,
@@ -539,9 +669,27 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
                     break;
                     
                 case "top3":
-                    // Award to semifinalists (need to find semifinals matches)
-                    // This is more complex and would require tracking all semifinalists
-                    // For simplicity, we'll skip this for now
+                    // Award to semifinalists
+                    // Find semifinal matches
+                    const finalRound = parseInt(finalMatchId.split('-')[0]);
+                    const semifinalRound = finalRound - 1;
+                    
+                    // Get semifinalists (top 4 players)
+                    const semifinalists = matches.filter(match => 
+                        match.round === semifinalRound && match.status === 'completed');
+                    
+                    // Collect all semifinalists (winners go to final, losers get 3rd place)
+                    const semifinalistIds = new Set();
+                    semifinalists.forEach(match => {
+                        if (match.player1) semifinalistIds.add(match.player1.id);
+                        if (match.player2) semifinalistIds.add(match.player2.id);
+                    });
+                    
+                    // Remove finalists to get 3rd/4th place
+                    if (finalMatch.player1) semifinalistIds.delete(finalMatch.player1.id);
+                    if (finalMatch.player2) semifinalistIds.delete(finalMatch.player2.id);
+                    
+                    recipientIds = [...semifinalistIds];
                     break;
                     
                 case "all":
@@ -579,3 +727,11 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
         console.error("Error awarding tournament badges:", error);
     }
 }
+
+// Export necessary functions
+export {
+    generateBracket,
+    getTournamentBracket,
+    isUserTournamentStaff,
+    updateMatchResults
+};
