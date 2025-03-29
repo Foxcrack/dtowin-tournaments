@@ -375,15 +375,25 @@ async function loadBracketData() {
             `;
             
             // Configurar botón para generar bracket si el usuario es staff
+            // Configurar botón para generar bracket si el usuario es staff
             if (isUserStaff) {
                 const generateBracketBtn = document.getElementById('generate-bracket-btn');
                 if (generateBracketBtn) {
-                    generateBracketBtn.addEventListener('click', () => generateBracket(tournamentId));
+                    generateBracketBtn.addEventListener('click', async () => {
+                        try {
+                            const { resetTournamentBracket } = await import('./brackets.js');
+                            if (confirm("¿Quieres generar un nuevo bracket? Esto reemplazará cualquier bracket existente.")) {
+                                await resetTournamentBracket(tournamentId);
+                                window.mostrarNotificacion("Bracket generado correctamente", "success");
+                                await loadBracketData();
+                            }
+                        } catch (error) {
+                            console.error("Error al generar bracket:", error);
+                            showError("Error al generar bracket: " + error.message);
+                        }
+                    });
                 }
             }
-            
-            return;
-        }
         
         // Obtener datos del bracket
         const bracketRef = await db.collection("brackets").doc(tournamentData.bracketId).get();
