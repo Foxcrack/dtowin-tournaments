@@ -30,10 +30,10 @@ export async function generateBracket(tournamentId) {
         
         const tournamentData = tournamentSnap.data();
         
-        // Get participants
-        const participants = tournamentData.participants || [];
+        // Get all participants
+        const allParticipants = tournamentData.participants || [];
         
-        if (participants.length < 2) {
+        if (allParticipants.length < 2) {
             throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
         }
         
@@ -48,11 +48,33 @@ export async function generateBracket(tournamentId) {
             return bracketsSnapshot.docs[0].id;
         }
         
-        // Get participant info with names
+        // Filter only participants with check-in
+        const participantInfoRef = collection(db, "participant_info");
+        const checkedInQuery = query(
+            participantInfoRef,
+            where("tournamentId", "==", tournamentId),
+            where("checkedIn", "==", true)
+        );
+        
+        const checkedInSnapshot = await getDocs(checkedInQuery);
+        
+        // Create array of checked-in user IDs
+        const checkedInParticipants = [];
+        checkedInSnapshot.forEach(doc => {
+            checkedInParticipants.push(doc.data().userId);
+        });
+        
+        console.log(`Participants with check-in: ${checkedInParticipants.length} of ${allParticipants.length}`);
+        
+        if (checkedInParticipants.length < 2) {
+            throw new Error("Se necesitan al menos 2 participantes con check-in para generar un bracket");
+        }
+        
+        // Get participant info with names (only for checked-in participants)
         const participantsInfo = await getTournamentParticipantsInfo(tournamentId);
         
         // Shuffle participants for random seeding
-        const shuffledParticipants = shuffleArray([...participants]);
+        const shuffledParticipants = shuffleArray([...checkedInParticipants]);
         
         // Generate bracket structure
         const bracketData = createBracketStructure(shuffledParticipants, participantsInfo);
@@ -63,7 +85,7 @@ export async function generateBracket(tournamentId) {
             name: tournamentData.nombre || "Tournament Bracket",
             rounds: bracketData.rounds,
             matches: bracketData.matches,
-            participants: participants.length,
+            participants: checkedInParticipants.length,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             status: "active",
@@ -75,13 +97,16 @@ export async function generateBracket(tournamentId) {
             await updateDoc(tournamentRef, {
                 estado: 'En Progreso',
                 bracketId: newBracketRef.id,
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                // Actualizar la lista de participantes para que solo incluya los que hicieron check-in
+                confirmedParticipants: checkedInParticipants // Guardamos los participantes confirmados en un nuevo campo
             });
         } else {
             // Just update the bracketId if tournament is already in progress
             await updateDoc(tournamentRef, {
                 bracketId: newBracketRef.id,
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                confirmedParticipants: checkedInParticipants
             });
         }
         
@@ -491,7 +516,8 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
                     const tournamentSnap = await getDoc(tournamentRef);
                     
                     if (tournamentSnap.exists()) {
-                        recipientIds = tournamentSnap.data().participants || [];
+                        // Usar confirmedParticipants en lugar de participants para dar badges solo a los que hicieron check-in
+                        recipientIds = tournamentSnap.data().confirmedParticipants || tournamentSnap.data().participants || [];
                     }
                     break;
             }
