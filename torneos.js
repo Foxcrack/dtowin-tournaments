@@ -29,6 +29,8 @@ function getStatusColor(estado) {
     switch(estado) {
         case 'Abierto':
             return 'green-500';
+        case 'Check In':
+            return 'purple-500';
         case 'En Progreso':
             return 'yellow-500';
         case 'Próximamente':
