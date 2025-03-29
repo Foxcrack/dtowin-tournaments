@@ -23,147 +23,6 @@
         .dtowin-cream {
             background-color: #fff3e6;
         }
-        
-        /* Bracket specific styles */
-        .bracket-container {
-            overflow-x: auto;
-            padding: 20px 0;
-        }
-        
-        .bracket {
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            min-width: max-content;
-        }
-        
-        .round {
-            display: flex;
-            flex-direction: column;
-            margin-right: 40px;
-        }
-        
-        .round-title {
-            text-align: center;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
-        .match {
-            width: 220px;
-            margin-bottom: 20px;
-            position: relative;
-        }
-        
-        .match-connector {
-            position: absolute;
-            right: -40px;
-            top: 50%;
-            width: 40px;
-            height: 2px;
-            background-color: #ccc;
-        }
-        
-        .match-spacer {
-            height: 40px;
-        }
-        
-        .player {
-            padding: 8px 10px;
-            border: 1px solid #e5e5e5;
-            border-bottom: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #fff;
-            position: relative;
-        }
-        
-        .player-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
-        }
-        
-        .player:last-child {
-            border-bottom: 1px solid #e5e5e5;
-        }
-        
-        .player.winner {
-            background-color: #e6f4ff;
-            border-left: 3px solid #0042ff;
-        }
-        
-        .player.loser {
-            background-color: #ffeaea;
-            border-left: 3px solid #ff3000;
-        }
-        
-        .player-score {
-            font-weight: bold;
-            min-width: 25px;
-            text-align: center;
-        }
-        
-        .player-score.winner {
-            background-color: #0042ff;
-            color: white;
-            border-radius: 4px;
-            padding: 0 6px;
-        }
-        
-        .player-score.loser {
-            background-color: #ff3000;
-            color: white;
-            border-radius: 4px;
-            padding: 0 6px;
-        }
-        
-        .discord-tooltip {
-            position: absolute;
-            left: 0;
-            top: 100%;
-            background-color: #333;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 10;
-            white-space: nowrap;
-            display: none;
-        }
-        
-        .player:hover .discord-tooltip {
-            display: block;
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .match {
-                width: 180px;
-            }
-            
-            .player-name {
-                max-width: 120px;
-                font-size: 14px;
-            }
-        }
-        
-        /* Score Modal */
-        .score-modal {
-            transition: opacity 0.3s ease;
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -240,15 +99,16 @@
                 </div>
             </div>
             
-            <!-- Staff Controls (solo visible para staff) -->
+            <!-- Staff Controls -->
             <div id="staff-controls" class="mt-8 bg-white rounded-lg shadow-md p-4 hidden">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Controles de Staff</h3>
                 <div class="space-y-4">
                     <button id="update-bracket-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                        Actualizar Bracket
+                        <i class="fas fa-sync-alt mr-2"></i> Actualizar Bracket
                     </button>
                     <p class="text-sm text-gray-600">Haz clic en un partido para actualizar el resultado</p>
                 </div>
+                <!-- Los nuevos botones se añadirán dinámicamente aquí -->
             </div>
         </div>
     </section>
@@ -310,6 +170,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Add Participant Modal -->
+    <!-- Este modal se creará dinámicamente desde JavaScript -->
 
     <!-- Footer -->
     <footer class="gradient-background text-white py-8 px-4 mt-12">
