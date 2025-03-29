@@ -375,7 +375,6 @@ async function loadBracketData() {
             `;
             
             // Configurar botón para generar bracket si el usuario es staff
-            // Configurar botón para generar bracket si el usuario es staff
             if (isUserStaff) {
                 const generateBracketBtn = document.getElementById('generate-bracket-btn');
                 if (generateBracketBtn) {
@@ -394,8 +393,11 @@ async function loadBracketData() {
                     });
                 }
             }
+            
+            return; // Importante: salir de la función aquí si no hay bracket
+        }
         
-        // Obtener datos del bracket
+        // Si llegamos a este punto, el torneo tiene un bracket
         const bracketRef = await db.collection("brackets").doc(tournamentData.bracketId).get();
         
         if (!bracketRef.exists) {
