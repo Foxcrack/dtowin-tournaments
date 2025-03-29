@@ -1,0 +1,260 @@
+/* Estilos para el visualizador de brackets */
+
+/* Estructura principal del bracket */
+.bracket-wrapper {
+    overflow-x: auto;
+    padding: 20px 0;
+    min-height: 600px;
+}
+
+.bracket {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-width: max-content;
+    position: relative; /* Para posicionar los conectores */
+}
+
+.round {
+    display: flex;
+    flex-direction: column;
+    margin-right: 60px; /* Más espacio entre rondas para los conectores */
+    min-width: 220px;
+}
+
+.round-title {
+    text-align: center;
+    font-weight: 600;
+    padding: 8px 0;
+    margin-bottom: 15px;
+    color: #333;
+    background-color: rgba(0, 66, 255, 0.1);
+    border-radius: 4px;
+}
+
+.matches {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Estilo del match individual */
+.match {
+    width: 220px;
+    margin-bottom: 20px;
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.match:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Espaciadores entre matches */
+.match-spacer {
+    height: 40px;
+}
+
+/* Estilo para jugadores */
+.player {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eaeaea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.player:last-child {
+    border-bottom: none;
+}
+
+.player-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    font-size: 14px;
+}
+
+/* Estilos para ganadores y perdedores */
+.player.winner {
+    background-color: #e6f7ff;
+    border-left: 3px solid #1890ff;
+}
+
+.player.loser {
+    background-color: #fff1f0;
+    border-left: 3px solid #ff4d4f;
+    opacity: 0.8;
+}
+
+.player-score {
+    font-weight: bold;
+    min-width: 25px;
+    text-align: center;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+}
+
+.player-score.winner {
+    background-color: #1890ff;
+    color: white;
+}
+
+.player-score.loser {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+/* Tooltip para Discord */
+.discord-tooltip {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10;
+    white-space: nowrap;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.player:hover .discord-tooltip {
+    display: block;
+}
+
+/* Conectores entre matches */
+.match-connector {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    width: 20px;
+    height: 2px;
+    background-color: #c0c0c0;
+}
+
+/* Conectores entre rondas */
+.bracket-connector {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Conector horizontal */
+.bracket-connector:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: #c0c0c0;
+}
+
+/* Conector vertical para posición superior */
+.connector-top:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2px;
+    height: 50%;
+    background-color: #c0c0c0;
+}
+
+/* Conector vertical para posición inferior */
+.connector-bottom:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    height: 50%;
+    background-color: #c0c0c0;
+}
+
+/* Estilos para TBD (To Be Determined) */
+.player-name:empty:after {
+    content: 'TBD';
+    color: #999;
+    font-style: italic;
+}
+
+/* Modal de actualización de resultados */
+.score-modal {
+    transition: all 0.3s ease;
+}
+
+/* Loading spinner */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    .match {
+        width: 180px;
+    }
+    
+    .player-name {
+        max-width: 120px;
+        font-size: 13px;
+    }
+    
+    .round {
+        margin-right: 40px;
+    }
+}
+
+/* Estilos para destacar el camino del ganador */
+.winner-path .match-connector {
+    background-color: #52c41a;
+}
+
+.winner-path.bracket-connector:before,
+.winner-path.connector-top:after,
+.winner-path.connector-bottom:after {
+    background-color: #52c41a;
+    height: 3px;
+}
+
+/* Estilo para el match final */
+.round:last-child .match {
+    border: 2px solid gold;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+/* Estilo para la badge del ganador */
+.winner-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background-color: gold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
