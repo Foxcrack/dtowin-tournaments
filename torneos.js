@@ -475,7 +475,7 @@ async function renderTournaments(containerId, torneos) {
         
         // Determine registration button state
         let botonInscripcion = '';
-        
+
         if (torneo.estado === 'Abierto') {
             if (!userAuthenticated) {
                 // User not authenticated - Show registration button
@@ -504,6 +504,41 @@ async function renderTournaments(containerId, torneos) {
                     <button class="w-full dtowin-blue text-white py-2 rounded-lg hover:opacity-90 transition font-semibold inscribirse-btn" 
                             data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre || 'Torneo'}">
                         Inscribirse
+                    </button>
+                `;
+            }
+        } else if (torneo.estado === 'Check In') {
+            if (!userAuthenticated) {
+                // Usuario no autenticado - No mostrar botón
+                botonInscripcion = `
+                    <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                        Período de Check-In
+                    </button>
+                `;
+            } else if (estaInscrito) {
+                // Usuario inscrito - Verificar si ya hizo check-in
+                const yaHizoCheckIn = torneo.checkedInParticipants && torneo.checkedInParticipants.includes(currentUser.uid);
+        
+                if (yaHizoCheckIn) {
+                    // Ya hizo check-in
+                    botonInscripcion = `
+                        <button class="w-full bg-purple-700 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                            <i class="fas fa-check-circle mr-2"></i> Check-In Completado
+                        </button>
+                    `;
+                } else {
+                    // No ha hecho check-in
+                    botonInscripcion = `
+                        <button class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition font-semibold checkin-btn" data-torneo-id="${torneo.id}">
+                            <i class="fas fa-clipboard-check mr-2"></i> Hacer Check-In
+                        </button>
+                    `;
+                }
+            } else {
+                // Usuario no inscrito - No mostrar opción de check-in
+                botonInscripcion = `
+                    <button class="w-full bg-gray-400 text-white py-2 rounded-lg cursor-not-allowed font-semibold">
+                        No estás inscrito
                     </button>
                 `;
             }
