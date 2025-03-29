@@ -37,6 +37,14 @@ export function initRegistrationModule() {
 function createRegistrationModal() {
     // Check if modal already exists
     if (document.getElementById('tournamentRegistrationModal')) {
+        console.log("Registration modal already exists, getting references");
+        registrationModal = document.getElementById('tournamentRegistrationModal');
+        closeRegistrationModalBtn = document.getElementById('closeRegistrationModalBtn');
+        tournamentRegistrationForm = document.getElementById('tournamentRegistrationForm');
+        playerNameInput = document.getElementById('playerName');
+        discordUsernameInput = document.getElementById('discordUsername');
+        registrationSubmitBtn = document.getElementById('registrationSubmitBtn');
+        registrationErrorMsg = document.getElementById('registrationErrorMsg');
         return;
     }
     
@@ -91,7 +99,7 @@ function createRegistrationModal() {
     registrationSubmitBtn = document.getElementById('registrationSubmitBtn');
     registrationErrorMsg = document.getElementById('registrationErrorMsg');
     
-    console.log("Registration modal created");
+    console.log("Registration modal created successfully:", !!registrationModal);
 }
 
 // Set up event listeners for the registration modal
@@ -121,8 +129,23 @@ function setupEventListeners() {
 
 // Show registration modal for a specific tournament
 export function showRegistrationModal(tournamentId, tournamentName) {
+    console.log("Showing registration modal for tournament:", tournamentId, tournamentName);
+    
+    // Ensure modal is created
     if (!registrationModal) {
+        console.log("Registration modal not found, creating it...");
         createRegistrationModal();
+        setupEventListeners();
+    }
+    
+    if (!registrationModal) {
+        console.error("Failed to create registration modal!");
+        if (typeof window.mostrarNotificacion === "function") {
+            window.mostrarNotificacion("Error al mostrar el formulario de inscripción", "error");
+        } else {
+            alert("Error al mostrar el formulario de inscripción");
+        }
+        return;
     }
     
     // Store tournament ID
@@ -150,6 +173,7 @@ export function showRegistrationModal(tournamentId, tournamentName) {
     // Show modal
     registrationModal.classList.remove('hidden');
     registrationModal.classList.add('flex');
+    console.log("Registration modal shown");
 }
 
 // Hide registration modal
@@ -234,7 +258,11 @@ async function handleRegistrationSubmit(e) {
         hideRegistrationModal();
         
         // Show success message
-        window.mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
+        if (typeof window.mostrarNotificacion === "function") {
+            window.mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
+        } else {
+            alert("¡Te has inscrito correctamente al torneo!");
+        }
         
         // Reload tournaments to update UI
         const { loadTournaments } = await import('./torneos.js');
@@ -368,7 +396,7 @@ export async function unregisterFromTournament(tournamentId) {
         
         const tournamentData = tournamentSnap.data();
         
-        // Check if tournament is still open or in progress
+        // Check if tournament is still open or in check-in phase
         if (tournamentData.estado !== 'Abierto' && tournamentData.estado !== 'Check In') {
             throw new Error("Solo puedes desinscribirte cuando el torneo está en fase de inscripción o check-in");
         }
@@ -388,6 +416,14 @@ export async function unregisterFromTournament(tournamentId) {
             updatedAt: serverTimestamp()
         });
         
+        // Also remove from checkedInParticipants if present
+        if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.includes(user.uid)) {
+            const newCheckedInParticipants = tournamentData.checkedInParticipants.filter(uid => uid !== user.uid);
+            await updateDoc(tournamentRef, {
+                checkedInParticipants: newCheckedInParticipants
+            });
+        }
+        
         // Delete participant info (optional - keeping for historical purposes)
         // Find and mark participant info as inactive
         const participantInfoRef = collection(db, "participant_info");
@@ -403,6 +439,7 @@ export async function unregisterFromTournament(tournamentId) {
             // Mark as inactive instead of deleting
             await updateDoc(doc(db, "participant_info", infoSnapshot.docs[0].id), {
                 active: false,
+                checkedIn: false,
                 updatedAt: serverTimestamp()
             });
         }
@@ -469,6 +506,23 @@ export async function checkInForTournament(tournamentId) {
             checkedInAt: serverTimestamp()
         });
         
+        // También actualizar el documento del torneo
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (tournamentSnap.exists()) {
+            const tournamentData = tournamentSnap.data();
+            const checkedInParticipants = tournamentData.checkedInParticipants || [];
+            
+            // Añadir usuario a la lista de participantes con check-in si no está ya
+            if (!checkedInParticipants.includes(user.uid)) {
+                await updateDoc(tournamentRef, {
+                    checkedInParticipants: [...checkedInParticipants, user.uid],
+                    updatedAt: serverTimestamp()
+                });
+            }
+        }
+        
         console.log("Check-in realizado correctamente");
         return true;
         
@@ -481,6 +535,18 @@ export async function checkInForTournament(tournamentId) {
 // Función para verificar si un usuario ha hecho check-in
 export async function hasUserCheckedIn(userId, tournamentId) {
     try {
+        // Primero, verificar en el documento del torneo
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (tournamentSnap.exists()) {
+            const tournamentData = tournamentSnap.data();
+            if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.includes(userId)) {
+                return true;
+            }
+        }
+        
+        // Si no está en el documento del torneo, verificar en participant_info
         const participantInfoRef = collection(db, "participant_info");
         const q = query(
             participantInfoRef, 
