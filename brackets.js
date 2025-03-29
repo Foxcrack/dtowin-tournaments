@@ -31,13 +31,18 @@ export async function generateBracket(tournamentId) {
         const tournamentData = tournamentSnap.data();
         
         // Check if bracket already exists
+        // Check if bracket already exists
         const bracketsRef = collection(db, "brackets");
-        const q = query(bracketsRef, where("tournamentId", "==", tournamentId));
+        const q = query(
+            bracketsRef, 
+            where("tournamentId", "==", tournamentId),
+            where("status", "==", "active") // Solo buscar brackets activos
+        );
         const bracketsSnapshot = await getDocs(q);
-        
+
         if (!bracketsSnapshot.empty) {
-            // Bracket already exists
-            console.log("Bracket already exists for this tournament");
+            // Active bracket already exists
+            console.log("Active bracket already exists for this tournament");
             return bracketsSnapshot.docs[0].id;
         }
         
