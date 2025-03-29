@@ -30,13 +30,6 @@ export async function generateBracket(tournamentId) {
         
         const tournamentData = tournamentSnap.data();
         
-        // Get all participants
-        const allParticipants = tournamentData.participants || [];
-        
-        if (allParticipants.length < 2) {
-            throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
-        }
-        
         // Check if bracket already exists
         const bracketsRef = collection(db, "brackets");
         const q = query(bracketsRef, where("tournamentId", "==", tournamentId));
@@ -48,33 +41,59 @@ export async function generateBracket(tournamentId) {
             return bracketsSnapshot.docs[0].id;
         }
         
-        // Filter only participants with check-in
-        const participantInfoRef = collection(db, "participant_info");
-        const checkedInQuery = query(
-            participantInfoRef,
-            where("tournamentId", "==", tournamentId),
-            where("checkedIn", "==", true)
-        );
+        // Usar participantes con check-in si es posible
+        let participantsToUse = [];
         
-        const checkedInSnapshot = await getDocs(checkedInQuery);
-        
-        // Create array of checked-in user IDs
-        const checkedInParticipants = [];
-        checkedInSnapshot.forEach(doc => {
-            checkedInParticipants.push(doc.data().userId);
-        });
-        
-        console.log(`Participants with check-in: ${checkedInParticipants.length} of ${allParticipants.length}`);
-        
-        if (checkedInParticipants.length < 2) {
-            throw new Error("Se necesitan al menos 2 participantes con check-in para generar un bracket");
+        if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.length >= 2) {
+            // Si hay participantes con check-in, usar esos
+            participantsToUse = tournamentData.checkedInParticipants;
+            console.log(`Using ${participantsToUse.length} checked-in participants for bracket generation`);
+        } else if (tournamentData.participants && tournamentData.participants.length >= 2) {
+            // Si no hay participantes con check-in o son menos de 2, usar todos los participantes
+            console.log("Not enough checked-in participants, using all participants");
+            participantsToUse = tournamentData.participants || [];
+        } else {
+            throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
         }
         
-        // Get participant info with names (only for checked-in participants)
+        if (participantsToUse.length < 2) {
+            throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
+        }
+        
+        // También verificar en la colección participant_info
+        if (participantsToUse.length === tournamentData.participants.length) {
+            // Si estamos usando todos los participantes, verifiquemos si hay info de check-in en participant_info
+            const participantInfoRef = collection(db, "participant_info");
+            const checkedInQuery = query(
+                participantInfoRef,
+                where("tournamentId", "==", tournamentId),
+                where("checkedIn", "==", true)
+            );
+            
+            const checkedInSnapshot = await getDocs(checkedInQuery);
+            
+            if (checkedInSnapshot.size >= 2) {
+                // Si hay suficientes con check-in en participant_info, usar esos
+                const checkedInParticipantsIds = [];
+                checkedInSnapshot.forEach(doc => {
+                    checkedInParticipantsIds.push(doc.data().userId);
+                });
+                
+                participantsToUse = checkedInParticipantsIds;
+                console.log(`Found ${participantsToUse.length} checked-in participants in participant_info`);
+                
+                // Actualizar el documento del torneo también
+                await updateDoc(tournamentRef, {
+                    checkedInParticipants: checkedInParticipantsIds
+                });
+            }
+        }
+        
+        // Get participant info with names
         const participantsInfo = await getTournamentParticipantsInfo(tournamentId);
         
         // Shuffle participants for random seeding
-        const shuffledParticipants = shuffleArray([...checkedInParticipants]);
+        const shuffledParticipants = shuffleArray([...participantsToUse]);
         
         // Generate bracket structure
         const bracketData = createBracketStructure(shuffledParticipants, participantsInfo);
@@ -85,7 +104,7 @@ export async function generateBracket(tournamentId) {
             name: tournamentData.nombre || "Tournament Bracket",
             rounds: bracketData.rounds,
             matches: bracketData.matches,
-            participants: checkedInParticipants.length,
+            participants: participantsToUse.length,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             status: "active",
@@ -98,15 +117,14 @@ export async function generateBracket(tournamentId) {
                 estado: 'En Progreso',
                 bracketId: newBracketRef.id,
                 updatedAt: serverTimestamp(),
-                // Actualizar la lista de participantes para que solo incluya los que hicieron check-in
-                confirmedParticipants: checkedInParticipants // Guardamos los participantes confirmados en un nuevo campo
+                confirmedParticipants: participantsToUse // Guardar los participantes que se usaron para el bracket
             });
         } else {
             // Just update the bracketId if tournament is already in progress
             await updateDoc(tournamentRef, {
                 bracketId: newBracketRef.id,
                 updatedAt: serverTimestamp(),
-                confirmedParticipants: checkedInParticipants
+                confirmedParticipants: participantsToUse
             });
         }
         
@@ -481,6 +499,22 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
             return;
         }
         
+        // Get tournament info to determine confirmed participants
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            return;
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Use confirmedParticipants (checked-in participants) if available
+        // Otherwise use regular participants
+        const participantsToAward = tournamentData.confirmedParticipants || 
+                                   tournamentData.checkedInParticipants || 
+                                   tournamentData.participants || [];
+        
         // Get user badges collection
         const userBadgesRef = collection(db, "user_badges");
         
@@ -511,14 +545,8 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
                     break;
                     
                 case "all":
-                    // Award to all participants
-                    const tournamentRef = doc(db, "torneos", tournamentId);
-                    const tournamentSnap = await getDoc(tournamentRef);
-                    
-                    if (tournamentSnap.exists()) {
-                        // Usar confirmedParticipants en lugar de participants para dar badges solo a los que hicieron check-in
-                        recipientIds = tournamentSnap.data().confirmedParticipants || tournamentSnap.data().participants || [];
-                    }
+                    // Award to all confirmed participants
+                    recipientIds = participantsToAward;
                     break;
             }
             
