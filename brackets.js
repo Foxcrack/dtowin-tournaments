@@ -288,6 +288,16 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     // Make sure we have a clear final match
     ensureFinalMatchExists(matches, numRounds);
     
+    // Create rounds array here before returning
+    const rounds = [];
+    for (let i = 1; i <= numRounds; i++) {
+        rounds.push({
+            round: i,
+            name: getRoundName(i, numRounds),
+            matchCount: bracketSize / Math.pow(2, i)
+        });
+    }
+    
     return {
         rounds: rounds,
         matches: matches
