@@ -591,7 +591,7 @@ export async function isUserTournamentStaff(userId, tournamentId) {
 }
 
 // Update match results
-export async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
+async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
     try {
         // Verify user is authenticated and has permission
         if (!isAuthenticated()) {
@@ -861,6 +861,5 @@ export {
     resetTournamentBracket,
     addParticipantManually,
     getTournamentBracket,
-    isUserTournamentStaff,
-    updateMatchResults
+    isUserTournamentStaff
 };
