@@ -856,10 +856,3 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
 }
 
 // Export necessary functions
-export {
-    generateBracket,
-    resetTournamentBracket,
-    addParticipantManually,
-    getTournamentBracket,
-    isUserTournamentStaff
-};
