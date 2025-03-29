@@ -302,6 +302,8 @@ export async function registerForTournamentWithInfo(tournamentId, playerName, di
             await updateDoc(doc(db, "participant_info", infoDoc.id), {
                 playerName: playerName,
                 discordUsername: discordUsername || null,
+                active: true,
+                checkedIn: false, // Reiniciar el estado de check-in si había uno anterior
                 updatedAt: serverTimestamp()
             });
         } else {
@@ -311,6 +313,8 @@ export async function registerForTournamentWithInfo(tournamentId, playerName, di
                 tournamentId: tournamentId,
                 playerName: playerName,
                 discordUsername: discordUsername || null,
+                active: true,
+                checkedIn: false, // Inicialmente no ha hecho check-in
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             });
@@ -365,8 +369,8 @@ export async function unregisterFromTournament(tournamentId) {
         const tournamentData = tournamentSnap.data();
         
         // Check if tournament is still open or in progress
-        if (tournamentData.estado !== 'Abierto' && tournamentData.estado !== 'En Progreso') {
-            throw new Error("No puedes desinscribirte de este torneo");
+        if (tournamentData.estado !== 'Abierto' && tournamentData.estado !== 'Check In') {
+            throw new Error("Solo puedes desinscribirte cuando el torneo está en fase de inscripción o check-in");
         }
         
         // Check if user is registered
@@ -426,6 +430,73 @@ export async function unregisterFromTournament(tournamentId) {
     }
 }
 
+// Función para hacer check-in en un torneo
+export async function checkInForTournament(tournamentId) {
+    try {
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para hacer check-in");
+        }
+        
+        const user = auth.currentUser;
+        
+        // Verificar si el usuario está inscrito en el torneo
+        const participantInfoRef = collection(db, "participant_info");
+        const q = query(
+            participantInfoRef, 
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", tournamentId),
+            where("active", "!=", false)
+        );
+        
+        const infoSnapshot = await getDocs(q);
+        
+        if (infoSnapshot.empty) {
+            throw new Error("No estás inscrito en este torneo");
+        }
+        
+        // Obtener el documento de información del participante
+        const participantInfoDoc = infoSnapshot.docs[0];
+        const participantInfo = participantInfoDoc.data();
+        
+        // Verificar si ya hizo check-in
+        if (participantInfo.checkedIn) {
+            throw new Error("Ya has confirmado tu asistencia a este torneo");
+        }
+        
+        // Actualizar el documento con el estado de check-in
+        await updateDoc(doc(db, "participant_info", participantInfoDoc.id), {
+            checkedIn: true,
+            checkedInAt: serverTimestamp()
+        });
+        
+        console.log("Check-in realizado correctamente");
+        return true;
+        
+    } catch (error) {
+        console.error("Error al hacer check-in:", error);
+        throw error;
+    }
+}
+
+// Función para verificar si un usuario ha hecho check-in
+export async function hasUserCheckedIn(userId, tournamentId) {
+    try {
+        const participantInfoRef = collection(db, "participant_info");
+        const q = query(
+            participantInfoRef, 
+            where("userId", "==", userId),
+            where("tournamentId", "==", tournamentId),
+            where("checkedIn", "==", true)
+        );
+        
+        const snapshot = await getDocs(q);
+        return !snapshot.empty;
+    } catch (error) {
+        console.error("Error al verificar check-in:", error);
+        return false;
+    }
+}
+
 // Show registration error message
 function showRegistrationError(message) {
     if (registrationErrorMsg) {
@@ -455,6 +526,7 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                 id: doc.id,
                 playerName: data.playerName,
                 discordUsername: data.discordUsername,
+                checkedIn: data.checkedIn || false,
                 ...data
             };
         });
