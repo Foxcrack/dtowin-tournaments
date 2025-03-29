@@ -616,5 +616,396 @@
         });
     });
     </script>
+
+    <!-- Script para arreglar el botón de inscripción -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Asegurarse de que todos los botones de inscripción funcionen
+        let inscribirseBtns = document.querySelectorAll('button.inscribirse-btn, button:contains("Inscribirse")');
+        
+        // Si no se encontraron, buscar por el texto "Inscribirse"
+        if (inscribirseBtns.length === 0) {
+            const allButtons = document.querySelectorAll('button');
+            inscribirseBtns = Array.from(allButtons).filter(btn => 
+                btn.textContent.trim() === 'Inscribirse' || 
+                btn.textContent.includes('Inscribirse')
+            );
+        }
+        
+        console.log("Botones de inscripción encontrados:", inscribirseBtns.length);
+        
+        // Para cada botón de inscripción
+        inscribirseBtns.forEach(btn => {
+            // Eliminar cualquier event listener anterior
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Añadir nuevo event listener
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log("Botón de inscripción clickeado");
+                
+                // Obtener ID del torneo del atributo data-torneo-id o del elemento padre
+                const torneoId = this.dataset.torneoId || 
+                                 this.closest('[data-torneo-id]')?.dataset.torneoId || 
+                                 this.closest('.tournament-card')?.dataset.torneoId;
+                                 
+                const torneoNombre = this.dataset.torneoNombre || 
+                                    this.closest('[data-torneo-nombre]')?.dataset.torneoNombre || 
+                                    "Torneo";
+                
+                if (!torneoId) {
+                    console.error("No se pudo encontrar el ID del torneo");
+                    alert("Error al identificar el torneo. Por favor, intenta de nuevo.");
+                    return;
+                }
+                
+                console.log("Intentando inscribirse al torneo:", torneoId, torneoNombre);
+                
+                // Mostrar formulario manualmente
+                mostrarFormularioInscripcion(torneoId, torneoNombre);
+            });
+        });
+        
+        // Buscar también el botón genérico
+        const inscribirseGenerico = document.querySelector('button:not([data-torneo-id]):contains("Inscribirse")');
+        if (inscribirseGenerico) {
+            inscribirseGenerico.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log("Botón genérico de inscripción clickeado");
+                
+                // Obtener ID del torneo del contenedor padre
+                const torneoCard = this.closest('.tournament-card');
+                if (!torneoCard) {
+                    console.error("No se encontró la tarjeta del torneo");
+                    return;
+                }
+                
+                const torneoId = torneoCard.dataset.torneoId;
+                const torneoNombre = torneoCard.querySelector('h3')?.textContent || "Torneo";
+                
+                if (!torneoId) {
+                    console.error("No se pudo encontrar el ID del torneo");
+                    alert("Error al identificar el torneo. Por favor, intenta de nuevo.");
+                    return;
+                }
+                
+                console.log("Intentando inscribirse al torneo:", torneoId, torneoNombre);
+                
+                // Mostrar formulario manualmente
+                mostrarFormularioInscripcion(torneoId, torneoNombre);
+            });
+        }
+        
+        // Función para mostrar el formulario de inscripción
+        function mostrarFormularioInscripcion(torneoId, torneoNombre) {
+            // Verificar si el usuario está autenticado
+            const auth = firebase.auth();
+            if (!auth.currentUser) {
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) {
+                    loginModal.classList.remove('hidden');
+                    loginModal.classList.add('flex');
+                } else {
+                    alert("Debes iniciar sesión para inscribirte a un torneo");
+                }
+                return;
+            }
+            
+            // Buscar o crear el modal de inscripción
+            let registrationModal = document.getElementById('tournamentRegistrationModal');
+            
+            // Si no existe, crearlo
+            if (!registrationModal) {
+                console.log("Creando modal de inscripción desde cero");
+                
+                const modalHTML = `
+                <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+                    <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                        <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="text-center mb-6">
+                            <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción: ${torneoNombre}</h3>
+                            <p class="text-gray-600">Completa la información para participar</p>
+                            <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+                        </div>
+                        
+                        <form id="tournamentRegistrationForm">
+                            <div class="mb-4">
+                                <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                                <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
+                                <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                                <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
+                                <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
+                            </div>
+                            
+                            <div class="flex items-center justify-end">
+                                <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
+                                    Cancelar
+                                </button>
+                                <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                                    Confirmar Inscripción
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>`;
+                
+                // Añadir al DOM
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                registrationModal = document.getElementById('tournamentRegistrationModal');
+                
+                // Configurar eventos
+                const closeBtn = document.getElementById('closeRegistrationModalBtn');
+                const cancelBtn = document.getElementById('cancelRegistrationBtn');
+                const form = document.getElementById('tournamentRegistrationForm');
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        registrationModal.classList.add('hidden');
+                        registrationModal.classList.remove('flex');
+                    });
+                }
+                
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', function() {
+                        registrationModal.classList.add('hidden');
+                        registrationModal.classList.remove('flex');
+                    });
+                }
+                
+                if (form) {
+                    form.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        console.log("Formulario enviado");
+                        
+                        const playerNameInput = document.getElementById('playerName');
+                        const discordUsernameInput = document.getElementById('discordUsername');
+                        const registrationSubmitBtn = document.getElementById('registrationSubmitBtn');
+                        const registrationErrorMsg = document.getElementById('registrationErrorMsg');
+                        
+                        if (!playerNameInput || !registrationSubmitBtn) {
+                            console.error("Faltan elementos del formulario");
+                            return;
+                        }
+                        
+                        const playerName = playerNameInput.value.trim();
+                        const discordUsername = discordUsernameInput ? discordUsernameInput.value.trim() : '';
+                        
+                        if (!playerName) {
+                            if (registrationErrorMsg) registrationErrorMsg.textContent = "El nombre de jugador es obligatorio";
+                            return;
+                        }
+                        
+                        // Mostrar estado de carga
+                        registrationSubmitBtn.disabled = true;
+                        registrationSubmitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+                        
+                        try {
+                            // Registrar al usuario
+                            const db = firebase.firestore();
+                            const user = firebase.auth().currentUser;
+                            
+                            if (!user) {
+                                throw new Error("Debes iniciar sesión para inscribirte");
+                            }
+                            
+                            // Conseguir el documento del torneo
+                            const torneoDoc = await db.collection("torneos").doc(torneoId).get();
+                            if (!torneoDoc.exists) {
+                                throw new Error("El torneo no existe");
+                            }
+                            
+                            const torneoData = torneoDoc.data();
+                            
+                            // Verificar que el torneo esté abierto
+                            if (torneoData.estado !== 'Abierto') {
+                                throw new Error("Este torneo no está abierto para inscripciones");
+                            }
+                            
+                            // Verificar cupos disponibles
+                            const currentParticipants = torneoData.participants || [];
+                            if (torneoData.capacidad && currentParticipants.length >= torneoData.capacidad) {
+                                throw new Error("No hay cupos disponibles para este torneo");
+                            }
+                            
+                            // Verificar si ya está inscrito
+                            if (currentParticipants.includes(user.uid)) {
+                                throw new Error("Ya estás inscrito en este torneo");
+                            }
+                            
+                            // Guardar información del participante
+                            const participantInfoQuery = await db.collection("participant_info")
+                                .where("userId", "==", user.uid)
+                                .where("tournamentId", "==", torneoId)
+                                .get();
+                            
+                            if (!participantInfoQuery.empty) {
+                                // Actualizar entrada existente
+                                await db.collection("participant_info").doc(participantInfoQuery.docs[0].id).update({
+                                    playerName: playerName,
+                                    discordUsername: discordUsername || null,
+                                    active: true,
+                                    checkedIn: false,
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            } else {
+                                // Crear nueva entrada
+                                await db.collection("participant_info").add({
+                                    userId: user.uid,
+                                    tournamentId: torneoId,
+                                    playerName: playerName,
+                                    discordUsername: discordUsername || null,
+                                    active: true,
+                                    checkedIn: false,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                            
+                            // Añadir usuario a la lista de participantes del torneo
+                            await db.collection("torneos").doc(torneoId).update({
+                                participants: [...currentParticipants, user.uid],
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            // Actualizar documento del usuario
+                            const userQuery = await db.collection("usuarios")
+                                .where("uid", "==", user.uid)
+                                .get();
+                            
+                            if (!userQuery.empty) {
+                                const userDoc = userQuery.docs[0];
+                                const userTournaments = userDoc.data().torneos || [];
+                                
+                                if (!userTournaments.includes(torneoId)) {
+                                    await db.collection("usuarios").doc(userDoc.id).update({
+                                        torneos: [...userTournaments, torneoId],
+                                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                    });
+                                }
+                            }
+                            
+                            // Cerrar el modal
+                            registrationModal.classList.add('hidden');
+                            registrationModal.classList.remove('flex');
+                            
+                            // Mostrar mensaje de éxito
+                            mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
+                            
+                            // Recargar la página para reflejar los cambios
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                            
+                        } catch (error) {
+                            console.error("Error al inscribirse:", error);
+                            if (registrationErrorMsg) {
+                                registrationErrorMsg.textContent = error.message || "Error al inscribirse al torneo";
+                            }
+                            
+                            // Restaurar botón
+                            registrationSubmitBtn.disabled = false;
+                            registrationSubmitBtn.textContent = "Confirmar Inscripción";
+                        }
+                    });
+                }
+            } else {
+                console.log("Modal de inscripción encontrado, actualizando título");
+                // Actualizar título con el nombre del torneo
+                const titleEl = document.getElementById('registrationTitle');
+                if (titleEl) {
+                    titleEl.textContent = `Inscripción: ${torneoNombre}`;
+                }
+                
+                // Limpiar mensajes de error
+                const errorMsg = document.getElementById('registrationErrorMsg');
+                if (errorMsg) {
+                    errorMsg.textContent = '';
+                }
+                
+                // Limpiar campos del formulario
+                const form = document.getElementById('tournamentRegistrationForm');
+                if (form) {
+                    form.reset();
+                }
+            }
+            
+            // Almacenar ID del torneo en un campo oculto
+            const torneoIdField = document.createElement('input');
+            torneoIdField.type = 'hidden';
+            torneoIdField.id = 'current-tournament-id';
+            torneoIdField.value = torneoId;
+            
+            // Reemplazar si ya existe, o añadirlo al formulario
+            const existingField = document.getElementById('current-tournament-id');
+            const form = document.getElementById('tournamentRegistrationForm');
+            
+            if (existingField) {
+                existingField.value = torneoId;
+            } else if (form) {
+                form.appendChild(torneoIdField);
+            }
+            
+            // Mostrar el modal
+            registrationModal.classList.remove('hidden');
+            registrationModal.classList.add('flex');
+            console.log("Modal de inscripción mostrado correctamente");
+        }
+        
+        // Función para mostrar notificaciones (fallback)
+        if (typeof window.mostrarNotificacion !== 'function') {
+            window.mostrarNotificacion = function(mensaje, tipo = "info") {
+                // Verificar si ya existe una notificación
+                const existingNotification = document.querySelector('.notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+                
+                // Crear elemento de notificación
+                const notification = document.createElement('div');
+                
+                // Clases según el tipo de notificación
+                let bgColor = 'bg-blue-500';
+                let icon = 'info-circle';
+                
+                if (tipo === 'success') {
+                    bgColor = 'bg-green-500';
+                    icon = 'check-circle';
+                } else if (tipo === 'error') {
+                    bgColor = 'bg-red-500';
+                    icon = 'exclamation-circle';
+                } else if (tipo === 'warning') {
+                    bgColor = 'bg-yellow-500';
+                    icon = 'exclamation-triangle';
+                }
+                
+                // Estilos de la notificación
+                notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+                notification.innerHTML = `
+                    <i class="fas fa-${icon} mr-2"></i>
+                    <span>${mensaje}</span>
+                `;
+                
+                // Añadir al DOM
+                document.body.appendChild(notification);
+                
+                // Eliminar después de 3 segundos
+                setTimeout(() => {
+                    notification.classList.add('opacity-0');
+                    notification.style.transition = 'opacity 0.5s';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 500);
+                }, 3000);
+            };
+        }
+    });
+    </script>
 </body>
 </html>
