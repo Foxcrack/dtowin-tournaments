@@ -185,7 +185,7 @@ async function loadBracketData() {
     }
 }
 
-// Renderizar bracket
+// Renderizar bracket con mejoras en la visualización
 function renderBracket(data) {
     if (!data || !data.rounds || !data.matches) {
         bracketContainer.innerHTML = `
@@ -196,12 +196,23 @@ function renderBracket(data) {
         return;
     }
     
-    let html = '<div class="bracket">';
+    // Crear un contenedor para el bracket con scroll horizontal
+    let html = '<div class="bracket-wrapper">';
+    html += '<div class="bracket">';
+    
+    // Organizar partidos por ronda
+    const matchesByRound = {};
+    data.rounds.forEach(round => {
+        matchesByRound[round.round] = data.matches.filter(match => match.round === round.round)
+            .sort((a, b) => a.position - b.position);
+    });
+    
+    // Calcular la altura máxima necesaria para cada ronda
+    const totalRounds = data.rounds.length;
     
     // Generar rondas
     data.rounds.forEach(round => {
-        // Filtrar partidos para esta ronda
-        const roundMatches = data.matches.filter(match => match.round === round.round);
+        const roundMatches = matchesByRound[round.round];
         
         html += `
             <div class="round">
@@ -209,7 +220,10 @@ function renderBracket(data) {
                 <div class="matches">
         `;
         
-        // Generar partidos
+        // Calcular espacio necesario entre partidos para esta ronda
+        const matchGap = Math.pow(2, round.round - 1);
+        
+        // Generar partidos para esta ronda
         roundMatches.forEach((match, index) => {
             const player1 = match.player1 || { name: "TBD", id: null };
             const player2 = match.player2 || { name: "TBD", id: null };
@@ -218,8 +232,8 @@ function renderBracket(data) {
             const player1Winner = matchCompleted && match.winner && player1.id === match.winner.id;
             const player2Winner = matchCompleted && match.winner && player2.id === match.winner.id;
             
-            // Crear elemento de partido
-            html += `<div class="match" data-match-id="${match.id}">`;
+            // Crear contenedor para este partido
+            html += `<div class="match" data-match-id="${match.id}" data-position="${match.position}" data-round="${match.round}">`;
             
             // Jugador 1
             html += `
@@ -243,17 +257,16 @@ function renderBracket(data) {
                 </div>
             `;
             
-            // Conector con siguiente partido
+            // Añadir conector con siguiente partido si existe
             if (match.nextMatchId) {
                 html += '<div class="match-connector"></div>';
             }
             
             html += '</div>';
             
-            // Añadir espaciadores entre partidos si es necesario
+            // Añadir espaciadores entre partidos según la ronda
             if (index < roundMatches.length - 1) {
-                const spacersNeeded = Math.pow(2, round.round - 1) - 1;
-                for (let i = 0; i < spacersNeeded; i++) {
+                for (let i = 0; i < matchGap - 1; i++) {
                     html += '<div class="match-spacer"></div>';
                 }
             }
@@ -265,7 +278,8 @@ function renderBracket(data) {
         `;
     });
     
-    html += '</div>';
+    html += '</div>'; // Cierre de bracket
+    html += '</div>'; // Cierre de bracket-wrapper
     
     bracketContainer.innerHTML = html;
     
@@ -284,6 +298,56 @@ function renderBracket(data) {
             });
         });
     }
+    
+    // Añadir líneas conectoras entre rondas
+    addConnectorLines();
+}
+
+// Función para añadir líneas conectoras entre partidos
+function addConnectorLines() {
+    if (!bracketData || !bracketData.matches) return;
+    
+    // Para cada partido excepto los de la última ronda
+    bracketData.matches.forEach(match => {
+        if (match.nextMatchId) {
+            // Buscar elementos DOM
+            const currentMatchEl = document.querySelector(`.match[data-match-id="${match.id}"]`);
+            const nextMatchEl = document.querySelector(`.match[data-match-id="${match.nextMatchId}"]`);
+            
+            if (currentMatchEl && nextMatchEl) {
+                // Crear línea conectora
+                const connector = document.createElement('div');
+                connector.className = 'bracket-connector';
+                
+                // Determinar posición de la línea
+                const currentRect = currentMatchEl.getBoundingClientRect();
+                const nextRect = nextMatchEl.getBoundingClientRect();
+                const bracketRect = document.querySelector('.bracket').getBoundingClientRect();
+                
+                // Calcular posiciones relativas al contenedor del bracket
+                const startX = currentRect.right - bracketRect.left;
+                const startY = currentRect.top + (currentRect.height / 2) - bracketRect.top;
+                const endX = nextRect.left - bracketRect.left;
+                const endY = nextRect.top + (nextRect.height / 2) - bracketRect.top;
+                
+                // Determinar si este partido va a la entrada superior o inferior del siguiente
+                const isOddPosition = match.position % 2 !== 0;
+                const connectorClass = isOddPosition ? 'connector-top' : 'connector-bottom';
+                
+                // Aplicar clase para estilo
+                connector.classList.add(connectorClass);
+                
+                // Establecer posición y tamaño
+                connector.style.left = `${startX}px`;
+                connector.style.top = `${startY}px`;
+                connector.style.width = `${endX - startX}px`;
+                connector.style.height = `${Math.abs(endY - startY)}px`;
+                
+                // Añadir conector al DOM
+                document.querySelector('.bracket').appendChild(connector);
+            }
+        }
+    });
 }
 
 // Abrir modal para actualizar puntaje
@@ -357,6 +421,20 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // Añadir listener para redimensionamiento de ventana
+    window.addEventListener('resize', debounce(addConnectorLines, 100));
+}
+
+// Función debounce para optimizar eventos frecuentes
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
 }
 
 // Manejar actualización de puntaje
@@ -394,9 +472,10 @@ async function handleScoreUpdate(e) {
         const match = bracketData.matches.find(m => m.id === currentMatchId);
         
         // Determinar ganador
-        const winnerId = player1Score > player2Score ? match.player1.id : match.player2.id;
-        const winnerName = player1Score > player2Score ? match.player1.name : match.player2.name;
-        const winnerInfo = player1Score > player2Score ? match.player1 : match.player2;
+        const isPlayer1Winner = player1Score > player2Score;
+        const winnerId = isPlayer1Winner ? match.player1.id : match.player2.id;
+        const winnerName = isPlayer1Winner ? match.player1.name : match.player2.name;
+        const winnerInfo = isPlayer1Winner ? match.player1 : match.player2;
         
         // Actualizar partido
         match.status = 'completed';
@@ -412,13 +491,16 @@ async function handleScoreUpdate(e) {
             
             if (nextMatch) {
                 // Determinar si el ganador va a la posición 1 o 2 del siguiente partido
-                const isPlayer1Slot = match.position % 2 !== 0;
+                // Este cálculo depende de si la posición es par o impar
+                const isOddPosition = match.position % 2 !== 0;
                 
-                if (isPlayer1Slot) {
+                if (isOddPosition) {
+                    // Las posiciones impares van al jugador 1 del siguiente partido
                     nextMatch.player1 = {
                         ...winnerInfo
                     };
                 } else {
+                    // Las posiciones pares van al jugador 2 del siguiente partido
                     nextMatch.player2 = {
                         ...winnerInfo
                     };
@@ -621,92 +703,32 @@ async function generateBracket(tournamentId) {
         for (let i = 1; i <= numRounds; i++) {
             rounds.push({
                 round: i,
-                name: `Ronda ${i}`
+                name: getRoundName(i, numRounds)
             });
         }
         
         // Mezclar participantes para seeding aleatorio
         const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
         
-        // Crear partidos de primera ronda y determinar byes
-        const matches = [];
-        const firstRoundMatchCount = Math.ceil(numParticipants / 2);
-        const byeCount = firstRoundMatchCount * 2 - numParticipants;
+        // Llamar a las funciones de brackets.js para generar el bracket balanceado
+        const bracketData = createBalancedBracketStructure(shuffledParticipants, numParticipants, numRounds, participantsInfo);
         
-        // Participantes con partidos en primera ronda
-        const playersWithMatches = shuffledParticipants.slice(0, numParticipants - byeCount);
-        
-        // Participantes con bye (pasan directamente a segunda ronda)
-        const playersWithByes = shuffledParticipants.slice(numParticipants - byeCount);
-        
-        // Crear partidos de primera ronda
-        for (let i = 0; i < playersWithMatches.length; i += 2) {
-            if (i + 1 < playersWithMatches.length) {
-                matches.push({
-                    id: `1-${i/2 + 1}`,
-                    round: 1,
-                    position: i/2 + 1,
-                    player1: {
-                        id: playersWithMatches[i],
-                        name: participantsInfo[playersWithMatches[i]]?.playerName || "Jugador",
-                        discord: participantsInfo[playersWithMatches[i]]?.discordUsername
-                    },
-                    player2: {
-                        id: playersWithMatches[i + 1],
-                        name: participantsInfo[playersWithMatches[i + 1]]?.playerName || "Jugador",
-                        discord: participantsInfo[playersWithMatches[i + 1]]?.discordUsername
-                    },
-                    status: "pending",
-                    nextMatchId: `2-${Math.ceil((i/2 + 1) / 2)}`
-                });
-            }
-        }
-        
-        // Crear partidos de rondas subsiguientes
-        let matchesInCurrentRound = firstRoundMatchCount;
-        
-        for (let round = 2; round <= numRounds; round++) {
-            matchesInCurrentRound = Math.ceil(matchesInCurrentRound / 2);
-            
-            for (let position = 1; position <= matchesInCurrentRound; position++) {
-                // Determinar si hay un jugador con bye para esta posición en ronda 2
-                let player1 = null;
-                
-                if (round === 2 && position <= playersWithByes.length) {
-                    const byePlayer = playersWithByes[position - 1];
-                    player1 = {
-                        id: byePlayer,
-                        name: participantsInfo[byePlayer]?.playerName || "Jugador",
-                        discord: participantsInfo[byePlayer]?.discordUsername
-                    };
-                }
-                
-                matches.push({
-                    id: `${round}-${position}`,
-                    round: round,
-                    position: position,
-                    player1: player1,
-                    player2: null,
-                    status: "pending",
-                    nextMatchId: round < numRounds ? `${round+1}-${Math.ceil(position/2)}` : null
-                });
-            }
-        }
-        
-        // Crear documento del bracket
-        const bracketRef = await db.collection("brackets").add({
+        // Guardar bracket en la base de datos
+        const bracketsRef = await db.collection("brackets").add({
             tournamentId: tournamentId,
-            name: tournamentData.nombre,
-            rounds: rounds,
-            matches: matches,
+            name: tournamentData.nombre || "Tournament Bracket",
+            rounds: bracketData.rounds,
+            matches: bracketData.matches,
+            participants: participants.length,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "active"
+            status: "active",
+            createdBy: auth.currentUser ? auth.currentUser.uid : null
         });
         
-        // Actualizar torneo con referencia al bracket y cambiar estado a "En Progreso"
+        // Actualizar torneo con referencia al bracket
         await db.collection("torneos").doc(tournamentId).update({
-            bracketId: bracketRef.id,
+            bracketId: bracketsRef.id,
             estado: "En Progreso",
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -720,6 +742,165 @@ async function generateBracket(tournamentId) {
     } catch (error) {
         console.error("Error al generar bracket:", error);
         showError("Error al generar bracket: " + error.message);
+    }
+}
+
+// Función auxiliar para crear una estructura balanceada de bracket
+function createBalancedBracketStructure(participants, numParticipants, numRounds, participantsInfo) {
+    // Calcular el número perfecto de participantes (siguiente potencia de 2)
+    const perfectSize = Math.pow(2, numRounds);
+    
+    // Crear rondas
+    const rounds = [];
+    for (let i = 1; i <= numRounds; i++) {
+        rounds.push({
+            round: i,
+            name: getRoundName(i, numRounds),
+            matchCount: perfectSize / Math.pow(2, i)
+        });
+    }
+    
+    // Crear matches utilizando el algoritmo mejorado
+    const matches = [];
+    
+    // Calcular byes
+    const numByes = perfectSize - numParticipants;
+    
+    // Crear seeding balanceado
+    const seeds = [];
+    for (let i = 0; i < perfectSize; i++) {
+        seeds.push(i < numParticipants ? i : null);
+    }
+    
+    // Distribuir byes de manera óptima
+    seeds.sort((a, b) => {
+        if (a === null && b === null) return 0;
+        if (a === null) return 1;
+        if (b === null) return -1;
+        return a - b;
+    });
+    
+    // Crear matches de primera ronda
+    for (let i = 0; i < perfectSize / 2; i++) {
+        const player1Index = seeds[i * 2];
+        const player2Index = seeds[i * 2 + 1];
+        
+        let player1 = null;
+        let player2 = null;
+        
+        if (player1Index !== null) {
+            player1 = {
+                id: participants[player1Index],
+                name: participantsInfo[participants[player1Index]]?.playerName || "TBD",
+                discord: participantsInfo[participants[player1Index]]?.discordUsername || null,
+                seed: player1Index + 1
+            };
+        }
+        
+        if (player2Index !== null) {
+            player2 = {
+                id: participants[player2Index],
+                name: participantsInfo[participants[player2Index]]?.playerName || "TBD",
+                discord: participantsInfo[participants[player2Index]]?.discordUsername || null,
+                seed: player2Index + 1
+            };
+        }
+        
+        const position = i + 1;
+        const nextMatchPosition = Math.ceil(position / 2);
+        
+        matches.push({
+            id: `1-${position}`,
+            round: 1,
+            position: position,
+            player1: player1,
+            player2: player2,
+            winner: null,
+            scores: {},
+            status: "pending",
+            nextMatchId: numRounds > 1 ? `2-${nextMatchPosition}` : null
+        });
+    }
+    
+    // Crear matches para las demás rondas
+    for (let round = 2; round <= numRounds; round++) {
+        const matchesInRound = perfectSize / Math.pow(2, round);
+        
+        for (let i = 0; i < matchesInRound; i++) {
+            const position = i + 1;
+            const nextMatchPosition = Math.ceil(position / 2);
+            
+            matches.push({
+                id: `${round}-${position}`,
+                round: round,
+                position: position,
+                player1: null,
+                player2: null,
+                winner: null,
+                scores: {},
+                status: "pending",
+                nextMatchId: round < numRounds ? `${round + 1}-${nextMatchPosition}` : null
+            });
+        }
+    }
+    
+    // Auto-avanzar byes
+    const byeMatches = matches.filter(match => 
+        (match.player1 && !match.player2) || (!match.player1 && match.player2)
+    );
+    
+    // Procesar matches con bye
+    byeMatches.forEach(match => {
+        const winner = match.player1 || match.player2;
+        
+        // Marcar match como completado
+        match.winner = winner;
+        match.status = "completed";
+        match.scores = {
+            player1: match.player1 ? 1 : 0,
+            player2: match.player2 ? 1 : 0
+        };
+        
+        // Avanzar jugador al siguiente match
+        if (match.nextMatchId) {
+            const nextMatch = matches.find(m => m.id === match.nextMatchId);
+            
+            if (nextMatch) {
+                const isOddPosition = match.position % 2 !== 0;
+                
+                if (isOddPosition) {
+                    nextMatch.player1 = winner;
+                } else {
+                    nextMatch.player2 = winner;
+                }
+            }
+        }
+    });
+    
+    // Ordenar matches por ronda y posición
+    matches.sort((a, b) => {
+        if (a.round !== b.round) {
+            return a.round - b.round;
+        }
+        return a.position - b.position;
+    });
+    
+    return {
+        rounds: rounds,
+        matches: matches
+    };
+}
+
+// Helper function for round names
+function getRoundName(roundNumber, totalRounds) {
+    if (roundNumber === totalRounds) {
+        return "Final";
+    } else if (roundNumber === totalRounds - 1) {
+        return "Semifinales";
+    } else if (roundNumber === totalRounds - 2 && totalRounds > 2) {
+        return "Cuartos de Final";
+    } else {
+        return `Ronda ${roundNumber}`;
     }
 }
 
