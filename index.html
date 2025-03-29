@@ -116,6 +116,17 @@
                 </div>
             </div>
             
+            <!-- Torneos en Check In -->
+            <div id="checkin-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Confirma tu Asistencia</h3>
+                <div id="torneos-checkin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos en check-in se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Próximos Torneos -->
             <div id="proximos-section" class="mb-12">
                 <h3 class="text-2xl font-bold mb-6 text-gray-700">Próximamente</h3>
@@ -204,6 +215,43 @@
         </p>
     </div>
 </div>
+
+    <!-- Tournament Registration Modal -->
+    <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción al Torneo</h3>
+                <p class="text-gray-600">Completa la información para participar</p>
+                <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="tournamentRegistrationForm">
+                <div class="mb-4">
+                    <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                    <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
+                    <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                    <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
+                    <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
+                </div>
+                
+                <div class="flex items-center justify-end">
+                    <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                        Confirmar Inscripción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="gradient-background text-white py-8 px-4">
