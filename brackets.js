@@ -31,7 +31,6 @@ export async function generateBracket(tournamentId) {
         const tournamentData = tournamentSnap.data();
         
         // Check if bracket already exists
-        // Check if bracket already exists
         const bracketsRef = collection(db, "brackets");
         const q = query(
             bracketsRef, 
@@ -126,7 +125,7 @@ function createBalancedBracketStructure(participants, participantsInfo) {
     
     const perfectBracketSize = Math.pow(2, numRounds);
     
-    // Create rounds array
+    // Create rounds array first, it will be passed separately
     const rounds = [];
     for (let i = 1; i <= numRounds; i++) {
         rounds.push({
@@ -136,8 +135,14 @@ function createBalancedBracketStructure(participants, participantsInfo) {
         });
     }
     
-    // Determine byes and create the bracket structure
-    return generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, perfectBracketSize);
+    // Get matches structure
+    const result = generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, perfectBracketSize);
+    
+    // Always make sure we return both rounds and matches
+    return {
+        rounds: rounds,
+        matches: result.matches
+    };
 }
 
 // Determine the name of each round (R1, R2, Semis, Final, etc.)
@@ -288,7 +293,7 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     // Make sure we have a clear final match
     ensureFinalMatchExists(matches, numRounds);
     
-    // Create rounds array here before returning
+    // Create rounds array here
     const rounds = [];
     for (let i = 1; i <= numRounds; i++) {
         rounds.push({
@@ -299,7 +304,6 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     }
     
     return {
-        rounds: rounds,
         matches: matches
     };
 }
@@ -606,7 +610,7 @@ export async function isUserTournamentStaff(userId, tournamentId) {
 }
 
 // Update match results
-async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
+export async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
     try {
         // Verify user is authenticated and has permission
         if (!isAuthenticated()) {
@@ -870,4 +874,8 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
     }
 }
 
-// Export necessary functions
+// Export necesario de funciones
+export {
+    resetTournamentBracket,
+    addParticipantManually
+};
