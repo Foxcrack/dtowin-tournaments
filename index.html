@@ -1007,5 +1007,102 @@
         }
     });
     </script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Inicializando script de arreglo para check-in...");
+    
+        function configurarBotonesCheckIn() {
+            // Buscar todos los botones de check-in
+            const checkInBtns = document.querySelectorAll('button:contains("Hacer Check-In"), button.checkin-btn');
+            console.log("Botones de check-in encontrados:", checkInBtns.length);
+        
+            checkInBtns.forEach(btn => {
+                // Reemplazar el event listener
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            
+                newBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    console.log("Botón de check-in clickeado");
+                
+                    // Obtener el ID del torneo
+                    const torneoId = this.dataset.torneoId || 
+                                     this.closest('[data-torneo-id]')?.dataset.torneoId ||
+                                     this.closest('.tournament-card')?.dataset.torneoId;
+                                 
+                    if (!torneoId) {
+                        console.error("No se pudo encontrar el ID del torneo");
+                        alert("Error al identificar el torneo. Por favor, intenta de nuevo.");
+                        return;
+                    }
+                
+                    // Mostrar estado de carga
+                    const originalText = this.textContent;
+                    this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+                    this.disabled = true;
+                
+                    try {
+                        // Implementación directa del check-in para evitar problemas de índices
+                        if (!firebase.auth().currentUser) {
+                        throw new Error("Debes iniciar sesión para hacer check-in");
+                        }
+                    
+                        const user = firebase.auth().currentUser;
+                        const db = firebase.firestore();
+                    
+                        // Actualizar directamente en dos pasos separados
+                        const participantInfoSnapshot = await db.collection("participant_info")
+                            .where("userId", "==", user.uid)
+                            .where("tournamentId", "==", torneoId)
+                            .get();
+                    
+                        if (!participantInfoSnapshot.empty) {
+                            await db.collection("participant_info").doc(participantInfoSnapshot.docs[0].id).update({
+                                checkedIn: true,
+                                checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        
+                            // Actualizar el documento del torneo también
+                            const torneoDoc = await db.collection("torneos").doc(torneoId).get();
+                            if (torneoDoc.exists) {
+                                const torneoData = torneoDoc.data();
+                                const checkedInParticipants = torneoData.checkedInParticipants || [];
+                            
+                                if (!checkedInParticipants.includes(user.uid)) {
+                                    await db.collection("torneos").doc(torneoId).update({
+                                        checkedInParticipants: [...checkedInParticipants, user.uid]
+                                    });
+                                }
+                            }
+                        
+                            // Actualizar UI
+                            this.textContent = "Asistencia Confirmada";
+                            this.classList.add("bg-green-500");
+                            this.disabled = true;
+                        
+                            // Mensaje de éxito
+                            window.mostrarNotificacion("¡Has confirmado tu asistencia correctamente!", "success");
+                        
+                            // Recargar página
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            throw new Error("No se encontró tu información de inscripción");
+                        }
+                    } catch (error) {
+                        console.error("Error al hacer check-in:", error);
+                        this.textContent = originalText;
+                        this.disabled = false;
+                        window.mostrarNotificacion("Error: " + error.message, "error");
+                    }
+                });
+            });
+        }
+    
+        // Ejecutar cuando la página cargue
+        setTimeout(configurarBotonesCheckIn, 1000);
+        setTimeout(configurarBotonesCheckIn, 3000);
+    });
+    </script>
 </body>
 </html>
