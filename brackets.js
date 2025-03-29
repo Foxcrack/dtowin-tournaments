@@ -60,44 +60,10 @@ export async function generateBracket(tournamentId) {
             throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
         }
         
-        // También verificar en la colección participant_info
-        if (participantsToUse.length === tournamentData.participants.length) {
-            // Si estamos usando todos los participantes, verifiquemos si hay info de check-in en participant_info
-            const participantInfoRef = collection(db, "participant_info");
-            const checkedInQuery = query(
-                participantInfoRef,
-                where("tournamentId", "==", tournamentId),
-                where("checkedIn", "==", true)
-            );
-            
-            try {
-                const checkedInSnapshot = await getDocs(checkedInQuery);
-                
-                if (checkedInSnapshot.size >= 2) {
-                    // Si hay suficientes con check-in en participant_info, usar esos
-                    const checkedInParticipantsIds = [];
-                    checkedInSnapshot.forEach(doc => {
-                        checkedInParticipantsIds.push(doc.data().userId);
-                    });
-                    
-                    participantsToUse = checkedInParticipantsIds;
-                    console.log(`Found ${participantsToUse.length} checked-in participants in participant_info`);
-                    
-                    // Actualizar el documento del torneo también
-                    await updateDoc(tournamentRef, {
-                        checkedInParticipants: checkedInParticipantsIds
-                    });
-                }
-            } catch (indexError) {
-                console.warn("Error al consultar participantes con check-in. Probablemente falta un índice:", indexError);
-                // Continuamos con todos los participantes si hay un error de índice
-            }
-        }
-        
         // Get participant info with names
         const participantsInfo = await getTournamentParticipantsInfo(tournamentId);
         
-        // Shuffle participants for random seeding (opcional, puede comentarse para mantener el orden original)
+        // Shuffle participants for random seeding
         const shuffledParticipants = shuffleArray([...participantsToUse]);
         
         // Generate bracket structure with improved balancing
@@ -165,8 +131,8 @@ function createBalancedBracketStructure(participants, participantsInfo) {
         });
     }
     
-    // Determine byes and create the bracket structure using improved algorithm
-    return determineByesAndCreateMatches(participants, participantsInfo, numParticipants, perfectBracketSize, numRounds);
+    // Determine byes and create the bracket structure
+    return generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, perfectBracketSize);
 }
 
 // Determine the name of each round (R1, R2, Semis, Final, etc.)
@@ -189,84 +155,88 @@ function getRoundName(roundNumber, totalRounds) {
             return "Final";
         } else if (roundNumber === totalRounds - 1 && totalRounds > 1) {
             return "Semifinales";
+        } else if (roundNumber === totalRounds - 2 && totalRounds > 2) {
+            return "Cuartos de Final";
         } else {
             return `Ronda ${roundNumber}`;
         }
     }
 }
 
-// Determine byes and create matches for balanced bracket (IMPROVED)
-function determineByesAndCreateMatches(participants, participantsInfo, numParticipants, perfectBracketSize, numRounds) {
+// Generate matches using standard tournament seeding (similar to Challonge)
+function generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, bracketSize) {
     const matches = [];
-    const numByes = perfectBracketSize - numParticipants;
+    const numParticipants = participants.length;
     
-    // Create seeds and positions using improved algorithm (similar to Challonge)
-    const seeds = createBalancedSeeds(numParticipants, perfectBracketSize);
-    
-    // First round matches with proper seeding
-    let matchId = 1;
-    const firstRoundMatchCount = perfectBracketSize / 2;
-    
-    // Create all first round matches (including empty ones for byes)
-    for (let i = 0; i < firstRoundMatchCount; i++) {
-        // Determine players for this match
-        const seedIndex1 = i * 2;
-        const seedIndex2 = i * 2 + 1;
-        
-        // Get participant indexes based on seed positions
-        const participantIndex1 = seedIndex1 < seeds.length ? seeds[seedIndex1].participantIndex : null;
-        const participantIndex2 = seedIndex2 < seeds.length ? seeds[seedIndex2].participantIndex : null;
-        
-        // Create player objects or null for byes
-        let player1 = null;
-        let player2 = null;
-        
-        if (participantIndex1 !== null && participantIndex1 < participants.length) {
-            player1 = {
-                id: participants[participantIndex1],
-                name: participantsInfo[participants[participantIndex1]]?.playerName || "TBD",
-                discord: participantsInfo[participants[participantIndex1]]?.discordUsername || null,
-                seed: seedIndex1 + 1
-            };
-        }
-        
-        if (participantIndex2 !== null && participantIndex2 < participants.length) {
-            player2 = {
-                id: participants[participantIndex2],
-                name: participantsInfo[participants[participantIndex2]]?.playerName || "TBD",
-                discord: participantsInfo[participants[participantIndex2]]?.discordUsername || null,
-                seed: seedIndex2 + 1
-            };
-        }
-        
-        // Create the match
-        const matchPosition = i + 1;
-        const nextMatchPosition = Math.ceil(matchPosition / 2);
-        const nextMatchId = numRounds > 1 ? `2-${nextMatchPosition}` : null;
-        
-        matches.push({
-            id: `1-${matchPosition}`,
-            round: 1,
-            position: matchPosition,
-            player1: player1,
-            player2: player2,
-            winner: null,
-            scores: {},
-            status: "pending",
-            nextMatchId: nextMatchId
-        });
+    // Generate seeds for participants (1, 2, 3, 4, etc.)
+    const seeds = [];
+    for (let i = 0; i < numParticipants; i++) {
+        seeds.push(i + 1);
     }
     
-    // Handle automatic advancement for byes
-    const matchesWithByes = matches.filter(match => 
+    // Generate first round match positions using standard tournament seeding
+    const firstRoundPositions = generateStandardSeedPositions(bracketSize);
+    
+    // Assign participants to positions based on seeding
+    const positionAssignments = {};
+    for (let i = 0; i < seeds.length; i++) {
+        const seed = seeds[i];
+        const position = firstRoundPositions[i];
+        positionAssignments[position] = {
+            id: participants[i],
+            name: participantsInfo[participants[i]]?.playerName || "TBD",
+            discord: participantsInfo[participants[i]]?.discordUsername || null,
+            seed: seed
+        };
+    }
+    
+    // Create matches for each round
+    for (let round = 1; round <= numRounds; round++) {
+        const matchesInRound = bracketSize / Math.pow(2, round);
+        
+        for (let position = 1; position <= matchesInRound; position++) {
+            const matchId = `${round}-${position}`;
+            
+            // Calculate which positions feed into this match
+            let player1 = null;
+            let player2 = null;
+            
+            if (round === 1) {
+                // First round - get players from position assignments
+                const player1Position = (position * 2) - 1;
+                const player2Position = position * 2;
+                
+                player1 = positionAssignments[player1Position] || null;
+                player2 = positionAssignments[player2Position] || null;
+            }
+            
+            // Next match calculation (the match this feeds into)
+            const nextRound = round < numRounds ? round + 1 : null;
+            const nextMatchPosition = nextRound ? Math.ceil(position / 2) : null;
+            const nextMatchId = nextRound ? `${nextRound}-${nextMatchPosition}` : null;
+            
+            // Create the match
+            matches.push({
+                id: matchId,
+                round: round,
+                position: position,
+                player1: player1,
+                player2: player2,
+                winner: null,
+                scores: {},
+                status: "pending",
+                nextMatchId: nextMatchId
+            });
+        }
+    }
+    
+    // Auto-advance participants where there's only one player in a match (byes)
+    const byeMatches = matches.filter(match => 
         (match.player1 && !match.player2) || (!match.player1 && match.player2)
     );
     
-    // Process all matches with byes to advance players automatically
-    const advancedPlayers = {};
-    
-    matchesWithByes.forEach(match => {
-        // Determine the winner (the only player in the match)
+    byeMatches.forEach(match => {
+        // Determine winner (the only player in the match)
         const winner = match.player1 || match.player2;
         
         // Mark match as completed with the sole player as winner
@@ -277,51 +247,30 @@ function determineByesAndCreateMatches(participants, participantsInfo, numPartic
             player2: match.player2 ? 1 : 0
         };
         
-        // Track this player for next round
+        // Advance winner to next match
         if (match.nextMatchId) {
-            if (!advancedPlayers[match.nextMatchId]) {
-                advancedPlayers[match.nextMatchId] = [];
+            const nextMatch = matches.find(m => m.id === match.nextMatchId);
+            if (nextMatch) {
+                // Determine if winner goes to player1 or player2 slot
+                const isOddPosition = match.position % 2 !== 0;
+                
+                if (isOddPosition) {
+                    nextMatch.player1 = winner;
+                } else {
+                    nextMatch.player2 = winner;
+                }
             }
-            advancedPlayers[match.nextMatchId].push(winner);
         }
     });
     
-    // Create the rest of the rounds
-    for (let round = 2; round <= numRounds; round++) {
-        const matchesInRound = perfectBracketSize / Math.pow(2, round);
-        
-        for (let i = 0; i < matchesInRound; i++) {
-            const matchPosition = i + 1;
-            const matchId = `${round}-${matchPosition}`;
-            const nextRound = round < numRounds ? round + 1 : null;
-            const nextMatchPosition = nextRound ? Math.ceil(matchPosition / 2) : null;
-            const nextMatchId = nextRound ? `${nextRound}-${nextMatchPosition}` : null;
-            
-            // Check if we have pre-advanced players for this match
-            const preAdvancedPlayers = advancedPlayers[matchId] || [];
-            
-            // Create the match with any pre-advanced players
-            matches.push({
-                id: matchId,
-                round: round,
-                position: matchPosition,
-                player1: preAdvancedPlayers[0] || null,
-                player2: preAdvancedPlayers[1] || null,
-                winner: null,
-                scores: {},
-                status: "pending",
-                nextMatchId: nextMatchId
-            });
+    // Add empty matches for rounds with odd number of participants
+    const roundsWithOddParticipants = {};
+    matches.forEach(match => {
+        if (match.round > 1 && 
+            ((match.player1 && !match.player2) || (!match.player1 && match.player2))) {
+            roundsWithOddParticipants[match.round] = true;
         }
-    }
-    
-    // Process second level of byes - matches where both players have been pre-advanced
-    const autoAdvanceMatches = matches.filter(match => 
-        match.round > 1 && match.player1 && match.player2 && match.status === "pending"
-    );
-    
-    // Note: We'd generally let these run normally, but if you want to auto-advance a certain scenario,
-    // you can add that logic here
+    });
     
     // Sort matches by round and position
     matches.sort((a, b) => {
@@ -331,67 +280,97 @@ function determineByesAndCreateMatches(participants, participantsInfo, numPartic
         return a.position - b.position;
     });
     
+    // Make sure we have a clear final match
+    ensureFinalMatchExists(matches, numRounds);
+    
     return {
         rounds: rounds,
         matches: matches
     };
 }
 
-// Create balanced seeds for the bracket (improved algorithm)
-function createBalancedSeeds(numParticipants, bracketSize) {
-    const seeds = [];
+// Ensure there's always a final match, even with odd numbers of participants
+function ensureFinalMatchExists(matches, numRounds) {
+    const finalMatches = matches.filter(match => match.round === numRounds);
     
-    // Create seed positions
-    for (let i = 0; i < bracketSize; i++) {
-        // For each seed position, determine its actual position in the bracket
-        // This uses a standard bracket seeding algorithm similar to what Challonge uses
-        let actualPosition;
+    if (finalMatches.length === 0) {
+        // No final match exists, create one
+        const lastRound = numRounds - 1;
+        const lastRoundMatches = matches.filter(match => match.round === lastRound);
         
-        if (i < numParticipants) {
-            // This is a real participant
-            actualPosition = getBalancedPosition(i + 1, bracketSize);
-        } else {
-            // This is a bye
-            actualPosition = null;
-        }
+        // Create final match
+        const finalMatch = {
+            id: `${numRounds}-1`,
+            round: numRounds,
+            position: 1,
+            player1: null,
+            player2: null,
+            winner: null,
+            scores: {},
+            status: "pending",
+            nextMatchId: null
+        };
         
-        seeds.push({
-            seed: i + 1,
-            participantIndex: i < numParticipants ? i : null,
-            position: actualPosition
+        // Update last round matches to point to final
+        lastRoundMatches.forEach(match => {
+            match.nextMatchId = finalMatch.id;
         });
+        
+        // Add final match
+        matches.push(finalMatch);
+    } else if (finalMatches.length > 1) {
+        // More than one final match, consolidate them
+        const keepFinalMatch = finalMatches[0];
+        const removeFinalMatches = finalMatches.slice(1);
+        
+        // Create a new super-final match
+        const superFinalMatch = {
+            id: `${numRounds + 1}-1`,
+            round: numRounds + 1,
+            position: 1,
+            player1: null,
+            player2: null,
+            winner: null,
+            scores: {},
+            status: "pending",
+            nextMatchId: null
+        };
+        
+        // Update final matches to point to super-final
+        finalMatches.forEach(match => {
+            match.nextMatchId = superFinalMatch.id;
+        });
+        
+        // Add super-final match
+        matches.push(superFinalMatch);
     }
-    
-    return seeds;
 }
 
-// Get balanced position for a seed in the bracket
-function getBalancedPosition(seed, bracketSize) {
-    // Implementation of standard tournament seeding algorithm
-    // Maps seeds to positions in a way that balances the bracket
+// Generate standard tournament seed positions
+function generateStandardSeedPositions(bracketSize) {
+    const positions = [];
     
-    // Start with position 1
-    let position = 1;
-    let power = 1;
-    
-    // Find the largest power of 2 less than or equal to the bracket size
-    while (power * 2 <= bracketSize) {
-        power *= 2;
-    }
-    
-    // Calculate position based on seed using bitwise operations
-    // This ensures proper distribution of seeds in the bracket
-    for (let i = 1; i < seed; i++) {
-        position = (position + power) % (bracketSize + 1);
-        if (position === 0) position = bracketSize;
-        
-        // After each power of 2 seeds, halve the increment
-        if (((i + 1) & i) === 0) {
-            power /= 2;
+    // Standard bracket positions using powers of 2
+    function assign(n, start, length) {
+        if (length === 1) {
+            positions[start] = n;
+            return;
         }
+        
+        const half = length / 2;
+        assign(n, start, half);
+        assign(bracketSize + 1 - n, start + half, half);
     }
     
-    return position;
+    // Initialize positions array
+    for (let i = 0; i < bracketSize; i++) {
+        positions[i] = 0;
+    }
+    
+    // Generate positions
+    assign(1, 0, bracketSize);
+    
+    return positions;
 }
 
 // Shuffle array randomly (Fisher-Yates algorithm)
@@ -443,6 +422,134 @@ export async function getTournamentBracket(tournamentId) {
     }
 }
 
+// Reset tournament bracket
+export async function resetTournamentBracket(tournamentId) {
+    try {
+        // Get tournament document
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            throw new Error("El torneo no existe");
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Check if tournament has a bracket
+        if (tournamentData.bracketId) {
+            // Delete existing bracket (or mark as inactive)
+            const bracketRef = doc(db, "brackets", tournamentData.bracketId);
+            await updateDoc(bracketRef, {
+                status: "inactive",
+                updatedAt: serverTimestamp()
+            });
+            
+            // Clear bracketId from tournament
+            await updateDoc(tournamentRef, {
+                bracketId: null,
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        // Generate new bracket (this will use checked-in participants if available)
+        return await generateBracket(tournamentId);
+        
+    } catch (error) {
+        console.error("Error resetting tournament bracket:", error);
+        throw error;
+    }
+}
+
+// Add participant manually to tournament
+export async function addParticipantManually(tournamentId, playerName, discordUsername, email) {
+    try {
+        if (!isAuthenticated() || !isUserTournamentStaff(auth.currentUser.uid, tournamentId)) {
+            throw new Error("No tienes permiso para añadir participantes");
+        }
+        
+        if (!playerName || !email) {
+            throw new Error("El nombre del jugador y correo son obligatorios");
+        }
+        
+        // Get tournament document
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            throw new Error("El torneo no existe");
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Try to find a user with the provided email
+        const usersRef = collection(db, "usuarios");
+        const emailQuery = query(usersRef, where("email", "==", email.toLowerCase()));
+        const userSnapshot = await getDocs(emailQuery);
+        
+        let userId;
+        
+        if (userSnapshot.empty) {
+            // No user found with this email, create placeholder ID
+            userId = `manual_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            
+            // Add to a special collection for manually added users
+            await addDoc(collection(db, "manual_participants"), {
+                email: email.toLowerCase(),
+                playerName: playerName,
+                discordUsername: discordUsername || null,
+                createdAt: serverTimestamp(),
+                createdBy: auth.currentUser.uid,
+                tournamentId: tournamentId
+            });
+        } else {
+            // User found, use their user ID
+            userId = userSnapshot.docs[0].data().uid;
+        }
+        
+        // Check if participant already exists
+        const participants = tournamentData.participants || [];
+        if (participants.includes(userId)) {
+            throw new Error("Este usuario ya está inscrito en el torneo");
+        }
+        
+        // Add participant to tournament
+        await updateDoc(tournamentRef, {
+            participants: [...participants, userId],
+            updatedAt: serverTimestamp()
+        });
+        
+        // Also add to checked-in participants if the tournament is in check-in phase
+        if (tournamentData.estado === 'Check In' || tournamentData.estado === 'En Progreso') {
+            const checkedInParticipants = tournamentData.checkedInParticipants || [];
+            if (!checkedInParticipants.includes(userId)) {
+                await updateDoc(tournamentRef, {
+                    checkedInParticipants: [...checkedInParticipants, userId]
+                });
+            }
+        }
+        
+        // Add participant info
+        await addDoc(collection(db, "participant_info"), {
+            userId: userId,
+            tournamentId: tournamentId,
+            playerName: playerName,
+            discordUsername: discordUsername || null,
+            email: email.toLowerCase(),
+            active: true,
+            checkedIn: true,
+            manuallyAdded: true,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        
+        return userId;
+        
+    } catch (error) {
+        console.error("Error adding participant manually:", error);
+        throw error;
+    }
+}
+
 // Check if user has staff role for a tournament
 export async function isUserTournamentStaff(userId, tournamentId) {
     try {
@@ -483,7 +590,7 @@ export async function isUserTournamentStaff(userId, tournamentId) {
     }
 }
 
-// Update match results (IMPROVED)
+// Update match results
 export async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
     try {
         // Verify user is authenticated and has permission
@@ -572,11 +679,12 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
                 const nextMatch = matches[nextMatchIndex];
                 
                 // Determine if winner goes into player1 or player2 slot of the next match
-                // This depends on whether the current match position is odd or even
+                // This depends on the current match position
                 const isEvenPosition = match.position % 2 === 0;
                 
+                // For odd positions, winner goes to player1 slot
+                // For even positions, winner goes to player2 slot
                 if (isEvenPosition) {
-                    // For even positions, winner goes to player2 slot
                     updatedMatches[nextMatchIndex] = {
                         ...nextMatch,
                         player2: {
@@ -587,7 +695,6 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
                         }
                     };
                 } else {
-                    // For odd positions, winner goes to player1 slot
                     updatedMatches[nextMatchIndex] = {
                         ...nextMatch,
                         player1: {
@@ -751,6 +858,8 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
 // Export necessary functions
 export {
     generateBracket,
+    resetTournamentBracket,
+    addParticipantManually,
     getTournamentBracket,
     isUserTournamentStaff,
     updateMatchResults
