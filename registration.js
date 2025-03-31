@@ -1,292 +1,38 @@
-// registration.js - Module for handling tournament registration with additional information
+// registration.js - Module for managing tournament registrations
 import { auth, db, isAuthenticated } from './firebase.js';
 import { 
     collection, 
-    addDoc, 
-    getDoc, 
     doc, 
-    updateDoc, 
-    query, 
-    where, 
+    getDoc, 
     getDocs,
-    serverTimestamp
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query, 
+    where,
+    orderBy,
+    serverTimestamp,
+    arrayUnion,
+    arrayRemove
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// DOM Elements for Registration Modal
-let registrationModal;
-let closeRegistrationModalBtn;
-let tournamentRegistrationForm;
-let playerNameInput;
-let discordUsernameInput;
-let registrationSubmitBtn;
-let registrationErrorMsg;
-let currentTournamentId = null;
-
-// Initialize the registration module
-export function initRegistrationModule() {
-    console.log("Initializing registration module...");
-    
-    // Create the registration modal if it doesn't exist
-    createRegistrationModal();
-    
-    // Set up event listeners
-    setupEventListeners();
-}
-
-// Create the registration modal dynamically
-function createRegistrationModal() {
-    // Check if modal already exists
-    if (document.getElementById('tournamentRegistrationModal')) {
-        console.log("Registration modal already exists, getting references");
-        registrationModal = document.getElementById('tournamentRegistrationModal');
-        closeRegistrationModalBtn = document.getElementById('closeRegistrationModalBtn');
-        tournamentRegistrationForm = document.getElementById('tournamentRegistrationForm');
-        playerNameInput = document.getElementById('playerName');
-        discordUsernameInput = document.getElementById('discordUsername');
-        registrationSubmitBtn = document.getElementById('registrationSubmitBtn');
-        registrationErrorMsg = document.getElementById('registrationErrorMsg');
-        return;
-    }
-    
-    // Create modal element
-    const modalHTML = `
-    <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción al Torneo</h3>
-                <p class="text-gray-600">Completa la información para participar</p>
-                <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
-            </div>
-            
-            <form id="tournamentRegistrationForm">
-                <div class="mb-4">
-                    <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
-                    <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
-                    <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
-                </div>
-                
-                <div class="mb-6">
-                    <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
-                    <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
-                    <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
-                </div>
-                
-                <div class="flex items-center justify-end">
-                    <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
-                        Cancelar
-                    </button>
-                    <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
-                        Confirmar Inscripción
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    `;
-    
-    // Append to body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // Get references to elements
-    registrationModal = document.getElementById('tournamentRegistrationModal');
-    closeRegistrationModalBtn = document.getElementById('closeRegistrationModalBtn');
-    tournamentRegistrationForm = document.getElementById('tournamentRegistrationForm');
-    playerNameInput = document.getElementById('playerName');
-    discordUsernameInput = document.getElementById('discordUsername');
-    registrationSubmitBtn = document.getElementById('registrationSubmitBtn');
-    registrationErrorMsg = document.getElementById('registrationErrorMsg');
-    
-    console.log("Registration modal created successfully:", !!registrationModal);
-}
-
-// Set up event listeners for the registration modal
-function setupEventListeners() {
-    if (closeRegistrationModalBtn) {
-        closeRegistrationModalBtn.addEventListener('click', hideRegistrationModal);
-    }
-    
-    const cancelBtn = document.getElementById('cancelRegistrationBtn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', hideRegistrationModal);
-    }
-    
-    if (tournamentRegistrationForm) {
-        tournamentRegistrationForm.addEventListener('submit', handleRegistrationSubmit);
-    }
-    
-    // Close modal when clicking outside
-    if (registrationModal) {
-        registrationModal.addEventListener('click', function(e) {
-            if (e.target === registrationModal) {
-                hideRegistrationModal();
-            }
-        });
-    }
-}
-
-// Show registration modal for a specific tournament
-export function showRegistrationModal(tournamentId, tournamentName) {
-    console.log("Showing registration modal for tournament:", tournamentId, tournamentName);
-    
-    // Ensure modal is created
-    if (!registrationModal) {
-        console.log("Registration modal not found, creating it...");
-        createRegistrationModal();
-        setupEventListeners();
-    }
-    
-    if (!registrationModal) {
-        console.error("Failed to create registration modal!");
-        if (typeof window.mostrarNotificacion === "function") {
-            window.mostrarNotificacion("Error al mostrar el formulario de inscripción", "error");
-        } else {
-            alert("Error al mostrar el formulario de inscripción");
-        }
-        return;
-    }
-    
-    // Store tournament ID
-    currentTournamentId = tournamentId;
-    
-    // Update title with tournament name if provided
-    const titleEl = document.getElementById('registrationTitle');
-    if (titleEl && tournamentName) {
-        titleEl.textContent = `Inscripción: ${tournamentName}`;
-    }
-    
-    // Clear previous error messages
-    if (registrationErrorMsg) {
-        registrationErrorMsg.textContent = '';
-    }
-    
-    // Clear form fields
-    if (tournamentRegistrationForm) {
-        tournamentRegistrationForm.reset();
-    }
-    
-    // Try to pre-fill with previous registration info if available
-    loadPreviousRegistrationInfo(tournamentId);
-    
-    // Show modal
-    registrationModal.classList.remove('hidden');
-    registrationModal.classList.add('flex');
-    console.log("Registration modal shown");
-}
-
-// Hide registration modal
-export function hideRegistrationModal() {
-    if (registrationModal) {
-        registrationModal.classList.add('hidden');
-        registrationModal.classList.remove('flex');
-        
-        // Reset current tournament ID
-        currentTournamentId = null;
-    }
-}
-
-// Load previous registration info if the user has registered before
-async function loadPreviousRegistrationInfo(tournamentId) {
+// Register user for a tournament
+export async function registerForTournament(tournamentId, playerName, discordUsername = null) {
     try {
-        if (!isAuthenticated()) return;
-        
-        const user = auth.currentUser;
-        
-        // Query participant_info collection to find previous registration
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
-            where("userId", "==", user.uid),
-            where("tournamentId", "==", tournamentId)
-        );
-        
-        const snapshot = await getDocs(q);
-        
-        if (!snapshot.empty) {
-            // User has registered before, load their info
-            const registrationInfo = snapshot.docs[0].data();
-            
-            if (playerNameInput && registrationInfo.playerName) {
-                playerNameInput.value = registrationInfo.playerName;
-            }
-            
-            if (discordUsernameInput && registrationInfo.discordUsername) {
-                discordUsernameInput.value = registrationInfo.discordUsername;
-            }
-        }
-    } catch (error) {
-        console.error("Error loading previous registration info:", error);
-    }
-}
-
-// Handle registration form submission
-async function handleRegistrationSubmit(e) {
-    e.preventDefault();
-    
-    if (!currentTournamentId) {
-        showRegistrationError("Error en el proceso de inscripción. Inténtalo de nuevo.");
-        return;
-    }
-    
-    // Validate form
-    const playerName = playerNameInput.value.trim();
-    const discordUsername = discordUsernameInput.value.trim();
-    
-    if (!playerName) {
-        showRegistrationError("El nombre de jugador es obligatorio");
-        return;
-    }
-    
-    // Show loading state
-    registrationSubmitBtn.disabled = true;
-    registrationSubmitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
-    
-    try {
-        // Check if user is authenticated
+        // Verificar autenticación
         if (!isAuthenticated()) {
-            throw new Error("Debes iniciar sesión para inscribirte");
+            throw new Error("Debes iniciar sesión para inscribirte en un torneo");
         }
         
+        // Obtener datos del usuario actual
         const user = auth.currentUser;
         
-        // Register user to the tournament with additional info
-        await registerForTournamentWithInfo(currentTournamentId, playerName, discordUsername);
-        
-        // Hide modal
-        hideRegistrationModal();
-        
-        // Show success message
-        if (typeof window.mostrarNotificacion === "function") {
-            window.mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
-        } else {
-            alert("¡Te has inscrito correctamente al torneo!");
+        // Validar nombre de jugador
+        if (!playerName || playerName.trim() === '') {
+            throw new Error("Debes proporcionar un nombre de jugador");
         }
         
-        // Reload tournaments to update UI
-        const { loadTournaments } = await import('./torneos.js');
-        await loadTournaments();
-        
-    } catch (error) {
-        console.error("Error registering for tournament:", error);
-        showRegistrationError(error.message || "Error al inscribirse al torneo");
-    } finally {
-        // Restore button
-        registrationSubmitBtn.disabled = false;
-        registrationSubmitBtn.textContent = "Confirmar Inscripción";
-    }
-}
-
-// Register user to tournament with additional info
-export async function registerForTournamentWithInfo(tournamentId, playerName, discordUsername) {
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error("Debes iniciar sesión para inscribirte");
-        }
-        
-        // Get tournament document
+        // Obtener documento del torneo
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
         
@@ -296,97 +42,73 @@ export async function registerForTournamentWithInfo(tournamentId, playerName, di
         
         const tournamentData = tournamentSnap.data();
         
-        // Check if tournament is open
-        if (tournamentData.estado !== 'Abierto') {
-            throw new Error("Este torneo no está abierto para inscripciones");
+        // Comprobar si el torneo permite inscripciones
+        if (tournamentData.estado === 'Finalizado') {
+            throw new Error("Este torneo ya ha finalizado");
         }
         
-        // Check if there are spots available
-        const currentParticipants = tournamentData.participants || [];
-        if (tournamentData.capacidad && currentParticipants.length >= tournamentData.capacidad) {
-            throw new Error("No hay cupos disponibles para este torneo");
+        if (tournamentData.estado === 'En Progreso') {
+            throw new Error("Este torneo ya está en progreso y no acepta nuevas inscripciones");
         }
         
-        // Check if user is already registered
-        if (currentParticipants.includes(user.uid)) {
+        // Verificar límite de participantes
+        if (tournamentData.limiteParticipantes && 
+            tournamentData.participants && 
+            tournamentData.participants.length >= tournamentData.limiteParticipantes) {
+            throw new Error("El torneo ha alcanzado el límite de participantes");
+        }
+        
+        // Verificar si el usuario ya está inscrito
+        const participants = tournamentData.participants || [];
+        if (participants.includes(user.uid)) {
             throw new Error("Ya estás inscrito en este torneo");
         }
         
-        // Save participant info
-        const participantInfoRef = collection(db, "participant_info");
-        
-        // Check if there's already an entry for this user and tournament
-        const q = query(
-            participantInfoRef, 
-            where("userId", "==", user.uid),
-            where("tournamentId", "==", tournamentId)
-        );
-        
-        const existingInfoSnapshot = await getDocs(q);
-        
-        if (!existingInfoSnapshot.empty) {
-            // Update existing entry
-            const infoDoc = existingInfoSnapshot.docs[0];
-            await updateDoc(doc(db, "participant_info", infoDoc.id), {
-                playerName: playerName,
-                discordUsername: discordUsername || null,
-                active: true,
-                checkedIn: false, // Reiniciar el estado de check-in si había uno anterior
-                updatedAt: serverTimestamp()
-            });
-        } else {
-            // Create new entry
-            await addDoc(participantInfoRef, {
-                userId: user.uid,
-                tournamentId: tournamentId,
-                playerName: playerName,
-                discordUsername: discordUsername || null,
-                active: true,
-                checkedIn: false, // Inicialmente no ha hecho check-in
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-        }
-        
-        // Add user to tournament participants
+        // Agregar al usuario a la lista de participantes
         await updateDoc(tournamentRef, {
-            participants: [...currentParticipants, user.uid],
+            participants: arrayUnion(user.uid),
             updatedAt: serverTimestamp()
         });
         
-        // Update user document to record participation
-        const usersRef = collection(db, "usuarios");
-        const userQuery = query(usersRef, where("uid", "==", user.uid));
-        const userSnapshot = await getDocs(userQuery);
+        // Guardar información del participante
+        await addDoc(collection(db, "participant_info"), {
+            userId: user.uid,
+            tournamentId: tournamentId,
+            playerName: playerName,
+            discordUsername: discordUsername,
+            email: user.email,
+            active: true,
+            checkedIn: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
         
-        if (!userSnapshot.empty) {
-            const userDoc = userSnapshot.docs[0];
-            const userTournaments = userDoc.data().torneos || [];
-            
-            if (!userTournaments.includes(tournamentId)) {
-                await updateDoc(doc(db, "usuarios", userDoc.id), {
-                    torneos: [...userTournaments, tournamentId],
-                    updatedAt: serverTimestamp()
-                });
-            }
-        }
+        return {
+            success: true,
+            tournamentId: tournamentId,
+            userId: user.uid,
+            playerName: playerName,
+            discordUsername: discordUsername
+        };
         
-        return true;
     } catch (error) {
-        console.error("Error registering for tournament with info:", error);
+        console.error("Error registering for tournament:", error);
         throw error;
     }
 }
 
-// Unregister from tournament
+// Unregister from a tournament
 export async function unregisterFromTournament(tournamentId) {
     try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error("Debes iniciar sesión para desinscribirte");
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para anular tu inscripción");
         }
         
-        // Get tournament document
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Obtener documento del torneo
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
         
@@ -396,229 +118,521 @@ export async function unregisterFromTournament(tournamentId) {
         
         const tournamentData = tournamentSnap.data();
         
-        // Check if tournament is still open or in check-in phase
-        if (tournamentData.estado !== 'Abierto' && tournamentData.estado !== 'Check In') {
-            throw new Error("Solo puedes desinscribirte cuando el torneo está en fase de inscripción o check-in");
+        // Comprobar si el torneo permite anular inscripciones
+        if (tournamentData.estado === 'Finalizado') {
+            throw new Error("Este torneo ya ha finalizado");
         }
         
-        // Check if user is registered
-        const currentParticipants = tournamentData.participants || [];
-        if (!currentParticipants.includes(user.uid)) {
+        if (tournamentData.estado === 'En Progreso') {
+            throw new Error("Este torneo ya está en progreso y no permite anular inscripciones");
+        }
+        
+        // Verificar si el usuario está inscrito
+        const participants = tournamentData.participants || [];
+        if (!participants.includes(user.uid)) {
             throw new Error("No estás inscrito en este torneo");
         }
         
-        // Remove user from participants
-        const newParticipants = currentParticipants.filter(uid => uid !== user.uid);
-        
-        // Update tournament document
+        // Eliminar al usuario de la lista de participantes
         await updateDoc(tournamentRef, {
-            participants: newParticipants,
+            participants: arrayRemove(user.uid),
             updatedAt: serverTimestamp()
         });
         
-        // Also remove from checkedInParticipants if present
+        // También eliminar del array de check-in si está presente
         if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.includes(user.uid)) {
-            const newCheckedInParticipants = tournamentData.checkedInParticipants.filter(uid => uid !== user.uid);
             await updateDoc(tournamentRef, {
-                checkedInParticipants: newCheckedInParticipants
+                checkedInParticipants: arrayRemove(user.uid)
             });
         }
         
-        // Delete participant info (optional - keeping for historical purposes)
-        // Find and mark participant info as inactive
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
+        // Buscar y actualizar información del participante en participant_info
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
             where("userId", "==", user.uid),
             where("tournamentId", "==", tournamentId)
         );
         
-        const infoSnapshot = await getDocs(q);
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
         
-        if (!infoSnapshot.empty) {
-            // Mark as inactive instead of deleting
-            await updateDoc(doc(db, "participant_info", infoSnapshot.docs[0].id), {
+        if (!participantInfoSnapshot.empty) {
+            const participantDoc = participantInfoSnapshot.docs[0];
+            
+            // Marcar como inactivo en lugar de eliminar
+            await updateDoc(doc(db, "participant_info", participantDoc.id), {
                 active: false,
                 checkedIn: false,
                 updatedAt: serverTimestamp()
             });
         }
         
-        // Update user document
-        const usersRef = collection(db, "usuarios");
-        const userQuery = query(usersRef, where("uid", "==", user.uid));
-        const userSnapshot = await getDocs(userQuery);
+        return {
+            success: true,
+            tournamentId: tournamentId,
+            userId: user.uid
+        };
         
-        if (!userSnapshot.empty) {
-            const userDoc = userSnapshot.docs[0];
-            const userTournaments = userDoc.data().torneos || [];
-            const newUserTournaments = userTournaments.filter(id => id !== tournamentId);
-            
-            await updateDoc(doc(db, "usuarios", userDoc.id), {
-                torneos: newUserTournaments,
-                updatedAt: serverTimestamp()
-            });
-        }
-        
-        return true;
     } catch (error) {
         console.error("Error unregistering from tournament:", error);
         throw error;
     }
 }
 
-// Función para hacer check-in en un torneo
+// Check in for a tournament
 export async function checkInForTournament(tournamentId) {
     try {
+        // Verificar autenticación
         if (!isAuthenticated()) {
             throw new Error("Debes iniciar sesión para hacer check-in");
         }
         
+        // Obtener datos del usuario actual
         const user = auth.currentUser;
         
-        // Verificar si el usuario está inscrito en el torneo
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
-            where("userId", "==", user.uid),
-            where("tournamentId", "==", tournamentId),
-            where("active", "!=", false)
-        );
-        
-        const infoSnapshot = await getDocs(q);
-        
-        if (infoSnapshot.empty) {
-            throw new Error("No estás inscrito en este torneo");
-        }
-        
-        // Obtener el documento de información del participante
-        const participantInfoDoc = infoSnapshot.docs[0];
-        const participantInfo = participantInfoDoc.data();
-        
-        // Verificar si ya hizo check-in
-        if (participantInfo.checkedIn) {
-            throw new Error("Ya has confirmado tu asistencia a este torneo");
-        }
-        
-        // Actualizar el documento con el estado de check-in
-        await updateDoc(doc(db, "participant_info", participantInfoDoc.id), {
-            checkedIn: true,
-            checkedInAt: serverTimestamp()
-        });
-        
-        // También actualizar el documento del torneo
+        // Obtener documento del torneo
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
         
-        if (tournamentSnap.exists()) {
-            const tournamentData = tournamentSnap.data();
-            const checkedInParticipants = tournamentData.checkedInParticipants || [];
-            
-            // Añadir usuario a la lista de participantes con check-in si no está ya
-            if (!checkedInParticipants.includes(user.uid)) {
-                await updateDoc(tournamentRef, {
-                    checkedInParticipants: [...checkedInParticipants, user.uid],
-                    updatedAt: serverTimestamp()
-                });
-            }
+        if (!tournamentSnap.exists()) {
+            throw new Error("El torneo no existe");
         }
         
-        console.log("Check-in realizado correctamente");
-        return true;
+        const tournamentData = tournamentSnap.data();
+        
+        // Comprobar si el torneo permite check-in
+        if (tournamentData.estado !== 'Check In' && tournamentData.estado !== 'Inscripciones Abiertas') {
+            throw new Error(`El torneo no está en fase de check-in (Estado actual: ${tournamentData.estado})`);
+        }
+        
+        // Verificar si el usuario está inscrito
+        const participants = tournamentData.participants || [];
+        if (!participants.includes(user.uid)) {
+            throw new Error("No estás inscrito en este torneo");
+        }
+        
+        // Verificar si el usuario ya hizo check-in
+        const checkedInParticipants = tournamentData.checkedInParticipants || [];
+        if (checkedInParticipants.includes(user.uid)) {
+            throw new Error("Ya has realizado el check-in para este torneo");
+        }
+        
+        // Agregar al usuario a la lista de check-in
+        await updateDoc(tournamentRef, {
+            checkedInParticipants: arrayUnion(user.uid),
+            updatedAt: serverTimestamp()
+        });
+        
+        // Actualizar información del participante
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", tournamentId)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        if (!participantInfoSnapshot.empty) {
+            const participantDoc = participantInfoSnapshot.docs[0];
+            
+            await updateDoc(doc(db, "participant_info", participantDoc.id), {
+                checkedIn: true,
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        return {
+            success: true,
+            tournamentId: tournamentId,
+            userId: user.uid
+        };
         
     } catch (error) {
-        console.error("Error al hacer check-in:", error);
+        console.error("Error checking in for tournament:", error);
         throw error;
     }
 }
 
-// Función para verificar si un usuario ha hecho check-in
-export async function hasUserCheckedIn(userId, tournamentId) {
+// Get tournament participants info
+export async function getTournamentParticipantsInfo(tournamentId) {
     try {
-        // Primero, verificar en el documento del torneo
+        console.log("Getting participants info for tournament:", tournamentId);
+        
+        // Objeto para almacenar la información de los participantes
+        const participantsInfo = {};
+        
+        // Obtener información de la colección participant_info
+        const participantInfoRef = collection(db, "participant_info");
+        const participantInfoQuery = query(
+            participantInfoRef,
+            where("tournamentId", "==", tournamentId),
+            where("active", "==", true)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        console.log(`Found ${participantInfoSnapshot.size} participants in participant_info collection`);
+        
+        // Procesar los resultados de la consulta
+        participantInfoSnapshot.forEach(doc => {
+            const data = doc.data();
+            participantsInfo[data.userId] = {
+                playerName: data.playerName || "Usuario",
+                discordUsername: data.discordUsername || null,
+                email: data.email || null,
+                checkedIn: data.checkedIn || false
+            };
+            
+            console.log(`Participant info from participant_info: ${data.userId} - ${data.playerName}`);
+        });
+        
+        // Obtener documento del torneo para obtener los participantes
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
         
-        if (tournamentSnap.exists()) {
-            const tournamentData = tournamentSnap.data();
-            if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.includes(userId)) {
-                return true;
+        if (!tournamentSnap.exists()) {
+            console.error("El torneo no existe");
+            return participantsInfo;
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        const participants = tournamentData.participants || [];
+        const checkedInParticipants = tournamentData.checkedInParticipants || [];
+        
+        console.log(`Tournament has ${participants.length} registered participants and ${checkedInParticipants.length} checked-in participants`);
+        
+        // Para cualquier participante que no esté en participant_info, buscar en usuarios
+        const missingParticipants = participants.filter(userId => !participantsInfo[userId]);
+        
+        if (missingParticipants.length > 0) {
+            console.log(`Looking up ${missingParticipants.length} participants missing from participant_info`);
+            
+            // Buscar datos en la colección de usuarios para participantes faltantes
+            const usersPromises = missingParticipants.map(async (userId) => {
+                try {
+                    // Verificar si es un ID manual
+                    if (userId.startsWith('manual_')) {
+                        // Buscar en manual_participants
+                        const manualParticipantsRef = collection(db, "manual_participants");
+                        const manualQuery = query(
+                            manualParticipantsRef,
+                            where("tournamentId", "==", tournamentId)
+                        );
+                        
+                        const manualSnapshot = await getDocs(manualQuery);
+                        
+                        for (const manualDoc of manualSnapshot.docs) {
+                            const manualData = manualDoc.data();
+                            if (manualData && manualData.createdAt && 
+                                userId.includes(manualData.createdAt.toMillis ? 
+                                    manualData.createdAt.toMillis() : 0)) {
+                                
+                                participantsInfo[userId] = {
+                                    playerName: manualData.playerName || "Usuario Manual",
+                                    discordUsername: manualData.discordUsername || null,
+                                    email: manualData.email || null,
+                                    checkedIn: checkedInParticipants.includes(userId)
+                                };
+                                
+                                console.log(`Found manual participant: ${userId} - ${manualData.playerName}`);
+                                break;
+                            }
+                        }
+                        
+                        // Si no se encontró, usar datos genéricos
+                        if (!participantsInfo[userId]) {
+                            participantsInfo[userId] = {
+                                playerName: `Participante #${userId.substring(0, 6)}`,
+                                discordUsername: null,
+                                email: null,
+                                checkedIn: checkedInParticipants.includes(userId)
+                            };
+                        }
+                        
+                        return;
+                    }
+                    
+                    // Buscar en la colección usuarios
+                    const userRef = doc(db, "usuarios", userId);
+                    const userSnap = await getDoc(userRef);
+                    
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        participantsInfo[userId] = {
+                            playerName: userData.nombre || "Usuario",
+                            discordUsername: userData.discordUsername || null,
+                            email: userData.email || null,
+                            checkedIn: checkedInParticipants.includes(userId)
+                        };
+                        
+                        console.log(`Participant info from usuarios: ${userId} - ${userData.nombre}`);
+                    } else {
+                        // Datos genéricos para usuarios que no existen
+                        participantsInfo[userId] = {
+                            playerName: `Usuario #${userId.substring(0, 6)}`,
+                            discordUsername: null,
+                            email: null,
+                            checkedIn: checkedInParticipants.includes(userId)
+                        };
+                        
+                        console.log(`No info found for participant: ${userId}, using generic name`);
+                    }
+                } catch (error) {
+                    console.error(`Error getting info for participant ${userId}:`, error);
+                    // Aún así, proporcionar datos genéricos
+                    participantsInfo[userId] = {
+                        playerName: `Usuario #${userId.substring(0, 6)}`,
+                        discordUsername: null,
+                        email: null,
+                        checkedIn: checkedInParticipants.includes(userId)
+                    };
+                }
+            });
+            
+            // Esperar a que todas las consultas se completen
+            await Promise.all(usersPromises);
+        }
+        
+        // Verificar que todos los participantes con check-in tengan información
+        for (const userId of checkedInParticipants) {
+            if (!participantsInfo[userId]) {
+                participantsInfo[userId] = {
+                    playerName: `Usuario #${userId.substring(0, 6)}`,
+                    discordUsername: null,
+                    email: null,
+                    checkedIn: true
+                };
+                
+                console.log(`Added generic info for checked-in participant: ${userId}`);
             }
         }
         
-        // Si no está en el documento del torneo, verificar en participant_info
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
-            where("userId", "==", userId),
-            where("tournamentId", "==", tournamentId),
-            where("checkedIn", "==", true)
-        );
-        
-        const snapshot = await getDocs(q);
-        return !snapshot.empty;
-    } catch (error) {
-        console.error("Error al verificar check-in:", error);
-        return false;
-    }
-}
-
-// Show registration error message
-function showRegistrationError(message) {
-    if (registrationErrorMsg) {
-        registrationErrorMsg.textContent = message;
-    }
-}
-
-// Get participant info for a tournament
-export async function getTournamentParticipantsInfo(tournamentId) {
-    try {
-        // Query participant_info collection
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
-            where("tournamentId", "==", tournamentId),
-            where("active", "!=", false)
-        );
-        
-        const snapshot = await getDocs(q);
-        
-        // Map results to an object with userId as key
-        const participantsInfo = {};
-        
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            participantsInfo[data.userId] = {
-                id: doc.id,
-                playerName: data.playerName,
-                discordUsername: data.discordUsername,
-                checkedIn: data.checkedIn || false,
-                ...data
-            };
-        });
-        
+        console.log(`Final participant info count: ${Object.keys(participantsInfo).length}`);
         return participantsInfo;
+        
     } catch (error) {
         console.error("Error getting tournament participants info:", error);
-        return {};
+        return {}; // Devolver objeto vacío en caso de error
     }
 }
 
-// Check if user has registered for tournament with additional info
-export async function hasUserRegisteredWithInfo(userId, tournamentId) {
+// Get user registered tournaments
+export async function getUserTournaments() {
     try {
-        const participantInfoRef = collection(db, "participant_info");
-        const q = query(
-            participantInfoRef, 
-            where("userId", "==", userId),
-            where("tournamentId", "==", tournamentId),
-            where("active", "!=", false)
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para ver tus torneos");
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Buscar torneos donde el usuario esté registrado
+        const tournamentsRef = collection(db, "torneos");
+        const userTournamentsQuery = query(
+            tournamentsRef,
+            where("participants", "array-contains", user.uid),
+            orderBy("fechaInicio", "desc")
         );
         
-        const snapshot = await getDocs(q);
-        return !snapshot.empty;
+        const tournamentsSnapshot = await getDocs(userTournamentsQuery);
+        
+        // Formatear resultados
+        const tournaments = [];
+        
+        tournamentsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            tournaments.push({
+                id: doc.id,
+                nombre: data.nombre,
+                juego: data.juego,
+                plataforma: data.plataforma,
+                estado: data.estado,
+                fechaInicio: data.fechaInicio ? new Date(data.fechaInicio.seconds * 1000) : null,
+                checkedIn: data.checkedInParticipants && data.checkedInParticipants.includes(user.uid)
+            });
+        });
+        
+        return tournaments;
+        
     } catch (error) {
-        console.error("Error checking if user has registered with info:", error);
+        console.error("Error getting user tournaments:", error);
+        throw error;
+    }
+}
+
+// Check if user is registered for a tournament
+export async function isUserRegistered(tournamentId) {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            return false;
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Obtener documento del torneo
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            return false;
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Verificar si el usuario está en la lista de participantes
+        return tournamentData.participants && tournamentData.participants.includes(user.uid);
+        
+    } catch (error) {
+        console.error("Error checking if user is registered:", error);
         return false;
+    }
+}
+
+// Check if user has checked in for a tournament
+export async function hasUserCheckedIn(tournamentId) {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            return false;
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Obtener documento del torneo
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            return false;
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Verificar si el usuario está en la lista de check-in
+        return tournamentData.checkedInParticipants && 
+               tournamentData.checkedInParticipants.includes(user.uid);
+        
+    } catch (error) {
+        console.error("Error checking if user has checked in:", error);
+        return false;
+    }
+}
+
+// Get participant info for current user in a tournament
+export async function getParticipantInfo(tournamentId) {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para ver tu información de participante");
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Buscar información del participante
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", tournamentId),
+            where("active", "==", true)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        if (participantInfoSnapshot.empty) {
+            return null;
+        }
+        
+        const participantData = participantInfoSnapshot.docs[0].data();
+        
+        return {
+            id: participantInfoSnapshot.docs[0].id,
+            userId: participantData.userId,
+            tournamentId: participantData.tournamentId,
+            playerName: participantData.playerName,
+            discordUsername: participantData.discordUsername,
+            email: participantData.email,
+            checkedIn: participantData.checkedIn,
+            createdAt: participantData.createdAt ? new Date(participantData.createdAt.seconds * 1000) : null
+        };
+        
+    } catch (error) {
+        console.error("Error getting participant info:", error);
+        throw error;
+    }
+}
+
+// Update participant information
+export async function updateParticipantInfo(tournamentId, playerName, discordUsername) {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            throw new Error("Debes iniciar sesión para actualizar tu información");
+        }
+        
+        // Validar nombre de jugador
+        if (!playerName || playerName.trim() === '') {
+            throw new Error("Debes proporcionar un nombre de jugador");
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Verificar si el usuario está inscrito
+        const isRegistered = await isUserRegistered(tournamentId);
+        
+        if (!isRegistered) {
+            throw new Error("No estás inscrito en este torneo");
+        }
+        
+        // Buscar información del participante
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", tournamentId),
+            where("active", "==", true)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        if (participantInfoSnapshot.empty) {
+            // No hay info de participante, crearla
+            await addDoc(collection(db, "participant_info"), {
+                userId: user.uid,
+                tournamentId: tournamentId,
+                playerName: playerName,
+                discordUsername: discordUsername || null,
+                email: user.email,
+                active: true,
+                checkedIn: false,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        } else {
+            // Actualizar info existente
+            const participantDoc = participantInfoSnapshot.docs[0];
+            
+            await updateDoc(doc(db, "participant_info", participantDoc.id), {
+                playerName: playerName,
+                discordUsername: discordUsername || null,
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        return {
+            success: true,
+            tournamentId: tournamentId,
+            userId: user.uid,
+            playerName: playerName,
+            discordUsername: discordUsername
+        };
+        
+    } catch (error) {
+        console.error("Error updating participant info:", error);
+        throw error;
     }
 }
