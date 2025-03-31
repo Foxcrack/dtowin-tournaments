@@ -307,7 +307,7 @@ export async function getTournamentParticipantsInfo(tournamentId) {
             console.log(`Looking up ${missingParticipants.length} participants missing from participant_info`);
             
             // Buscar datos en la colección de usuarios para participantes faltantes
-            for (const userId of missingParticipants) {
+            const usersPromises = missingParticipants.map(async (userId) => {
                 try {
                     // Verificar si es un ID manual
                     if (userId.startsWith('manual_')) {
@@ -320,12 +320,12 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                         
                         const manualSnapshot = await getDocs(manualQuery);
                         
-                        let found = false;
                         for (const manualDoc of manualSnapshot.docs) {
                             const manualData = manualDoc.data();
-                            
-                            // Verificar si este es el participante manual correcto (comparando por ID parcial)
-                            if (manualData && userId.includes(manualData.createdAt?.toMillis?.() || 0)) {
+                            if (manualData && manualData.createdAt && 
+                                userId.includes(manualData.createdAt.toMillis ? 
+                                    manualData.createdAt.toMillis() : 0)) {
+                                
                                 participantsInfo[userId] = {
                                     playerName: manualData.playerName || "Usuario Manual",
                                     discordUsername: manualData.discordUsername || null,
@@ -334,47 +334,47 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                                 };
                                 
                                 console.log(`Found manual participant: ${userId} - ${manualData.playerName}`);
-                                found = true;
                                 break;
                             }
                         }
                         
                         // Si no se encontró, usar datos genéricos
-                        if (!found) {
+                        if (!participantsInfo[userId]) {
                             participantsInfo[userId] = {
                                 playerName: `Participante #${userId.substring(0, 6)}`,
                                 discordUsername: null,
                                 email: null,
                                 checkedIn: checkedInParticipants.includes(userId)
                             };
-                            console.log(`Using generic info for manual participant: ${userId}`);
                         }
-                    } else {
-                        // Buscar en la colección usuarios
-                        const userRef = doc(db, "usuarios", userId);
-                        const userSnap = await getDoc(userRef);
                         
-                        if (userSnap.exists()) {
-                            const userData = userSnap.data();
-                            participantsInfo[userId] = {
-                                playerName: userData.nombre || "Usuario",
-                                discordUsername: userData.discordUsername || null,
-                                email: userData.email || null,
-                                checkedIn: checkedInParticipants.includes(userId)
-                            };
-                            
-                            console.log(`Participant info from usuarios: ${userId} - ${userData.nombre}`);
-                        } else {
-                            // Datos genéricos para usuarios que no existen
-                            participantsInfo[userId] = {
-                                playerName: `Usuario #${userId.substring(0, 6)}`,
-                                discordUsername: null,
-                                email: null,
-                                checkedIn: checkedInParticipants.includes(userId)
-                            };
-                            
-                            console.log(`No info found for participant: ${userId}, using generic name`);
-                        }
+                        return;
+                    }
+                    
+                    // Buscar en la colección usuarios
+                    const userRef = doc(db, "usuarios", userId);
+                    const userSnap = await getDoc(userRef);
+                    
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        participantsInfo[userId] = {
+                            playerName: userData.nombre || "Usuario",
+                            discordUsername: userData.discordUsername || null,
+                            email: userData.email || null,
+                            checkedIn: checkedInParticipants.includes(userId)
+                        };
+                        
+                        console.log(`Participant info from usuarios: ${userId} - ${userData.nombre}`);
+                    } else {
+                        // Datos genéricos para usuarios que no existen
+                        participantsInfo[userId] = {
+                            playerName: `Usuario #${userId.substring(0, 6)}`,
+                            discordUsername: null,
+                            email: null,
+                            checkedIn: checkedInParticipants.includes(userId)
+                        };
+                        
+                        console.log(`No info found for participant: ${userId}, using generic name`);
                     }
                 } catch (error) {
                     console.error(`Error getting info for participant ${userId}:`, error);
@@ -386,7 +386,10 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                         checkedIn: checkedInParticipants.includes(userId)
                     };
                 }
-            }
+            });
+            
+            // Esperar a que todas las consultas se completen
+            await Promise.all(usersPromises);
         }
         
         // Verificar que todos los participantes con check-in tengan información
@@ -631,5 +634,194 @@ export async function updateParticipantInfo(tournamentId, playerName, discordUse
     } catch (error) {
         console.error("Error updating participant info:", error);
         throw error;
+    }
+}
+
+// Función que faltaba y estaba causando el error
+export async function hasUserRegisterEditInfo(tournamentId) {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            return false;
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Verificar si el usuario está inscrito
+        const isRegistered = await isUserRegistered(tournamentId);
+        
+        if (!isRegistered) {
+            return false;
+        }
+        
+        // Buscar información del participante
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
+            where("userId", "==", user.uid),
+            where("tournamentId", "==", tournamentId),
+            where("active", "==", true)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        // Si existe información del participante, el usuario ha editado sus datos
+        return !participantInfoSnapshot.empty;
+        
+    } catch (error) {
+        console.error("Error checking if user has register edit info:", error);
+        return false;
+    }
+}
+
+// Función para configurar botones de check-in
+export function configurarBotonesCheckIn() {
+    console.log("Configurando botones de check-in");
+    
+    // Utilizar selectores más simples y robustos
+    const checkInButtons = document.querySelectorAll('.check-in-btn');
+    
+    if (checkInButtons.length === 0) {
+        console.log("No se encontraron botones de check-in");
+        return;
+    }
+    
+    console.log(`Se encontraron ${checkInButtons.length} botones de check-in`);
+    
+    checkInButtons.forEach(button => {
+        const tournamentId = button.dataset.tournamentId;
+        if (!tournamentId) {
+            console.log("Botón sin ID de torneo", button);
+            return;
+        }
+        
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                await checkInForTournament(tournamentId);
+                window.mostrarNotificacion("Check-in realizado con éxito", "success");
+                
+                // Actualizar UI
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Check-in completado';
+                button.classList.remove('dtowin-primary');
+                button.classList.add('bg-green-500');
+                
+                // Actualizar estado en la UI
+                const statusElement = document.querySelector(`#check-in-status-${tournamentId}`);
+                if (statusElement) {
+                    statusElement.classList.remove('bg-red-100', 'text-red-800');
+                    statusElement.classList.add('bg-green-100', 'text-green-800');
+                    statusElement.textContent = 'Sí';
+                }
+                
+            } catch (error) {
+                window.mostrarNotificacion(error.message, "error");
+            }
+        });
+    });
+}
+
+// Función para configurar botones de inscripción
+export function configurarBotonesInscripcion() {
+    console.log("Configurando botones de inscripción");
+    
+    // Utilizar selectores más simples y robustos
+    const inscripcionButtons = document.querySelectorAll('.inscribirse-btn');
+    
+    if (inscripcionButtons.length === 0) {
+        console.log("No se encontraron botones de inscripción");
+        return;
+    }
+    
+    console.log(`Se encontraron ${inscripcionButtons.length} botones de inscripción`);
+    
+    inscripcionButtons.forEach(button => {
+        const tournamentId = button.dataset.tournamentId;
+        if (!tournamentId) {
+            console.log("Botón sin ID de torneo", button);
+            return;
+        }
+        
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                // Mostrar modal de inscripción
+                const inscripcionModal = document.getElementById('inscripcion-modal');
+                if (inscripcionModal) {
+                    // Establecer ID del torneo en el formulario
+                    document.getElementById('inscripcion-torneo-id').value = tournamentId;
+                    
+                    // Mostrar modal
+                    inscripcionModal.classList.remove('hidden');
+                    inscripcionModal.classList.add('flex');
+                } else {
+                    console.error("No se encontró el modal de inscripción");
+                }
+            } catch (error) {
+                window.mostrarNotificacion(error.message, "error");
+            }
+        });
+    });
+    
+    // Configurar formulario de inscripción
+    const inscripcionForm = document.getElementById('inscripcion-form');
+    if (inscripcionForm) {
+        inscripcionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const tournamentId = document.getElementById('inscripcion-torneo-id').value;
+                const playerName = document.getElementById('inscripcion-nombre').value;
+                const discordUsername = document.getElementById('inscripcion-discord').value;
+                
+                // Validar campos
+                if (!playerName || playerName.trim() === '') {
+                    throw new Error("Debes proporcionar un nombre de jugador");
+                }
+                
+                // Mostrar estado de carga
+                const submitBtn = document.getElementById('inscripcion-submit');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+                
+                // Registrar en el torneo
+                await registerForTournament(tournamentId, playerName, discordUsername);
+                
+                // Cerrar modal
+                const modal = document.getElementById('inscripcion-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                
+                // Mostrar mensaje de éxito
+                window.mostrarNotificacion("Inscripción realizada con éxito", "success");
+                
+                // Actualizar UI
+                const button = document.querySelector(`[data-tournament-id="${tournamentId}"].inscribirse-btn`);
+                if (button) {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Inscrito';
+                    button.classList.remove('dtowin-primary');
+                    button.classList.add('bg-green-500');
+                }
+                
+                // Recargar página después de un breve retraso para actualizar UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } catch (error) {
+                document.getElementById('inscripcion-error').textContent = error.message;
+            } finally {
+                // Restaurar botón
+                const submitBtn = document.getElementById('inscripcion-submit');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Inscribirme';
+                }
+            }
+        });
     }
 }
