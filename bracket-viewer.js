@@ -206,7 +206,7 @@ function createAddParticipantModal() {
     form.addEventListener('submit', handleAddParticipant);
 }
 
-// Manejar envío del formulario de añadir participante
+// Manejar envío del formulario de añadir participante - VERSIÓN CORREGIDA
 async function handleAddParticipant(e) {
     e.preventDefault();
     
@@ -228,6 +228,21 @@ async function handleAddParticipant(e) {
     submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
     
     try {
+        console.log("Iniciando adición de participante:", playerName, playerEmail);
+        
+        // Verificar autenticación
+        if (!auth.currentUser) {
+            throw new Error("Debes iniciar sesión para añadir participantes");
+        }
+        
+        // Verificar si el usuario es staff (usando la función local para depuración)
+        const isStaff = await checkUserIsStaff(auth.currentUser.uid, tournamentId);
+        console.log("¿El usuario actual es staff?", isStaff);
+        
+        if (!isStaff) {
+            throw new Error("No tienes permiso para añadir participantes (verificación local)");
+        }
+        
         // Importar función desde módulo de brackets
         const { addParticipantManually } = await import('./brackets.js');
         
@@ -239,6 +254,14 @@ async function handleAddParticipant(e) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         
+        // Si el modal de participantes estaba abierto, actualizarlo
+        const participantManagerModal = document.getElementById('participant-manager-modal');
+        if (participantManagerModal && !participantManagerModal.classList.contains('hidden')) {
+            await loadTournamentParticipants();
+            participantManagerModal.classList.remove('hidden');
+            participantManagerModal.classList.add('flex');
+        }
+        
         // Mostrar mensaje de éxito
         window.mostrarNotificacion("Participante añadido correctamente", "success");
         
@@ -247,7 +270,13 @@ async function handleAddParticipant(e) {
         
     } catch (error) {
         console.error("Error al añadir participante:", error);
-        errorMsg.textContent = error.message || "Error al añadir participante";
+        
+        // Mostrar mensaje de error más detallado para depuración
+        if (error.code) {
+            errorMsg.textContent = `${error.message} (${error.code})`;
+        } else {
+            errorMsg.textContent = error.message || "Error al añadir participante";
+        }
     } finally {
         // Restaurar botón
         submitBtn.disabled = false;
@@ -334,7 +363,7 @@ async function checkUserIsStaff(uid, tournamentId) {
     }
 }
 
-// Cargar datos del bracket
+// Cargar datos del bracket - VERSIÓN MODIFICADA
 async function loadBracketData() {
     try {
         // Mostrar estado de carga
@@ -415,6 +444,11 @@ async function loadBracketData() {
         
         // Cargar badges del torneo
         loadTournamentBadges(tournamentId);
+        
+        // NUEVA LÍNEA: Si el usuario es staff, crear UI de gestión de participantes
+        if (isUserStaff) {
+            createParticipantManagementUI();
+        }
         
     } catch (error) {
         console.error("Error al cargar datos del bracket:", error);
@@ -642,7 +676,14 @@ function setupEventListeners() {
     // Botón de actualizar bracket
     const updateBracketBtn = document.getElementById('update-bracket-btn');
     if (updateBracketBtn) {
-        updateBracketBtn.addEventListener('click', loadBracketData);
+        updateBracketBtn.addEventListener('click', async () => {
+            await loadBracketData();
+            
+            // Si el usuario es staff, recrear la UI de gestión de participantes
+            if (isUserStaff) {
+                createParticipantManagementUI();
+            }
+        });
     }
     
     // Menú móvil
@@ -882,4 +923,283 @@ function showError(message) {
     `;
     
     window.mostrarNotificacion(message, "error");
+}
+
+// NUEVAS FUNCIONES PARA GESTIÓN DE PARTICIPANTES
+
+// Función para crear UI de gestión de participantes
+function createParticipantManagementUI() {
+    // Verificar si tenemos datos del bracket con participantes
+    const staffControls = document.getElementById('staff-controls');
+    if (!staffControls) return;
+    
+    // Si ya existe el botón, no lo volvemos a crear
+    if (document.getElementById('manage-participants-btn')) return;
+    
+    // Agregar botón de gestión de participantes después de otros botones
+    const manageBtn = document.createElement('button');
+    manageBtn.id = 'manage-participants-btn';
+    manageBtn.className = 'w-full bg-yellow-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition mt-3';
+    manageBtn.innerHTML = '<i class="fas fa-users-cog mr-2"></i> Administrar Participantes';
+    manageBtn.addEventListener('click', showParticipantManager);
+    
+    // Añadir al espacio de botones en staff-controls
+    const buttonContainer = staffControls.querySelector('.space-y-4');
+    if (buttonContainer) {
+        buttonContainer.appendChild(manageBtn);
+    } else {
+        staffControls.appendChild(manageBtn);
+    }
+}
+
+// Función para mostrar el gestor de participantes
+async function showParticipantManager() {
+    try {
+        // Crear modal si no existe
+        if (!document.getElementById('participant-manager-modal')) {
+            createParticipantManagerModal();
+        }
+        
+        const modal = document.getElementById('participant-manager-modal');
+        const participantsList = document.getElementById('participants-list');
+        
+        // Mostrar spinner de carga
+        participantsList.innerHTML = `
+            <div class="py-4 flex justify-center">
+                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+            </div>
+        `;
+        
+        // Mostrar modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Cargar datos de participantes
+        await loadTournamentParticipants();
+    } catch (error) {
+        console.error("Error al mostrar gestor de participantes:", error);
+        window.mostrarNotificacion("Error al cargar participantes", "error");
+    }
+}
+
+// Crear modal de gestor de participantes
+function createParticipantManagerModal() {
+    const modalHTML = `
+        <div id="participant-manager-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative max-h-screen overflow-hidden flex flex-col">
+                <button id="close-participant-manager" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="text-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-800">Administrar Participantes</h3>
+                    <p class="text-gray-600">Añade o elimina participantes del torneo</p>
+                    <p id="participant-manager-error" class="text-red-500 mt-2 text-sm"></p>
+                </div>
+                
+                <div class="flex justify-end mb-4">
+                    <button id="add-new-participant-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-user-plus mr-2"></i> Añadir Participante
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto" id="participants-list">
+                    <!-- Participants will be listed here -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Añadir al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar event listeners
+    const modal = document.getElementById('participant-manager-modal');
+    const closeBtn = document.getElementById('close-participant-manager');
+    const addBtn = document.getElementById('add-new-participant-btn');
+    
+    // Cerrar modal
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+    
+    // Mostrar modal para añadir participante
+    addBtn.addEventListener('click', () => {
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex');
+        showAddParticipantModal();
+    });
+}
+
+// Cargar participantes del torneo
+async function loadTournamentParticipants() {
+    try {
+        // Obtener datos del torneo
+        const tournamentRef = await db.collection("torneos").doc(tournamentId).get();
+        const tournamentData = tournamentRef.data();
+        
+        if (!tournamentData) {
+            throw new Error("No se pudo cargar la información del torneo");
+        }
+        
+        // Obtener participantes
+        const participants = tournamentData.participants || [];
+        const checkedInParticipants = tournamentData.checkedInParticipants || [];
+        
+        // Obtener elemento de la lista de participantes
+        const participantsListEl = document.getElementById('participants-list');
+        
+        if (participants.length === 0) {
+            participantsListEl.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-gray-500">No hay participantes registrados en este torneo</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Obtener información de cada participante
+        const participantInfoPromises = participants.map(async (participantId) => {
+            // Buscar en la colección participant_info
+            const participantInfoQuery = await db.collection("participant_info")
+                .where("userId", "==", participantId)
+                .where("tournamentId", "==", tournamentId)
+                .get();
+            
+            if (!participantInfoQuery.empty) {
+                return {
+                    id: participantId,
+                    ...participantInfoQuery.docs[0].data(),
+                    isCheckedIn: checkedInParticipants.includes(participantId)
+                };
+            }
+            
+            // Si no se encuentra en participant_info, buscar en usuarios
+            const userQuery = await db.collection("usuarios")
+                .where("uid", "==", participantId)
+                .get();
+            
+            if (!userQuery.empty) {
+                const userData = userQuery.docs[0].data();
+                return {
+                    id: participantId,
+                    playerName: userData.nombre || "Usuario sin nombre",
+                    discordUsername: userData.discordUsername || null,
+                    email: userData.email || null,
+                    isCheckedIn: checkedInParticipants.includes(participantId)
+                };
+            }
+            
+            // Si no se encuentra en ninguna colección
+            return {
+                id: participantId,
+                playerName: "Participante #" + participantId.substring(0, 6),
+                email: null,
+                discordUsername: null,
+                isCheckedIn: checkedInParticipants.includes(participantId)
+            };
+        });
+        
+        const participantsInfo = await Promise.all(participantInfoPromises);
+        
+        // Renderizar lista de participantes
+        let html = `
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="px-4 py-2 text-left">Nombre</th>
+                            <th class="px-4 py-2 text-left">Discord</th>
+                            <th class="px-4 py-2 text-left">Check-in</th>
+                            <th class="px-4 py-2 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        participantsInfo.forEach(participant => {
+            html += `
+                <tr class="border-b hover:bg-gray-50" data-participant-id="${participant.id}">
+                    <td class="px-4 py-3">
+                        <div>
+                            <div class="font-medium">${participant.playerName}</div>
+                            <div class="text-xs text-gray-500">${participant.email || ''}</div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">${participant.discordUsername || '-'}</td>
+                    <td class="px-4 py-3">
+                        <span class="inline-block px-2 py-1 text-xs rounded-full ${participant.isCheckedIn ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${participant.isCheckedIn ? 'Sí' : 'No'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button class="remove-participant-btn text-red-500 hover:text-red-700 px-2" 
+                                data-participant-id="${participant.id}"
+                                data-participant-name="${participant.playerName}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        participantsListEl.innerHTML = html;
+        
+        // Añadir event listeners para botones de eliminar
+        document.querySelectorAll('.remove-participant-btn').forEach(btn => {
+            btn.addEventListener('click', handleRemoveParticipant);
+        });
+        
+    } catch (error) {
+        console.error("Error loading tournament participants:", error);
+        document.getElementById('participants-list').innerHTML = `
+            <div class="text-center py-4">
+                <p class="text-red-500">Error al cargar participantes: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Manejar clic en botón de eliminar participante
+async function handleRemoveParticipant(e) {
+    const participantId = e.currentTarget.dataset.participantId;
+    const participantName = e.currentTarget.dataset.participantName;
+    
+    if (!participantId) return;
+    
+    if (!confirm(`¿Estás seguro de eliminar a ${participantName} del torneo? Esta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        // Mostrar estado de carga
+        e.currentTarget.innerHTML = '<div class="spinner w-4 h-4 border-t-2 border-b-2 border-red-500 rounded-full"></div>';
+        e.currentTarget.disabled = true;
+        
+        // Importar función desde módulo de brackets
+        const { removeParticipant } = await import('./brackets.js');
+        
+        // Eliminar participante
+        await removeParticipant(tournamentId, participantId);
+        
+        // Mostrar mensaje de éxito
+        window.mostrarNotificacion("Participante eliminado correctamente", "success");
+        
+        // Recargar participantes
+        await loadTournamentParticipants();
+        
+    } catch (error) {
+        console.error("Error al eliminar participante:", error);
+        window.mostrarNotificacion("Error al eliminar participante: " + error.message, "error");
+        
+        // Restaurar botón
+        e.currentTarget.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        e.currentTarget.disabled = false;
+    }
 }
