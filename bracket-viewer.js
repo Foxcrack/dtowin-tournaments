@@ -264,7 +264,7 @@ function createParticipantManagerModal() {
     });
 }
 
-// Manejar envío del formulario de añadir participante - VERSIÓN CORREGIDA
+// Manejar envío del formulario de añadir participante
 async function handleAddParticipant(e) {
     e.preventDefault();
     
@@ -421,7 +421,7 @@ async function checkUserIsStaff(uid, tournamentId) {
     }
 }
 
-// Cargar datos del bracket - VERSIÓN MEJORADA
+// Cargar datos del bracket
 async function loadBracketData() {
     try {
         // Mostrar estado de carga
@@ -518,7 +518,7 @@ async function loadBracketData() {
     }
 }
 
-// Renderizar bracket con mejoras en la visualización - VERSIÓN MEJORADA
+// Renderizar bracket con mejoras en la visualización
 function renderBracket(data) {
     if (!data || !data.rounds || !data.matches) {
         bracketContainer.innerHTML = `
@@ -584,7 +584,7 @@ function renderBracket(data) {
                 <div class="player ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
                     <div class="player-name">${player1.name}</div>
                     <div class="player-score ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
-                        ${matchCompleted && match.scores ? match.scores.player1 || 0 : ''}
+                        ${matchCompleted && match.scores ? match.scores.player1 || 0 : '0'}
                     </div>
                     ${player1.discord ? `<div class="discord-tooltip">Discord: ${player1.discord}</div>` : ''}
                 </div>
@@ -595,7 +595,7 @@ function renderBracket(data) {
                 <div class="player ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
                     <div class="player-name">${player2.name}</div>
                     <div class="player-score ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
-                        ${matchCompleted && match.scores ? match.scores.player2 || 0 : ''}
+                        ${matchCompleted && match.scores ? match.scores.player2 || 0 : '0'}
                     </div>
                     ${player2.discord ? `<div class="discord-tooltip">Discord: ${player2.discord}</div>` : ''}
                 </div>
@@ -634,10 +634,18 @@ function renderBracket(data) {
                 const matchId = matchEl.dataset.matchId;
                 const match = data.matches.find(m => m.id === matchId);
                 
-                if (match && match.player1 && match.player2) {
+                // Permitir actualizar cualquier partido siempre que tenga ID
+                if (match) {
+                    // Si falta algún jugador, usar TBD
+                    if (!match.player1) {
+                        match.player1 = { name: "TBD", id: "tbd_" + Date.now() };
+                    }
+                    if (!match.player2) {
+                        match.player2 = { name: "TBD", id: "tbd_" + Date.now() };
+                    }
                     openScoreModal(match);
                 } else {
-                    window.mostrarNotificacion("No se puede actualizar este partido todavía", "warning");
+                    window.mostrarNotificacion("Error al encontrar información del partido", "error");
                 }
             });
         });
@@ -703,6 +711,8 @@ function addConnectorLines() {
 function openScoreModal(match) {
     currentMatchId = match.id;
     
+    console.log("Abriendo modal para actualizar puntaje del partido:", match);
+    
     // Actualizar info en el modal
     document.getElementById('match-id').value = match.id;
     document.getElementById('match-info').textContent = `${match.player1.name} vs ${match.player2.name}`;
@@ -716,13 +726,13 @@ function openScoreModal(match) {
     if (match.scores && match.scores.player1 !== undefined) {
         player1ScoreInput.value = match.scores.player1;
     } else {
-        player1ScoreInput.value = '';
+        player1ScoreInput.value = '0';  // Valor por defecto
     }
     
     if (match.scores && match.scores.player2 !== undefined) {
         player2ScoreInput.value = match.scores.player2;
     } else {
-        player2ScoreInput.value = '';
+        player2ScoreInput.value = '0';  // Valor por defecto
     }
     
     // Limpiar mensaje de error
@@ -815,6 +825,7 @@ async function handleScoreUpdate(e) {
             throw new Error("Los puntajes no pueden ser negativos");
         }
         
+        // Comprobar que son puntajes diferentes para que haya un ganador
         if (player1Score === player2Score) {
             throw new Error("Los puntajes no pueden ser iguales, debe haber un ganador");
         }
@@ -1168,7 +1179,7 @@ async function loadTournamentParticipants() {
     }
 }
 
-// Manejar clic en botón de eliminar participante - VERSIÓN MEJORADA
+// Manejar clic en botón de eliminar participante
 async function handleRemoveParticipant(e) {
     const participantId = e.currentTarget.dataset.participantId;
     const participantName = e.currentTarget.dataset.participantName;
