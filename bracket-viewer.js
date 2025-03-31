@@ -96,6 +96,10 @@ async function addStaffControls() {
             <button id="reset-bracket-btn" class="w-full bg-red-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
                 <i class="fas fa-redo-alt mr-2"></i> Reiniciar Bracket
             </button>
+            
+            <button id="manage-participants-btn" class="w-full bg-yellow-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition">
+                <i class="fas fa-users-cog mr-2"></i> Administrar Participantes
+            </button>
         </div>
     `;
     
@@ -107,6 +111,7 @@ async function addStaffControls() {
 function setupStaffControlListeners() {
     const addParticipantBtn = document.getElementById('add-participant-btn');
     const resetBracketBtn = document.getElementById('reset-bracket-btn');
+    const manageParticipantsBtn = document.getElementById('manage-participants-btn');
     
     if (addParticipantBtn) {
         addParticipantBtn.addEventListener('click', showAddParticipantModal);
@@ -114,6 +119,10 @@ function setupStaffControlListeners() {
     
     if (resetBracketBtn) {
         resetBracketBtn.addEventListener('click', confirmResetBracket);
+    }
+    
+    if (manageParticipantsBtn) {
+        manageParticipantsBtn.addEventListener('click', showParticipantManager);
     }
 }
 
@@ -204,6 +213,55 @@ function createAddParticipantModal() {
     
     // Manejar envío del formulario
     form.addEventListener('submit', handleAddParticipant);
+}
+
+// Crear modal para gestionar participantes
+function createParticipantManagerModal() {
+    const modalHTML = `
+        <div id="participant-manager-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative max-h-screen overflow-hidden flex flex-col">
+                <button id="close-participant-manager" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="text-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-800">Administrar Participantes</h3>
+                    <p class="text-gray-600">Añade o elimina participantes del torneo</p>
+                    <p id="participant-manager-error" class="text-red-500 mt-2 text-sm"></p>
+                </div>
+                
+                <div class="flex justify-end mb-4">
+                    <button id="add-new-participant-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-user-plus mr-2"></i> Añadir Participante
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto" id="participants-list">
+                    <!-- Participants will be listed here -->
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Añadir al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Configurar event listeners
+    const modal = document.getElementById('participant-manager-modal');
+    const closeBtn = document.getElementById('close-participant-manager');
+    const addBtn = document.getElementById('add-new-participant-btn');
+    
+    // Cerrar modal
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+    
+    // Mostrar modal para añadir participante
+    addBtn.addEventListener('click', () => {
+        modal.classList.add('hidden'); 
+        modal.classList.remove('flex');
+        showAddParticipantModal();
+    });
 }
 
 // Manejar envío del formulario de añadir participante - VERSIÓN CORREGIDA
@@ -363,7 +421,7 @@ async function checkUserIsStaff(uid, tournamentId) {
     }
 }
 
-// Cargar datos del bracket - VERSIÓN MODIFICADA
+// Cargar datos del bracket - VERSIÓN MEJORADA
 async function loadBracketData() {
     try {
         // Mostrar estado de carga
@@ -382,6 +440,11 @@ async function loadBracketData() {
         }
         
         const tournamentData = tournamentRef.data();
+        console.log("Datos del torneo cargados:", tournamentData.nombre);
+        
+        // DEBUGGING: Mostrar participantes
+        console.log("Participantes registrados:", tournamentData.participants?.length || 0);
+        console.log("Participantes con check-in:", tournamentData.checkedInParticipants?.length || 0);
         
         // Actualizar nombre y estado del torneo
         tournamentNameEl.textContent = tournamentData.nombre || "Torneo sin nombre";
@@ -439,16 +502,15 @@ async function loadBracketData() {
             ...bracketRef.data()
         };
         
+        console.log("Bracket datos cargados:", bracketData.id);
+        console.log("Número de partidos:", bracketData.matches?.length || 0);
+        console.log("Número de rondas:", bracketData.rounds?.length || 0);
+        
         // Renderizar bracket
         renderBracket(bracketData);
         
         // Cargar badges del torneo
         loadTournamentBadges(tournamentId);
-        
-        // NUEVA LÍNEA: Si el usuario es staff, crear UI de gestión de participantes
-        if (isUserStaff) {
-            createParticipantManagementUI();
-        }
         
     } catch (error) {
         console.error("Error al cargar datos del bracket:", error);
@@ -456,7 +518,7 @@ async function loadBracketData() {
     }
 }
 
-// Renderizar bracket con mejoras en la visualización
+// Renderizar bracket con mejoras en la visualización - VERSIÓN MEJORADA
 function renderBracket(data) {
     if (!data || !data.rounds || !data.matches) {
         bracketContainer.innerHTML = `
@@ -466,6 +528,8 @@ function renderBracket(data) {
         `;
         return;
     }
+    
+    console.log("Rendering bracket with data:", data);
     
     // Crear un contenedor para el bracket con scroll horizontal
     let html = '<div class="bracket-wrapper">';
@@ -478,9 +542,19 @@ function renderBracket(data) {
             .sort((a, b) => a.position - b.position);
     });
     
+    // Registrar participantes para depuración
+    const participantsList = new Set();
+    data.matches.forEach(match => {
+        if (match.player1 && match.player1.id) participantsList.add(match.player1.id);
+        if (match.player2 && match.player2.id) participantsList.add(match.player2.id);
+    });
+    console.log(`Total unique participants in bracket: ${participantsList.size}`);
+    console.log("Participantes en el bracket:", Array.from(participantsList));
+    
     // Generar rondas
     data.rounds.forEach(round => {
         const roundMatches = matchesByRound[round.round];
+        console.log(`Rendering round ${round.round} (${round.name}) with ${roundMatches.length} matches`);
         
         html += `
             <div class="round">
@@ -495,6 +569,8 @@ function renderBracket(data) {
         roundMatches.forEach((match, index) => {
             const player1 = match.player1 || { name: "TBD", id: null };
             const player2 = match.player2 || { name: "TBD", id: null };
+            
+            console.log(`Match ${match.id}: ${player1.name} vs ${player2.name}`);
             
             const matchCompleted = match.status === 'completed';
             const player1Winner = matchCompleted && match.winner && player1.id === match.winner.id;
@@ -667,23 +743,23 @@ function closeScoreModal() {
 // Configurar event listeners
 function setupEventListeners() {
     // Botones del modal de puntaje
-    closeScoreModalBtn.addEventListener('click', closeScoreModal);
-    cancelScoreBtn.addEventListener('click', closeScoreModal);
+    if (closeScoreModalBtn) {
+        closeScoreModalBtn.addEventListener('click', closeScoreModal);
+    }
+    
+    if (cancelScoreBtn) {
+        cancelScoreBtn.addEventListener('click', closeScoreModal);
+    }
     
     // Formulario de actualización de puntaje
-    scoreUpdateForm.addEventListener('submit', handleScoreUpdate);
+    if (scoreUpdateForm) {
+        scoreUpdateForm.addEventListener('submit', handleScoreUpdate);
+    }
     
     // Botón de actualizar bracket
     const updateBracketBtn = document.getElementById('update-bracket-btn');
     if (updateBracketBtn) {
-        updateBracketBtn.addEventListener('click', async () => {
-            await loadBracketData();
-            
-            // Si el usuario es staff, recrear la UI de gestión de participantes
-            if (isUserStaff) {
-                createParticipantManagementUI();
-            }
-        });
+        updateBracketBtn.addEventListener('click', loadBracketData);
     }
     
     // Menú móvil
@@ -925,32 +1001,7 @@ function showError(message) {
     window.mostrarNotificacion(message, "error");
 }
 
-// NUEVAS FUNCIONES PARA GESTIÓN DE PARTICIPANTES
-
-// Función para crear UI de gestión de participantes
-function createParticipantManagementUI() {
-    // Verificar si tenemos datos del bracket con participantes
-    const staffControls = document.getElementById('staff-controls');
-    if (!staffControls) return;
-    
-    // Si ya existe el botón, no lo volvemos a crear
-    if (document.getElementById('manage-participants-btn')) return;
-    
-    // Agregar botón de gestión de participantes después de otros botones
-    const manageBtn = document.createElement('button');
-    manageBtn.id = 'manage-participants-btn';
-    manageBtn.className = 'w-full bg-yellow-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-yellow-600 transition mt-3';
-    manageBtn.innerHTML = '<i class="fas fa-users-cog mr-2"></i> Administrar Participantes';
-    manageBtn.addEventListener('click', showParticipantManager);
-    
-    // Añadir al espacio de botones en staff-controls
-    const buttonContainer = staffControls.querySelector('.space-y-4');
-    if (buttonContainer) {
-        buttonContainer.appendChild(manageBtn);
-    } else {
-        staffControls.appendChild(manageBtn);
-    }
-}
+// FUNCIONES PARA GESTIONAR PARTICIPANTES
 
 // Función para mostrar el gestor de participantes
 async function showParticipantManager() {
@@ -980,55 +1031,6 @@ async function showParticipantManager() {
         console.error("Error al mostrar gestor de participantes:", error);
         window.mostrarNotificacion("Error al cargar participantes", "error");
     }
-}
-
-// Crear modal de gestor de participantes
-function createParticipantManagerModal() {
-    const modalHTML = `
-        <div id="participant-manager-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative max-h-screen overflow-hidden flex flex-col">
-                <button id="close-participant-manager" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="text-center mb-4">
-                    <h3 class="text-2xl font-bold text-gray-800">Administrar Participantes</h3>
-                    <p class="text-gray-600">Añade o elimina participantes del torneo</p>
-                    <p id="participant-manager-error" class="text-red-500 mt-2 text-sm"></p>
-                </div>
-                
-                <div class="flex justify-end mb-4">
-                    <button id="add-new-participant-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                        <i class="fas fa-user-plus mr-2"></i> Añadir Participante
-                    </button>
-                </div>
-                
-                <div class="flex-1 overflow-y-auto" id="participants-list">
-                    <!-- Participants will be listed here -->
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Añadir al DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // Configurar event listeners
-    const modal = document.getElementById('participant-manager-modal');
-    const closeBtn = document.getElementById('close-participant-manager');
-    const addBtn = document.getElementById('add-new-participant-btn');
-    
-    // Cerrar modal
-    closeBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    });
-    
-    // Mostrar modal para añadir participante
-    addBtn.addEventListener('click', () => {
-        modal.classList.add('hidden'); 
-        modal.classList.remove('flex');
-        showAddParticipantModal();
-    });
 }
 
 // Cargar participantes del torneo
@@ -1166,7 +1168,7 @@ async function loadTournamentParticipants() {
     }
 }
 
-// Manejar clic en botón de eliminar participante
+// Manejar clic en botón de eliminar participante - VERSIÓN MEJORADA
 async function handleRemoveParticipant(e) {
     const participantId = e.currentTarget.dataset.participantId;
     const participantName = e.currentTarget.dataset.participantName;
@@ -1182,17 +1184,23 @@ async function handleRemoveParticipant(e) {
         e.currentTarget.innerHTML = '<div class="spinner w-4 h-4 border-t-2 border-b-2 border-red-500 rounded-full"></div>';
         e.currentTarget.disabled = true;
         
+        console.log("Iniciando proceso de eliminar participante", participantId);
+        
         // Importar función desde módulo de brackets
         const { removeParticipant } = await import('./brackets.js');
         
         // Eliminar participante
-        await removeParticipant(tournamentId, participantId);
+        const result = await removeParticipant(tournamentId, participantId);
+        console.log("Resultado de eliminar participante:", result);
         
         // Mostrar mensaje de éxito
         window.mostrarNotificacion("Participante eliminado correctamente", "success");
         
         // Recargar participantes
         await loadTournamentParticipants();
+        
+        // Recargar datos del bracket si hay cambios en los participantes
+        await loadBracketData();
         
     } catch (error) {
         console.error("Error al eliminar participante:", error);
