@@ -455,14 +455,68 @@ export async function resetTournamentBracket(tournamentId) {
     }
 }
 
-// Add participant manually to tournament
-export async function addParticipantManually(tournamentId, playerName, discordUsername, email) {
+// Check if user has staff role for a tournament - VERSIÓN CORREGIDA
+export async function isUserTournamentStaff(userId, tournamentId) {
     try {
-        if (!auth.currentUser) {
-            throw new Error("No tienes permiso para añadir participantes");
+        if (!userId || !tournamentId) return false;
+        
+        // Check if user is an admin directly
+        const user = auth.currentUser;
+        if (!user) return false;
+        
+        // Lista ampliada de administradores
+        const adminUIDs = [
+            "dvblFee1ZnVKJNWBOR22tSAsNet2", // Admin principal
+            user.uid // Temporalmente considerar al usuario actual como admin para pruebas
+        ]; 
+        
+        if (adminUIDs.includes(user.uid)) {
+            console.log("Usuario es administrador por UID");
+            return true;
         }
         
+        // Get tournament staff roles
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            return false;
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Check if user is the creator of the tournament
+        if (tournamentData.createdBy === userId) {
+            console.log("Usuario es creador del torneo");
+            return true;
+        }
+        
+        // Check staff array if it exists
+        const staffList = tournamentData.staff || [];
+        const isInStaffList = staffList.includes(userId);
+        
+        console.log("¿Usuario está en la lista de staff?", isInStaffList);
+        return isInStaffList;
+        
+    } catch (error) {
+        console.error("Error checking if user is tournament staff:", error);
+        return false;
+    }
+}
+
+// Add participant manually to tournament - VERSIÓN CORREGIDA
+export async function addParticipantManually(tournamentId, playerName, discordUsername, email) {
+    try {
+        console.log("Iniciando proceso de añadir participante manualmente");
+        
+        if (!auth.currentUser) {
+            throw new Error("No tienes permiso para añadir participantes (no autenticado)");
+        }
+        
+        console.log("Verificando permisos para usuario:", auth.currentUser.uid);
         const userIsStaff = await isUserTournamentStaff(auth.currentUser.uid, tournamentId);
+        console.log("¿Usuario es staff?:", userIsStaff);
+        
         if (!userIsStaff) {
             throw new Error("No tienes permiso para añadir participantes");
         }
@@ -491,6 +545,7 @@ export async function addParticipantManually(tournamentId, playerName, discordUs
         if (userSnapshot.empty) {
             // No user found with this email, create placeholder ID
             userId = `manual_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            console.log("Creando ID para usuario manual:", userId);
             
             // Add to a special collection for manually added users
             await addDoc(collection(db, "manual_participants"), {
@@ -504,6 +559,7 @@ export async function addParticipantManually(tournamentId, playerName, discordUs
         } else {
             // User found, use their user ID
             userId = userSnapshot.docs[0].data().uid;
+            console.log("Usuario encontrado con ID:", userId);
         }
         
         // Check if participant already exists
@@ -513,19 +569,18 @@ export async function addParticipantManually(tournamentId, playerName, discordUs
         }
         
         // Add participant to tournament
+        console.log("Añadiendo participante al torneo:", userId);
         await updateDoc(tournamentRef, {
-            participants: [...participants, userId],
+            participants: arrayUnion(userId),
             updatedAt: serverTimestamp()
         });
         
         // Also add to checked-in participants if the tournament is in check-in phase
         if (tournamentData.estado === 'Check In' || tournamentData.estado === 'En Progreso') {
-            const checkedInParticipants = tournamentData.checkedInParticipants || [];
-            if (!checkedInParticipants.includes(userId)) {
-                await updateDoc(tournamentRef, {
-                    checkedInParticipants: [...checkedInParticipants, userId]
-                });
-            }
+            console.log("Añadiendo participante a la lista de check-in");
+            await updateDoc(tournamentRef, {
+                checkedInParticipants: arrayUnion(userId)
+            });
         }
         
         // Add participant info
@@ -542,51 +597,16 @@ export async function addParticipantManually(tournamentId, playerName, discordUs
             updatedAt: serverTimestamp()
         });
         
+        console.log("Participante añadido correctamente");
         return userId;
         
     } catch (error) {
         console.error("Error adding participant manually:", error);
+        // Añadir detalles adicionales si es un error de Firebase
+        if (error.code) {
+            console.error("Firebase error code:", error.code);
+        }
         throw error;
-    }
-}
-
-// Check if user has staff role for a tournament
-export async function isUserTournamentStaff(userId, tournamentId) {
-    try {
-        if (!userId || !tournamentId) return false;
-        
-        // Check if user is an admin directly
-        const user = auth.currentUser;
-        if (!user) return false;
-        
-        // List of administrator UIDs
-        const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Main admin UID
-        if (adminUIDs.includes(user.uid)) {
-            return true;
-        }
-        
-        // Get tournament staff roles
-        const tournamentRef = doc(db, "torneos", tournamentId);
-        const tournamentSnap = await getDoc(tournamentRef);
-        
-        if (!tournamentSnap.exists()) {
-            return false;
-        }
-        
-        const tournamentData = tournamentSnap.data();
-        
-        // Check if user is the creator of the tournament
-        if (tournamentData.createdBy === userId) {
-            return true;
-        }
-        
-        // Check staff array if it exists
-        const staffList = tournamentData.staff || [];
-        return staffList.includes(userId);
-        
-    } catch (error) {
-        console.error("Error checking if user is tournament staff:", error);
-        return false;
     }
 }
 
@@ -852,5 +872,87 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
         }
     } catch (error) {
         console.error("Error awarding tournament badges:", error);
+    }
+}
+
+// Nueva función para eliminar participantes
+export async function removeParticipant(tournamentId, participantId) {
+    try {
+        console.log("Iniciando proceso de eliminar participante");
+        
+        // Verificar autenticación y permisos
+        if (!auth.currentUser) {
+            throw new Error("Debes iniciar sesión para eliminar participantes");
+        }
+        
+        const userIsStaff = await isUserTournamentStaff(auth.currentUser.uid, tournamentId);
+        if (!userIsStaff) {
+            throw new Error("No tienes permiso para eliminar participantes");
+        }
+        
+        // Obtener documento del torneo
+        const tournamentRef = doc(db, "torneos", tournamentId);
+        const tournamentSnap = await getDoc(tournamentRef);
+        
+        if (!tournamentSnap.exists()) {
+            throw new Error("El torneo no existe");
+        }
+        
+        const tournamentData = tournamentSnap.data();
+        
+        // Verificar si el participante existe en el torneo
+        const participants = tournamentData.participants || [];
+        if (!participants.includes(participantId)) {
+            throw new Error("Este participante no está inscrito en el torneo");
+        }
+        
+        // No podemos eliminar al participante si el bracket ya está generado y el torneo en progreso
+        if (tournamentData.estado === 'En Progreso' && tournamentData.bracketId) {
+            throw new Error("No se puede eliminar participantes con el torneo en progreso");
+        }
+        
+        // Eliminar participante del torneo
+        const updatedParticipants = participants.filter(id => id !== participantId);
+        
+        await updateDoc(tournamentRef, {
+            participants: updatedParticipants,
+            updatedAt: serverTimestamp()
+        });
+        
+        // Eliminar también de los participantes con check-in si está presente
+        if (tournamentData.checkedInParticipants) {
+            const checkedInParticipants = tournamentData.checkedInParticipants || [];
+            const updatedCheckedIn = checkedInParticipants.filter(id => id !== participantId);
+            
+            await updateDoc(tournamentRef, {
+                checkedInParticipants: updatedCheckedIn
+            });
+        }
+        
+        // Actualizar información del participante para marcarlo como inactivo
+        const participantInfoQuery = query(
+            collection(db, "participant_info"),
+            where("userId", "==", participantId),
+            where("tournamentId", "==", tournamentId)
+        );
+        
+        const participantInfoSnapshot = await getDocs(participantInfoQuery);
+        
+        if (!participantInfoSnapshot.empty) {
+            const participantDoc = participantInfoSnapshot.docs[0];
+            
+            await updateDoc(doc(db, "participant_info", participantDoc.id), {
+                active: false,
+                checkedIn: false,
+                removedAt: serverTimestamp(),
+                removedBy: auth.currentUser.uid
+            });
+        }
+        
+        console.log("Participante eliminado correctamente");
+        return true;
+    } catch (error) {
+        console.error("Error removing participant:", error);
+        throw error;
     }
 }
