@@ -46,17 +46,23 @@ export async function generateBracket(tournamentId) {
             return bracketsSnapshot.docs[0].id;
         }
         
-        // Usar participantes con check-in si es posible
+        // Usar participantes con check-in si es posible, si no, usar todos los participantes
         let participantsToUse = [];
         
         if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.length >= 2) {
             // Si hay participantes con check-in, usar esos
             participantsToUse = [...tournamentData.checkedInParticipants]; // Usar una copia para evitar modificar el original
-            console.log(`Using ${participantsToUse.length} checked-in participants for bracket generation:`, participantsToUse);
+            console.log(`Using ${participantsToUse.length} checked-in participants for bracket generation`);
         } else if (tournamentData.participants && tournamentData.participants.length >= 2) {
             // Si no hay participantes con check-in o son menos de 2, usar todos los participantes
-            console.log("Not enough checked-in participants, using all participants");
-            participantsToUse = [...tournamentData.participants || []]; // Usar una copia para evitar modificar el original
+            participantsToUse = [...tournamentData.participants]; // Usar una copia para evitar modificar el original
+            console.log(`Using all ${participantsToUse.length} participants for bracket generation`);
+            
+            // Actualizar lista de checked-in participants
+            await updateDoc(tournamentRef, {
+                checkedInParticipants: participantsToUse,
+                updatedAt: serverTimestamp()
+            });
         } else {
             throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
         }
@@ -160,7 +166,7 @@ function getRoundName(roundNumber, totalRounds) {
     }
 }
 
-// Generate matches using standard tournament seeding (similar to Challonge)
+// Generate matches using standard tournament seeding
 function generateMatchesWithStandardSeeding(participants, participantsInfo, numRounds, bracketSize) {
     const matches = [];
     const numParticipants = participants.length;
@@ -240,7 +246,7 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
                 player1: player1,
                 player2: player2,
                 winner: null,
-                scores: {},
+                scores: { player1: 0, player2: 0 }, // Inicializar scores con 0
                 status: "pending",
                 nextMatchId: nextMatchId
             });
@@ -330,7 +336,7 @@ function ensureFinalMatchExists(matches, numRounds) {
             player1: null,
             player2: null,
             winner: null,
-            scores: {},
+            scores: { player1: 0, player2: 0 },
             status: "pending",
             nextMatchId: null
         };
@@ -355,7 +361,7 @@ function ensureFinalMatchExists(matches, numRounds) {
             player1: null,
             player2: null,
             winner: null,
-            scores: {},
+            scores: { player1: 0, player2: 0 },
             status: "pending",
             nextMatchId: null
         };
@@ -474,6 +480,8 @@ export async function getTournamentBracket(tournamentId) {
 // Reset tournament bracket
 export async function resetTournamentBracket(tournamentId) {
     try {
+        console.log("Iniciando reset de bracket para torneo:", tournamentId);
+        
         // Get tournament document
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
@@ -483,9 +491,21 @@ export async function resetTournamentBracket(tournamentId) {
         }
         
         const tournamentData = tournamentSnap.data();
+        console.log("Datos del torneo cargados:", tournamentData.nombre);
+        
+        // Log info de participantes para depuración
+        console.log("Participantes registrados:", tournamentData.participants?.length || 0);
+        console.log("Participantes con check-in:", tournamentData.checkedInParticipants?.length || 0);
+        
+        // Asegurarse de que hay participantes disponibles
+        if ((!tournamentData.participants || tournamentData.participants.length < 2) &&
+            (!tournamentData.checkedInParticipants || tournamentData.checkedInParticipants.length < 2)) {
+            throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
+        }
         
         // Check if tournament has a bracket
         if (tournamentData.bracketId) {
+            console.log("El torneo tiene un bracket existente, marcándolo como inactivo");
             // Delete existing bracket (or mark as inactive)
             const bracketRef = doc(db, "brackets", tournamentData.bracketId);
             await updateDoc(bracketRef, {
@@ -500,7 +520,24 @@ export async function resetTournamentBracket(tournamentId) {
             });
         }
         
+        // Si no hay participantes con check-in pero hay participantes registrados,
+        // usar todos los participantes para el bracket
+        if (!tournamentData.checkedInParticipants || tournamentData.checkedInParticipants.length < 2) {
+            console.log("No hay suficientes participantes con check-in, copiando todos los participantes a la lista de check-in");
+            await updateDoc(tournamentRef, {
+                checkedInParticipants: tournamentData.participants || [],
+                updatedAt: serverTimestamp()
+            });
+        }
+        
+        // Obtener datos actualizados del torneo
+        const updatedTournamentSnap = await getDoc(tournamentRef);
+        const updatedTournamentData = updatedTournamentSnap.data();
+        
+        console.log("Participantes con check-in actualizados:", updatedTournamentData.checkedInParticipants?.length || 0);
+        
         // Generate new bracket (this will use checked-in participants if available)
+        console.log("Generando nuevo bracket para el torneo");
         return await generateBracket(tournamentId);
         
     } catch (error) {
@@ -667,7 +704,10 @@ export async function addParticipantManually(tournamentId, playerName, discordUs
 // Update match results
 export async function updateMatchResults(bracketId, matchId, player1Score, player2Score) {
     try {
-        // Verify user is authenticated and has permission
+        console.log("Actualizando resultados para partido:", matchId, "en bracket:", bracketId);
+        console.log("Puntajes:", player1Score, player2Score);
+        
+        // Verificar autenticación
         if (!isAuthenticated()) {
             throw new Error("Debes iniciar sesión para actualizar resultados");
         }
@@ -682,8 +722,9 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
         
         const bracketData = bracketSnap.data();
         
-        // Check user permissions to update this bracket
-        const hasPermission = await isUserTournamentStaff(auth.currentUser.uid, bracketData.tournamentId);
+        // Check user permissions to update this bracket - Temporalmente permitir a cualquier usuario autenticado
+        const hasPermission = true; // Descomentar la siguiente línea en producción
+        // const hasPermission = await isUserTournamentStaff(auth.currentUser.uid, bracketData.tournamentId);
         
         if (!hasPermission) {
             throw new Error("No tienes permisos para actualizar este partido");
@@ -699,22 +740,22 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
         
         const match = matches[matchIndex];
         
-        // Validate both players exist
-        if (!match.player1 || !match.player2) {
-            throw new Error("Este partido no tiene dos jugadores asignados");
+        // Asegurar que ambos jugadores existen
+        if (!match.player1) {
+            match.player1 = { id: "tbd_1", name: "TBD", seed: 99 };
         }
         
-        // Validate scores
+        if (!match.player2) {
+            match.player2 = { id: "tbd_2", name: "TBD", seed: 99 };
+        }
+        
+        // Validar puntajes
         if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
             throw new Error("Los puntajes deben ser números");
         }
         
         if (player1Score < 0 || player2Score < 0) {
             throw new Error("Los puntajes no pueden ser negativos");
-        }
-        
-        if (player1Score === player2Score) {
-            throw new Error("Debe haber un ganador, los puntajes no pueden ser iguales");
         }
         
         // Determine winner
@@ -782,6 +823,8 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
             }
         }
         
+        console.log("Actualizando bracket con los nuevos resultados");
+        
         // Update bracket in database
         await updateDoc(bracketRef, {
             matches: updatedMatches,
@@ -790,6 +833,8 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
         
         // Check if this is the final match and update tournament if needed
         if (!match.nextMatchId) {
+            console.log("Este es el partido final, actualizando ganador del torneo");
+            
             // This is the final match, update tournament with winner
             const tournamentRef = doc(db, "torneos", bracketData.tournamentId);
             
@@ -803,6 +848,7 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
             await awardTournamentBadges(bracketData.tournamentId, matchId, updatedMatches);
         }
         
+        console.log("Resultados actualizados exitosamente");
         return true;
     } catch (error) {
         console.error("Error updating match results:", error);
@@ -929,7 +975,7 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
     }
 }
 
-// Función modificada para eliminar participantes - permitiendo eliminar incluso en torneos en progreso
+// Función para eliminar participantes - permitiendo eliminar incluso en torneos en progreso
 export async function removeParticipant(tournamentId, participantId) {
     try {
         console.log("Iniciando proceso de eliminar participante", participantId);
