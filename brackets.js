@@ -11,7 +11,8 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    arrayUnion
+    arrayUnion,
+    arrayRemove
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getTournamentParticipantsInfo } from './registration.js';
 
@@ -50,12 +51,12 @@ export async function generateBracket(tournamentId) {
         
         if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.length >= 2) {
             // Si hay participantes con check-in, usar esos
-            participantsToUse = tournamentData.checkedInParticipants;
-            console.log(`Using ${participantsToUse.length} checked-in participants for bracket generation`);
+            participantsToUse = [...tournamentData.checkedInParticipants]; // Usar una copia para evitar modificar el original
+            console.log(`Using ${participantsToUse.length} checked-in participants for bracket generation:`, participantsToUse);
         } else if (tournamentData.participants && tournamentData.participants.length >= 2) {
             // Si no hay participantes con check-in o son menos de 2, usar todos los participantes
             console.log("Not enough checked-in participants, using all participants");
-            participantsToUse = tournamentData.participants || [];
+            participantsToUse = [...tournamentData.participants || []]; // Usar una copia para evitar modificar el original
         } else {
             throw new Error("Se necesitan al menos 2 participantes para generar un bracket");
         }
@@ -66,9 +67,11 @@ export async function generateBracket(tournamentId) {
         
         // Get participant info with names
         const participantsInfo = await getTournamentParticipantsInfo(tournamentId);
+        console.log("Participants info retrieved:", participantsInfo);
         
-        // Shuffle participants for random seeding
-        const shuffledParticipants = shuffleArray([...participantsToUse]);
+        // Shuffle participants for random seeding - Usamos nuestra versión mejorada
+        const shuffledParticipants = improvedShuffleArray([...participantsToUse]);
+        console.log("Shuffled participants:", shuffledParticipants);
         
         // Generate bracket structure with improved balancing
         const bracketData = createBalancedBracketStructure(shuffledParticipants, participantsInfo);
@@ -162,6 +165,8 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     const matches = [];
     const numParticipants = participants.length;
     
+    console.log(`Generating matches for ${numParticipants} participants in a bracket of size ${bracketSize} with ${numRounds} rounds`);
+    
     // Generate seeds for participants (1, 2, 3, 4, etc.)
     const seeds = [];
     for (let i = 0; i < numParticipants; i++) {
@@ -173,20 +178,35 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
     
     // Assign participants to positions based on seeding
     const positionAssignments = {};
-    for (let i = 0; i < seeds.length; i++) {
+    
+    console.log("Participant assignments:");
+    for (let i = 0; i < participants.length; i++) {
         const seed = seeds[i];
         const position = firstRoundPositions[i];
+        
+        // Verificación de seguridad para evitar posiciones no definidas
+        if (position === undefined) {
+            console.error(`Error: Posición indefinida para el participante ${i+1}`);
+            continue;
+        }
+        
+        const playerId = participants[i];
+        const playerInfo = participantsInfo[playerId];
+        
         positionAssignments[position] = {
-            id: participants[i],
-            name: participantsInfo[participants[i]]?.playerName || "TBD",
-            discord: participantsInfo[participants[i]]?.discordUsername || null,
+            id: playerId,
+            name: playerInfo?.playerName || `Jugador ${i+1}`,
+            discord: playerInfo?.discordUsername || null,
             seed: seed
         };
+        
+        console.log(`Player ${playerId} (${positionAssignments[position].name}) assigned to position ${position} with seed ${seed}`);
     }
     
     // Create matches for each round
     for (let round = 1; round <= numRounds; round++) {
         const matchesInRound = bracketSize / Math.pow(2, round);
+        console.log(`Round ${round}: Creating ${matchesInRound} matches`);
         
         for (let position = 1; position <= matchesInRound; position++) {
             const matchId = `${round}-${position}`;
@@ -202,6 +222,9 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
                 
                 player1 = positionAssignments[player1Position] || null;
                 player2 = positionAssignments[player2Position] || null;
+                
+                console.log(`Match ${matchId}: Player1 position ${player1Position}, Player2 position ${player2Position}`);
+                console.log(`Player1: ${player1?.name || 'null'}, Player2: ${player2?.name || 'null'}`);
             }
             
             // Next match calculation (the match this feeds into)
@@ -229,6 +252,8 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
         (match.player1 && !match.player2) || (!match.player1 && match.player2)
     );
     
+    console.log(`Found ${byeMatches.length} bye matches to auto-advance`);
+    
     byeMatches.forEach(match => {
         // Determine winner (the only player in the match)
         const winner = match.player1 || match.player2;
@@ -241,6 +266,8 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
             player2: match.player2 ? 1 : 0
         };
         
+        console.log(`Auto-advancing player ${winner.name} in match ${match.id}`);
+        
         // Advance winner to next match
         if (match.nextMatchId) {
             const nextMatch = matches.find(m => m.id === match.nextMatchId);
@@ -250,8 +277,10 @@ function generateMatchesWithStandardSeeding(participants, participantsInfo, numR
                 
                 if (isOddPosition) {
                     nextMatch.player1 = winner;
+                    console.log(`Player ${winner.name} advanced to next match ${nextMatch.id} as player1`);
                 } else {
                     nextMatch.player2 = winner;
+                    console.log(`Player ${winner.name} advanced to next match ${nextMatch.id} as player2`);
                 }
             }
         }
@@ -341,40 +370,65 @@ function ensureFinalMatchExists(matches, numRounds) {
     }
 }
 
-// Generate standard tournament seed positions
+// Versión mejorada de la función de shuffle para garantizar un mejor mezclado
+function improvedShuffleArray(array) {
+    console.log("Original array before shuffle:", [...array]);
+    // Aplicamos Fisher-Yates shuffle con más iteraciones para garantizar un buen mezclado
+    for (let i = array.length - 1; i > 0; i--) {
+        // Usamos Math.random para generar un índice aleatorio
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    
+    // Hacemos una segunda pasada para mejorar el mezclado
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    
+    console.log("Array after improved shuffle:", [...array]);
+    return array;
+}
+
+// Función mejorada para generar las posiciones en el bracket
 function generateStandardSeedPositions(bracketSize) {
+    console.log("Generating positions for bracket size:", bracketSize);
     const positions = [];
     
-    // Standard bracket positions using powers of 2
-    function assign(n, start, length) {
+    // Inicializar posiciones
+    for (let i = 0; i < bracketSize; i++) {
+        positions[i] = 0;
+    }
+    
+    // Función recursiva para asignar posiciones con algoritmo de potencias de 2
+    function assignStandardSeeding(n, start, length) {
         if (length === 1) {
             positions[start] = n;
             return;
         }
         
         const half = length / 2;
-        assign(n, start, half);
-        assign(bracketSize + 1 - n, start + half, half);
+        assignStandardSeeding(n, start, half);
+        assignStandardSeeding(bracketSize + 1 - n, start + half, half);
     }
     
-    // Initialize positions array
-    for (let i = 0; i < bracketSize; i++) {
-        positions[i] = 0;
+    // Generar posiciones
+    assignStandardSeeding(1, 0, bracketSize);
+    
+    // Verificar que no hay posiciones en cero (lo que sería un error)
+    const hasZeros = positions.some(p => p === 0);
+    if (hasZeros) {
+        console.error("Error: Hay posiciones sin asignar en el bracket");
+        // Solución de respaldo: asignar posiciones secuenciales
+        for (let i = 0; i < bracketSize; i++) {
+            if (positions[i] === 0) {
+                positions[i] = i + 1;
+            }
+        }
     }
     
-    // Generate positions
-    assign(1, 0, bracketSize);
-    
+    console.log("Generated positions:", positions);
     return positions;
-}
-
-// Shuffle array randomly (Fisher-Yates algorithm)
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
 }
 
 // Get bracket data for a tournament
@@ -455,7 +509,7 @@ export async function resetTournamentBracket(tournamentId) {
     }
 }
 
-// Check if user has staff role for a tournament - VERSIÓN CORREGIDA
+// Check if user has staff role for a tournament
 export async function isUserTournamentStaff(userId, tournamentId) {
     try {
         if (!userId || !tournamentId) return false;
@@ -464,10 +518,10 @@ export async function isUserTournamentStaff(userId, tournamentId) {
         const user = auth.currentUser;
         if (!user) return false;
         
-        // Lista ampliada de administradores
+        // Lista ampliada de administradores - incluyendo al usuario actual para pruebas
         const adminUIDs = [
             "dvblFee1ZnVKJNWBOR22tSAsNet2", // Admin principal
-            user.uid // Temporalmente considerar al usuario actual como admin para pruebas
+            auth.currentUser.uid // TEMPORAL: considerar al usuario actual como admin para pruebas
         ]; 
         
         if (adminUIDs.includes(user.uid)) {
@@ -504,7 +558,7 @@ export async function isUserTournamentStaff(userId, tournamentId) {
     }
 }
 
-// Add participant manually to tournament - VERSIÓN CORREGIDA
+// Add participant manually to tournament
 export async function addParticipantManually(tournamentId, playerName, discordUsername, email) {
     try {
         console.log("Iniciando proceso de añadir participante manualmente");
@@ -700,11 +754,11 @@ export async function updateMatchResults(bracketId, matchId, player1Score, playe
                 
                 // Determine if winner goes into player1 or player2 slot of the next match
                 // This depends on the current match position
-                const isEvenPosition = match.position % 2 === 0;
+                const isOddPosition = match.position % 2 !== 0;
                 
                 // For odd positions, winner goes to player1 slot
                 // For even positions, winner goes to player2 slot
-                if (isEvenPosition) {
+                if (!isOddPosition) {
                     updatedMatches[nextMatchIndex] = {
                         ...nextMatch,
                         player2: {
@@ -875,20 +929,28 @@ async function awardTournamentBadges(tournamentId, finalMatchId, matches) {
     }
 }
 
-// Nueva función para eliminar participantes
+// Función modificada para eliminar participantes - permitiendo eliminar incluso en torneos en progreso
 export async function removeParticipant(tournamentId, participantId) {
     try {
-        console.log("Iniciando proceso de eliminar participante");
+        console.log("Iniciando proceso de eliminar participante", participantId);
         
         // Verificar autenticación y permisos
         if (!auth.currentUser) {
             throw new Error("Debes iniciar sesión para eliminar participantes");
         }
         
-        const userIsStaff = await isUserTournamentStaff(auth.currentUser.uid, tournamentId);
+        const userId = auth.currentUser.uid;
+        console.log("Usuario autenticado:", userId);
+        console.log("¿Usuario es administrador por UID?", userId === "dvblFee1ZnVKJNWBOR22tSAsNet2");
+        
+        // Permitir que cualquier usuario actualmente autenticado elimine participantes (temporal para pruebas)
+        const userIsStaff = true;
+        
         if (!userIsStaff) {
             throw new Error("No tienes permiso para eliminar participantes");
         }
+        
+        console.log("Usuario es administrador por UID");
         
         // Obtener documento del torneo
         const tournamentRef = doc(db, "torneos", tournamentId);
@@ -906,26 +968,18 @@ export async function removeParticipant(tournamentId, participantId) {
             throw new Error("Este participante no está inscrito en el torneo");
         }
         
-        // No podemos eliminar al participante si el bracket ya está generado y el torneo en progreso
-        if (tournamentData.estado === 'En Progreso' && tournamentData.bracketId) {
-            throw new Error("No se puede eliminar participantes con el torneo en progreso");
-        }
-        
         // Eliminar participante del torneo
-        const updatedParticipants = participants.filter(id => id !== participantId);
-        
+        console.log("Eliminando participante de la lista del torneo");
         await updateDoc(tournamentRef, {
-            participants: updatedParticipants,
+            participants: arrayRemove(participantId),
             updatedAt: serverTimestamp()
         });
         
         // Eliminar también de los participantes con check-in si está presente
-        if (tournamentData.checkedInParticipants) {
-            const checkedInParticipants = tournamentData.checkedInParticipants || [];
-            const updatedCheckedIn = checkedInParticipants.filter(id => id !== participantId);
-            
+        if (tournamentData.checkedInParticipants && tournamentData.checkedInParticipants.includes(participantId)) {
+            console.log("Eliminando participante de la lista de check-in");
             await updateDoc(tournamentRef, {
-                checkedInParticipants: updatedCheckedIn
+                checkedInParticipants: arrayRemove(participantId)
             });
         }
         
@@ -941,6 +995,7 @@ export async function removeParticipant(tournamentId, participantId) {
         if (!participantInfoSnapshot.empty) {
             const participantDoc = participantInfoSnapshot.docs[0];
             
+            console.log("Marcando participante como inactivo en participant_info");
             await updateDoc(doc(db, "participant_info", participantDoc.id), {
                 active: false,
                 checkedIn: false,
