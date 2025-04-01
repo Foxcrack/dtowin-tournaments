@@ -14,7 +14,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Import registration and brackets modules
-import { showRegistrationModal, unregisterFromTournament, getTournamentParticipantsInfo, hasUserRegisteredWithInfo, initRegistrationModule } from './registration.js';
+import { 
+    showRegistrationModal, 
+    unregisterFromTournament, 
+    getTournamentParticipantsInfo, 
+    hasUserRegisteredWithInfo,
+    initRegistrationModule,
+    checkInForTournament
+} from './registration.js';
 
 // Global variable to store participants info
 let participantsInfoCache = {};
@@ -959,7 +966,7 @@ function setupTournamentButtons() {
             
             try {
                 // Realizar check-in
-                await realizarCheckIn(torneoId);
+                await checkInForTournament(torneoId);
                 
                 // Cambiar el estado del botón a confirmado
                 this.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Check-In Completado';
