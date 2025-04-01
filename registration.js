@@ -637,8 +637,8 @@ export async function updateParticipantInfo(tournamentId, playerName, discordUse
     }
 }
 
-// Función que faltaba y estaba causando el error
-export async function hasUserRegisterEditInfo(tournamentId) {
+// Función que faltaba y estaba causando el error - CORREGIDO
+export async function hasUserRegisteredWithInfo(tournamentId) {
     try {
         // Verificar autenticación
         if (!isAuthenticated()) {
@@ -674,12 +674,136 @@ export async function hasUserRegisterEditInfo(tournamentId) {
     }
 }
 
+// Mostrar modal de inscripción
+export function showRegistrationModal(tournamentId, tournamentName) {
+    // Verificar si el usuario está autenticado
+    if (!isAuthenticated()) {
+        window.mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) loginBtn.click();
+        return;
+    }
+
+    // Buscar o crear el modal
+    let registrationModal = document.getElementById('tournamentRegistrationModal');
+    
+    if (!registrationModal) {
+        // Crear el modal dinámicamente
+        const modalHTML = `
+        <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="text-center mb-6">
+                    <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción: ${tournamentName}</h3>
+                    <p class="text-gray-600">Completa la información para participar</p>
+                    <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+                </div>
+                
+                <form id="tournamentRegistrationForm">
+                    <input type="hidden" id="tournamentId" value="${tournamentId}">
+                    <div class="mb-4">
+                        <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                        <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
+                        <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                        <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
+                        <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
+                    </div>
+                    
+                    <div class="flex items-center justify-end">
+                        <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                            Confirmar Inscripción
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        registrationModal = document.getElementById('tournamentRegistrationModal');
+        
+        // Configurar eventos
+        document.getElementById('closeRegistrationModalBtn').addEventListener('click', () => {
+            registrationModal.classList.add('hidden');
+            registrationModal.classList.remove('flex');
+        });
+        
+        document.getElementById('cancelRegistrationBtn').addEventListener('click', () => {
+            registrationModal.classList.add('hidden');
+            registrationModal.classList.remove('flex');
+        });
+        
+        document.getElementById('tournamentRegistrationForm').addEventListener('submit', handleRegistrationSubmit);
+    } else {
+        // Actualizar título y datos
+        document.getElementById('registrationTitle').textContent = `Inscripción: ${tournamentName}`;
+        document.getElementById('tournamentId').value = tournamentId;
+        document.getElementById('registrationErrorMsg').textContent = '';
+        document.getElementById('tournamentRegistrationForm').reset();
+    }
+    
+    // Mostrar modal
+    registrationModal.classList.remove('hidden');
+    registrationModal.classList.add('flex');
+}
+
+// Manejar envío del formulario de inscripción
+async function handleRegistrationSubmit(e) {
+    e.preventDefault();
+    
+    const tournamentId = document.getElementById('tournamentId').value;
+    const playerName = document.getElementById('playerName').value;
+    const discordUsername = document.getElementById('discordUsername').value;
+    const submitBtn = document.getElementById('registrationSubmitBtn');
+    const errorMsg = document.getElementById('registrationErrorMsg');
+    
+    if (!playerName) {
+        errorMsg.textContent = "El nombre de jugador es obligatorio";
+        return;
+    }
+    
+    // Mostrar estado de carga
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+    
+    try {
+        // Registrar al usuario
+        await registerForTournament(tournamentId, playerName, discordUsername);
+        
+        // Cerrar modal
+        const modal = document.getElementById('tournamentRegistrationModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // Mostrar mensaje de éxito
+        window.mostrarNotificacion("¡Te has inscrito correctamente al torneo!", "success");
+        
+        // Recargar para actualizar la UI
+        setTimeout(() => window.location.reload(), 1500);
+        
+    } catch (error) {
+        errorMsg.textContent = error.message || "Error al inscribirse al torneo";
+        
+        // Restaurar botón
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Confirmar Inscripción";
+    }
+}
+
 // Función para configurar botones de check-in
 export function configurarBotonesCheckIn() {
     console.log("Configurando botones de check-in");
     
-    // Utilizar selectores más simples y robustos
-    const checkInButtons = document.querySelectorAll('.check-in-btn');
+    // Buscar todos los botones de check-in (usando clases en lugar de selectores inválidos)
+    const checkInButtons = document.querySelectorAll('.checkin-btn');
     
     if (checkInButtons.length === 0) {
         console.log("No se encontraron botones de check-in");
@@ -689,24 +813,36 @@ export function configurarBotonesCheckIn() {
     console.log(`Se encontraron ${checkInButtons.length} botones de check-in`);
     
     checkInButtons.forEach(button => {
-        const tournamentId = button.dataset.tournamentId;
+        const tournamentId = button.dataset.torneoId || button.getAttribute('data-torneo-id');
         if (!tournamentId) {
             console.log("Botón sin ID de torneo", button);
             return;
         }
         
-        button.addEventListener('click', async (e) => {
+        // Remover listeners previos
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', async (e) => {
             e.preventDefault();
             
             try {
+                // Cambiar estado del botón
+                newButton.disabled = true;
+                const originalText = newButton.innerHTML;
+                newButton.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+                
+                // Realizar check-in
                 await checkInForTournament(tournamentId);
-                window.mostrarNotificacion("Check-in realizado con éxito", "success");
                 
                 // Actualizar UI
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Check-in completado';
-                button.classList.remove('dtowin-primary');
-                button.classList.add('bg-green-500');
+                newButton.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Check-in completado';
+                newButton.classList.remove('dtowin-primary', 'bg-purple-600', 'hover:bg-purple-700');
+                newButton.classList.add('bg-green-500');
+                newButton.disabled = true;
+                
+                // Mostrar mensaje
+                window.mostrarNotificacion("¡Has confirmado tu asistencia correctamente!", "success");
                 
                 // Actualizar estado en la UI
                 const statusElement = document.querySelector(`#check-in-status-${tournamentId}`);
@@ -718,110 +854,23 @@ export function configurarBotonesCheckIn() {
                 
             } catch (error) {
                 window.mostrarNotificacion(error.message, "error");
+                newButton.disabled = false;
+                newButton.innerHTML = originalText;
             }
         });
     });
 }
 
-// Función para configurar botones de inscripción
-export function configurarBotonesInscripcion() {
-    console.log("Configurando botones de inscripción");
+// Inicializar módulo de registro
+export function initRegistrationModule() {
+    console.log("Inicializando módulo de registro");
     
-    // Utilizar selectores más simples y robustos
-    const inscripcionButtons = document.querySelectorAll('.inscribirse-btn');
-    
-    if (inscripcionButtons.length === 0) {
-        console.log("No se encontraron botones de inscripción");
-        return;
-    }
-    
-    console.log(`Se encontraron ${inscripcionButtons.length} botones de inscripción`);
-    
-    inscripcionButtons.forEach(button => {
-        const tournamentId = button.dataset.tournamentId;
-        if (!tournamentId) {
-            console.log("Botón sin ID de torneo", button);
-            return;
-        }
-        
-        button.addEventListener('click', async (e) => {
-            e.preventDefault();
-            
-            try {
-                // Mostrar modal de inscripción
-                const inscripcionModal = document.getElementById('inscripcion-modal');
-                if (inscripcionModal) {
-                    // Establecer ID del torneo en el formulario
-                    document.getElementById('inscripcion-torneo-id').value = tournamentId;
-                    
-                    // Mostrar modal
-                    inscripcionModal.classList.remove('hidden');
-                    inscripcionModal.classList.add('flex');
-                } else {
-                    console.error("No se encontró el modal de inscripción");
-                }
-            } catch (error) {
-                window.mostrarNotificacion(error.message, "error");
-            }
+    // Ejecutar configuraciones cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(configurarBotonesCheckIn, 1000);
         });
-    });
-    
-    // Configurar formulario de inscripción
-    const inscripcionForm = document.getElementById('inscripcion-form');
-    if (inscripcionForm) {
-        inscripcionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            try {
-                const tournamentId = document.getElementById('inscripcion-torneo-id').value;
-                const playerName = document.getElementById('inscripcion-nombre').value;
-                const discordUsername = document.getElementById('inscripcion-discord').value;
-                
-                // Validar campos
-                if (!playerName || playerName.trim() === '') {
-                    throw new Error("Debes proporcionar un nombre de jugador");
-                }
-                
-                // Mostrar estado de carga
-                const submitBtn = document.getElementById('inscripcion-submit');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
-                
-                // Registrar en el torneo
-                await registerForTournament(tournamentId, playerName, discordUsername);
-                
-                // Cerrar modal
-                const modal = document.getElementById('inscripcion-modal');
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                
-                // Mostrar mensaje de éxito
-                window.mostrarNotificacion("Inscripción realizada con éxito", "success");
-                
-                // Actualizar UI
-                const button = document.querySelector(`[data-tournament-id="${tournamentId}"].inscribirse-btn`);
-                if (button) {
-                    button.disabled = true;
-                    button.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Inscrito';
-                    button.classList.remove('dtowin-primary');
-                    button.classList.add('bg-green-500');
-                }
-                
-                // Recargar página después de un breve retraso para actualizar UI
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-                
-            } catch (error) {
-                document.getElementById('inscripcion-error').textContent = error.message;
-            } finally {
-                // Restaurar botón
-                const submitBtn = document.getElementById('inscripcion-submit');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Inscribirme';
-                }
-            }
-        });
+    } else {
+        setTimeout(configurarBotonesCheckIn, 1000);
     }
 }
