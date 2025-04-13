@@ -1,5 +1,5 @@
 // firebase.js - Configuración y funciones de Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import {
     getAuth,
     signInWithEmailAndPassword,
@@ -8,8 +8,8 @@ import {
     signInWithPopup,
     onAuthStateChanged,
     createUserWithEmailAndPassword,
-    updateProfile,
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import {
     getFirestore,
     doc,
@@ -21,13 +21,8 @@ import {
     query,
     where,
     getDocs
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-import {
-    getStorage,
-    ref,
-    uploadBytesResumable,
-    getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
