@@ -1158,10 +1158,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
                         await fileRef.put(newProfilePhoto);
                         
-                        // Obtener la URL
-                        const photoURL = await fileRef.getDownloadURL();
-                        console.log("photoURL: ", photoURL);
-                        
                         // Actualizar foto en Auth
                         console.log("Actualizando foto en Auth");
                         
@@ -1169,14 +1165,20 @@ document.addEventListener("DOMContentLoaded", function() {
                             photoURL: photoURL
                         });
                         
+                         // Obtener la URL después de la subida
+                        const photoURL = await fileRef.getDownloadURL();
+                        console.log("photoURL: ", photoURL);
+
+                        // Imprimir la photoURL justo antes de actualizar Firestore
+                        console.log("photoURL antes de Firestore update:", photoURL);
+
                         // Actualizar foto en Firestore
                         if (!userDocs.empty) {
                             await userDocs.docs[0].ref.update({
                                 photoURL: photoURL,
                                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
-                        } else {
-                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
+                        } else {                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
                             
                         }
                     }
