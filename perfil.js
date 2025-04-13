@@ -956,47 +956,6 @@ async function loadAvailableBanners() {
     }
 }
 
-// Manejar cambio de foto de perfil - Versión actualizada
-function handleProfilePhotoChange(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    console.log("Archivo de foto seleccionado:", file.name);
-    
-    // Verificar que sea imagen
-    if (!file.type.startsWith('image/')) {
-        mostrarNotificacion("El archivo debe ser una imagen", "error");
-        event.target.value = '';
-        return;
-    }
-    
-    // Verificar tamaño (max 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-    if (file.size > MAX_SIZE) {
-        mostrarNotificacion("La imagen es demasiado grande. Máximo 2MB", "warning");
-    }
-    
-    // Guardar referencia al archivo
-    newProfilePhoto = file;
-    console.log("newProfilePhoto:", newProfilePhoto);
-    
-    // Mostrar vista previa
-    const photoPreview = document.getElementById('photoPreview');
-    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
-    
-    if (photoPreview && photoPreviewContainer) {
-        photoPreviewContainer.classList.remove('hidden');
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            photoPreview.src = e.target.result;
-            photoPreviewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// La función handleProfileFormSubmit tradicional está eliminada deliberadamente
-// En su lugar, usamos un enfoque directo que sobrescribe el comportamiento del formulario
 
 // Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
@@ -1079,7 +1038,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const bannerID = window.selectedBannerId; // Usar variable global
                 
                 // Validación simple
-                if (newProfilePhoto && !newProfilePhoto.type.startsWith('image/')) {
+                if (newProfilePhoto && !newProfilePhoto.type.startsWith("image/")) {
                     mostrarNotificacion("El archivo debe ser una imagen", "error");
                     return;
                 }
@@ -1159,13 +1118,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     // 7. Manejar foto si existe
                     const photoInput = document.getElementById('profilePhotoInput');
                     const saveProfileChanges = document.getElementById('saveProfileChanges');
-                    
+
                     if (newProfilePhoto) {
                         // Mostrar carga en el botón
                         if (saveProfileChanges) {
                             saveProfileChanges.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
                             saveProfileChanges.disabled = true;
-                        }
+                        } 
 
                         if (!newProfilePhoto) {
                             console.log("No se seleccionó nueva foto, omitiendo subida");
@@ -1174,12 +1133,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         console.log("7. Subiendo nueva foto (si existe)...");
                         // Subir archivo
                         const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
-                        await fileRef.put(newProfilePhoto);
-                        
                         const uploadTask = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`).put(newProfilePhoto);
-                        
+
                         // Observar el progreso de la subida
-                        uploadTask.on('state_changed', 
+                        uploadTask.on(
+                            "state_changed",
                             (snapshot) => {
                                 const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                                 console.log('Subida en progreso:', progress + '%');
@@ -1188,14 +1146,14 @@ document.addEventListener("DOMContentLoaded", function() {
                             (error) => {
                                 console.error("Error en la subida:", error);
                                 mostrarNotificacion("Error al subir la imagen", "error");
-                            }
+                            },
                         );
 
                         // Obtener la URL después de la subida
                         const photoURL = await uploadTask.snapshot.ref.getDownloadURL();
                         console.log("photoURL: ", photoURL);
                         // Actualizar foto en Auth                            
-                        console.log("Actualizando foto en Auth");
+                        console.log("Actualizando foto en Auth...");
                         await firebase.auth().currentUser.updateProfile({
                             photoURL: photoURL,
                         });
@@ -1204,14 +1162,14 @@ document.addEventListener("DOMContentLoaded", function() {
                         console.log("photoURL antes de Firestore update:", photoURL);
 
                         console.log("Actualizando foto en Firestore");
-                        // Actualizar foto en Firestore
+
                         if (!userDocs.empty) {
                             await userDocs.docs[0].ref.update({
                                 photoURL: photoURL,
                                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
-                        } else {                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
-                            
+                        } else {
+                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
                         }
                     }
                     
@@ -1230,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     console.log("9. Perfil actualizado con éxito");
 
                     document.getElementById('profilePhotoInput').value = "";
-                    // 10. Forzar recarga completa (no usar reload que podría usar caché)
+
                     setTimeout(() => {
                         window.location.href = window.location.pathname + "?t=" + Date.now();
                     }, 1500);
@@ -1240,7 +1198,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     const profilePhotoInput = document.getElementById('profilePhotoInput');
                     
                     // Limpiar input de foto
-                    if(profilePhotoInput) profilePhotoInput.value = "";
+                    if (profilePhotoInput) profilePhotoInput.value = "";
                     
                     // Eliminar referencia
                     newProfilePhoto = null;
@@ -1262,4 +1220,3 @@ document.addEventListener("DOMContentLoaded", function() {
             console.warn("No se encontró el formulario de edición de perfil");
         }
     }, 1000); // Esperar 1 segundo para asegurar que el DOM está listo
-});
