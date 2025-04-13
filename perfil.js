@@ -1158,16 +1158,15 @@ document.addEventListener("DOMContentLoaded", function() {
                         const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
                         await fileRef.put(newProfilePhoto);
                         
-                        // Actualizar foto en Auth
-                        console.log("Actualizando foto en Auth");
-                        
-                        await firebase.auth().currentUser.updateProfile({
-                            photoURL: photoURL
-                        });
-                        
-                         // Obtener la URL después de la subida
+                        // Obtener la URL después de la subida
                         const photoURL = await fileRef.getDownloadURL();
                         console.log("photoURL: ", photoURL);
+                        
+                        // Actualizar foto en Auth
+                        console.log("Actualizando foto en Auth");
+                        await firebase.auth().currentUser.updateProfile({
+                            photoURL: photoURL,
+                        });
 
                         // Imprimir la photoURL justo antes de actualizar Firestore
                         console.log("photoURL antes de Firestore update:", photoURL);
