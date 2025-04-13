@@ -1097,6 +1097,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 try {
                     // 1. Obtener usuario actual
+                    console.log("1. Obteniendo usuario actual...");
+                    
                     const user = firebase.auth().currentUser;
                     if (!user) {
                         throw new Error("No hay usuario autenticado");
@@ -1104,12 +1106,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     
                     // 2. Actualizar perfil en Auth
                     await firebase.auth().currentUser.updateProfile({
-                        displayName: username
+                        displayName: username,
                     });
+                    console.log("2. Perfil actualizado en Auth");
                     
                     // 3. Buscar documento en Firestore
+                    console.log("3. Buscando documento en Firestore...");
+
                     const userDocs = await firebase.firestore()
                         .collection("usuarios")
+                        .limit(1)
                         .where("uid", "==", user.uid)
                         .limit(1)
                         .get();
@@ -1120,6 +1126,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
                     
+                    console.log("4. Datos preparados para actualizar:", updateData);
+                    
                     // 5. Manejar banner
                     if (bannerID === "") {
                         updateData.bannerId = null;
@@ -1127,8 +1135,11 @@ document.addEventListener("DOMContentLoaded", function() {
                         updateData.bannerId = bannerID;
                     }
                     
+                    console.log("5. Manejando banner (si existe): ", bannerID);
+                    
                     // 6. Actualizar o crear documento
                     if (!userDocs.empty) {
+                        console.log("6. Actualizando documento en Firestore...");
                         await userDocs.docs[0].ref.update(updateData);
                     } else {
                         await firebase.firestore().collection("usuarios").add({
@@ -1142,6 +1153,8 @@ document.addEventListener("DOMContentLoaded", function() {
                             torneos: []
                         });
                     }
+                    console.log("6. Documento en Firestore actualizado");
+
                     
                     // 7. Manejar foto si existe
                     const photoInput = document.getElementById('profilePhotoInput');
@@ -1154,6 +1167,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             saveProfileChanges.disabled = true;
                         }
                         
+                        console.log("7. Subiendo nueva foto (si existe)...");
                         // Subir archivo
                         const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
                         await fileRef.put(newProfilePhoto);
@@ -1161,7 +1175,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         // Obtener la URL después de la subida
                         const photoURL = await fileRef.getDownloadURL();
                         console.log("photoURL: ", photoURL);
-                        
                         // Actualizar foto en Auth
                         console.log("Actualizando foto en Auth");
                         await firebase.auth().currentUser.updateProfile({
@@ -1171,6 +1184,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         // Imprimir la photoURL justo antes de actualizar Firestore
                         console.log("photoURL antes de Firestore update:", photoURL);
 
+                        console.log("Actualizando foto en Firestore");
                         // Actualizar foto en Firestore
                         if (!userDocs.empty) {
                             await userDocs.docs[0].ref.update({
@@ -1182,16 +1196,21 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     }
                     
+                    console.log("7. Foto subida (si aplicaba) y URL actualizada");
+
                     // 8. Cerrar modal
                     const modal = document.getElementById('editProfileModal');
                     if (modal) {
+                        console.log("8. Cerrando modal de edición");
                         modal.classList.add('hidden');
                         modal.classList.remove('flex');
                     }
                     
                     // 9. Mostrar mensaje de éxito y recargar
                     mostrarNotificacion("Perfil actualizado correctamente", "success");
-                    
+                    console.log("9. Perfil actualizado con éxito");
+
+                    document.getElementById('profilePhotoInput').value = "";
                     // 10. Forzar recarga completa (no usar reload que podría usar caché)
                     setTimeout(() => {
                         window.location.href = window.location.pathname + "?t=" + Date.now();
