@@ -867,27 +867,10 @@ export function initRegistrationModule() {
     
     // Ejecutar configuraciones cuando el DOM esté listo
     if (document.readyState === 'loading') {
-        // Si el DOM está cargando, agregar un listener para cuando termine
         document.addEventListener('DOMContentLoaded', () => {
-            // Configurar botones de check-in con un retraso de 1 segundo
             setTimeout(configurarBotonesCheckIn, 1000);
-            
-            // Importar la función configurarBotonesInscripcion
-            import('./index.js').then(module => {
-                // Configurar botones de inscripción con un retraso de 1 segundo
-                setTimeout(module.configurarBotonesInscripcion, 1000);
-            });
         });
     } else {
-        // Si el DOM ya está cargado, ejecutar configuraciones directamente
         setTimeout(configurarBotonesCheckIn, 1000);
-        
-        // Importar la función configurarBotonesInscripcion
-        import('./index.js').then(module => {
-            // Configurar botones de inscripción con un retraso de 1 segundo
-            setTimeout(module.configurarBotonesInscripcion, 1000);
-        });
     }
-
-    console.log("Módulo de registro inicializado");
 }
