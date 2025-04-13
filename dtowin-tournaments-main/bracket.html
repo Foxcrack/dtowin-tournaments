@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bracket del Torneo - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="bracket-styles.css">
+    <style>
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            </div>
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tournament Info Header -->
+    <div class="gradient-background text-white py-6 px-4">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h2 id="tournament-name" class="text-3xl font-bold mb-2">Cargando torneo...</h2>
+                    <p id="tournament-status" class="text-xl opacity-90"></p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a href="index.html#torneos" class="bg-white text-blue-600 px-5 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver a Torneos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bracket Section -->
+    <section id="bracket-section" class="py-8 px-4">
+        <div class="container mx-auto">
+            <!-- Tournament Badges -->
+            <div id="tournament-badges" class="mb-8 bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Badges del Torneo</h3>
+                <div id="badges-container" class="flex flex-wrap gap-4">
+                    <p class="text-gray-500">Cargando badges...</p>
+                </div>
+            </div>
+            
+            <!-- Bracket Container -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 border-b">
+                    <h3 class="text-xl font-bold text-gray-800">Bracket del Torneo</h3>
+                    <p class="text-sm text-gray-600 mt-1">Desliza horizontalmente para ver todo el bracket</p>
+                </div>
+                
+                <div id="bracket-container" class="bracket-container">
+                    <!-- Loading spinner -->
+                    <div class="py-12 flex justify-center">
+                        <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Staff Controls -->
+            <div id="staff-controls" class="mt-8 bg-white rounded-lg shadow-md p-4 hidden">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Controles de Staff</h3>
+                <div class="space-y-4">
+                    <button id="update-bracket-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                        <i class="fas fa-sync-alt mr-2"></i> Actualizar Bracket
+                    </button>
+                    <p class="text-sm text-gray-600">Haz clic en un partido para actualizar el resultado</p>
+                </div>
+                <!-- Los nuevos botones se añadirán dinámicamente aquí -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Score Update Modal -->
+    <div id="score-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50 score-modal">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="close-score-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Actualizar Resultado</h3>
+                <p id="match-info" class="text-gray-600">Partido</p>
+                <p id="score-error-msg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="score-update-form">
+                <div class="mb-4">
+                    <input type="hidden" id="match-id">
+                    <label id="player1-label" class="block text-gray-700 text-sm font-bold mb-2">Jugador 1</label>
+                    <input type="number" id="player1-score" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                
+                <div class="mb-6">
+                    <label id="player2-label" class="block text-gray-700 text-sm font-bold mb-2">Jugador 2</label>
+                    <input type="number" id="player2-score" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                
+                <div class="flex items-center justify-end">
+                    <button type="button" id="cancel-score-btn" class="text-gray-600 mr-4 hover:text-gray-800">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="submit-score-btn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                        Guardar Resultado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+                <p class="text-gray-600">Bienvenido de vuelta</p>
+                <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <div class="mb-6">
+                <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline hover:bg-gray-50 transition flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                    Continuar con Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Participant Modal -->
+    <!-- Este modal se creará dinámicamente desde JavaScript -->
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-8 px-4 mt-12">
+        <div class="container mx-auto">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-8 h-8 rounded-full">
+                    <h3 class="text-lg font-bold">Dtowin Torneos</h3>
+                </div>
+                <div>
+                    <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Hacer Firebase disponible globalmente
+    window.firebase = firebase;
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.storage = firebase.storage();
+
+    // Configurar persistencia para mantener la sesión
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            console.log("Persistencia de sesión configurada correctamente");
+        })
+        .catch((error) => {
+            console.error("Error al configurar persistencia de sesión:", error);
+        });
+
+    // Iniciar función de notificación global
+    window.mostrarNotificacion = function(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    };
+    </script>
+
+    <!-- Script para manejar el bracket -->
+    <script src="bracket-viewer.js" type="module"></script>
+</body>
+</html>

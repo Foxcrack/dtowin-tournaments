@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Badges - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .badge-preview {
+            transition: transform 0.3s ease;
+        }
+        .badge-preview:hover {
+            transform: scale(1.05);
+        }
+        .notification {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="admin-panel.html" class="flex items-center">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                </a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-2">
+                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full" id="userAvatar">
+                    <span class="hidden md:inline" id="userName">Admin</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto py-8 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Sidebar -->
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <ul>
+                        <li>
+                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-trophy mr-2"></i> Torneos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-users mr-2"></i> Participantes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
+                                <i class="fas fa-certificate mr-2"></i> Badges
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                 <i class="fas fa-image mr-2"></i> Banners
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-chart-line mr-2"></i> Resultados
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i> Configuración
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-4">
+                <!-- Badges Section -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="flex justify-between mb-6">
+                        <h2 class="text-2xl font-bold">Gestión de Badges</h2>
+                        <button id="headerCreateBadgeBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                            <i class="fas fa-plus mr-2"></i>Crear Badge
+                        </button>
+                    </div>
+                    
+                    <!-- Form para crear/editar badge (oculto inicialmente) -->
+                    <div id="badgeFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden fade-in">
+                        <h3 class="font-semibold text-lg mb-2" id="formTitle">Crear Nuevo Badge</h3>
+                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
+                                    Nombre del Badge *
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
+                                    Descripción *
+                                </label>
+                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge" required></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
+                                    Color
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
+                                    Ícono
+                                </label>
+                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
+                                    <option value="trophy">Trofeo</option>
+                                    <option value="medal">Medalla</option>
+                                    <option value="star">Estrella</option>
+                                    <option value="award">Premio</option>
+                                    <option value="crown">Corona</option>
+                                    <option value="certificate">Certificado</option>
+                                    <option value="shield">Escudo</option>
+                                    <option value="bolt">Rayo</option>
+                                    <option value="fire">Fuego</option>
+                                    <option value="gem">Gema</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
+                                    Imagen del Badge (PNG recomendado)
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                    id="imagenBadge" 
+                                    type="file" 
+                                    accept="image/png, image/jpeg, image/svg+xml">
+                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
+                            </div>
+                            <div class="flex items-center">
+                                <!-- Contenedor de vista previa -->
+                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden badge-preview">
+                                    <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-600">Vista previa</p>
+                                    <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex justify-end">
+                                <button type="button" id="cancelButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition mr-2">
+                                    Cancelar
+                                </button>
+                                <button type="submit" id="submitButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                                    Crear Badge
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Filtros y búsqueda de badges -->
+                    <div class="flex flex-col md:flex-row gap-4 mb-6">
+                        <div class="flex-grow">
+                            <div class="relative">
+                                <input type="text" id="searchBadges" placeholder="Buscar badges..." class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-300">
+                                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de badges -->
+                    <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
+                    <div id="badgesContainer" class="mt-4">
+                        <div class="flex justify-center my-8">
+                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-4 px-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
+        </div>
+    </footer>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Configurar persistencia para mantener la sesión
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            console.log("Persistencia de sesión configurada correctamente");
+        })
+        .catch((error) => {
+            console.error("Error al configurar persistencia de sesión:", error);
+        });
+    </script>
+
+    <!-- Script para gestión de badges -->
+    <script src="admin-panel-badges.js"></script>
+</body>
+</html>

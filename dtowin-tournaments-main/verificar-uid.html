@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar UID</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h1 class="text-2xl font-bold mb-4 text-center">Verificador de UID</h1>
+        
+        <div id="loading" class="text-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p>Verificando autenticación...</p>
+        </div>
+        
+        <div id="uid-result" class="hidden">
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold mb-2">Tu UID exacto es:</h2>
+                <div class="bg-gray-100 p-3 rounded overflow-auto break-all">
+                    <code id="uid-code"></code>
+                </div>
+                <button id="copy-btn" class="mt-2 text-blue-500 hover:underline text-sm">Copiar al portapapeles</button>
+            </div>
+            
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-2">Instrucciones:</h2>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Copia este UID exacto</li>
+                    <li>Úsalo en tus reglas de seguridad de Firestore</li>
+                    <li>Úsalo en el archivo firebase.js en la variable adminUIDs</li>
+                </ol>
+            </div>
+            
+            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p class="text-sm text-yellow-800">
+                    <strong>Importante:</strong> Asegúrate de usar exactamente este UID, respetando mayúsculas/minúsculas 
+                    y todos los caracteres especiales.
+                </p>
+            </div>
+            
+            <a href="index.html" class="block w-full bg-blue-500 hover:bg-blue-600 text-white py-2 text-center rounded-lg">
+                Volver al inicio
+            </a>
+        </div>
+        
+        <div id="no-auth" class="hidden text-center py-4">
+            <div class="text-red-500 text-5xl mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h2 class="text-xl font-semibold mb-2">No hay usuario autenticado</h2>
+            <p class="mb-4">Debes iniciar sesión primero para ver tu UID.</p>
+            <a href="index.html" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                Ir a iniciar sesión
+            </a>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+        
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+            authDomain: "dtowin-tournament.firebaseapp.com",
+            projectId: "dtowin-tournament",
+            storageBucket: "dtowin-tournament.appspot.com",
+            messagingSenderId: "991226820083",
+            appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+            measurementId: "G-R4Q5YKZXGY"
+        };
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        // Elementos DOM
+        const loadingDiv = document.getElementById('loading');
+        const uidResultDiv = document.getElementById('uid-result');
+        const noAuthDiv = document.getElementById('no-auth');
+        const uidCode = document.getElementById('uid-code');
+        const copyBtn = document.getElementById('copy-btn');
+        
+        // Verificar autenticación
+        onAuthStateChanged(auth, (user) => {
+            loadingDiv.classList.add('hidden');
+            
+            if (user) {
+                // Usuario autenticado
+                uidResultDiv.classList.remove('hidden');
+                uidCode.textContent = user.uid;
+                
+                // Copiar al portapapeles
+                copyBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(user.uid).then(() => {
+                        copyBtn.textContent = '✓ Copiado!';
+                        setTimeout(() => {
+                            copyBtn.textContent = 'Copiar al portapapeles';
+                        }, 2000);
+                    });
+                });
+            } else {
+                // No hay usuario autenticado
+                noAuthDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

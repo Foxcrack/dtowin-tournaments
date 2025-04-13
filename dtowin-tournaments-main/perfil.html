@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .notification {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="index.html" class="flex items-center">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+                    <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+                </a>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            </div>
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Section -->
+    <section class="py-16 px-4">
+        <div class="container mx-auto" id="profileContainer">
+            <!-- El contenido del perfil se cargará dinámicamente -->
+            <div class="flex justify-center py-8">
+                <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-8 px-4">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                    <h3 class="text-xl font-bold">Dtowin Torneos</h3>
+                </div>
+                <p class="text-sm opacity-80">La plataforma líder para organizar y participar en torneos competitivos.</p>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Enlaces</h4>
+                <ul class="space-y-2">
+                    <li><a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a></li>
+                    <li><a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a></li>
+                    <li><a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Soporte</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:text-gray-300 transition">FAQ</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Contacto</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Términos y Condiciones</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Privacidad</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Conóceme</h4>
+                <div class="flex space-x-4 mb-4">
+                    <a href="https://twfox.carrd.co" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fas fa-link"></i>
+                    </a>
+                </div>
+                <p class="text-sm opacity-80">Suscríbete para recibir noticias</p>
+                <div class="flex mt-2">
+                    <input type="email" placeholder="Tu correo" class="px-3 py-2 rounded-l-lg w-full focus:outline-none text-gray-700">
+                    <button class="bg-white text-orange-500 px-4 py-2 rounded-r-lg font-semibold hover:bg-gray-100 transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto mt-8 pt-8 border-t border-white border-opacity-20 text-center">
+            <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+                <p class="text-gray-600">Bienvenido de vuelta</p>
+                <!-- Mensaje de error -->
+                <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
+                        Correo electrónico
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="loginPassword" type="password" placeholder="******************">
+                    <a class="inline-block align-baseline font-bold text-sm text-orange-500 hover:text-orange-700" href="#">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+                
+                <div class="mb-6">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
+                        Iniciar Sesión
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Registro Modal -->
+    <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
+                <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+                <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="registroForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                        Nombre de usuario
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                        Correo electrónico (Gmail)
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="tucorreo@gmail.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                        Contraseña
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="******************">
+                </div>
+                
+                <div class="mb-6">
+                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
+                        Registrarse
+                    </button>
+                    <div class="text-center mt-4">
+                        <p class="text-gray-600 text-sm">o</p>
+                    </div>
+                    <button type="button" class="google-register-btn w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                        Continuar con Google
+                    </button>
+                </div>
+                
+                <p class="text-center text-gray-500 text-xs">
+                    Al registrarte aceptas nuestros términos y condiciones
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Plantillas para contenido dinámico -->
+    <template id="profileTemplate">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <!-- Encabezado del perfil -->
+            <div class="gradient-background text-white p-8">
+                <div class="flex flex-col md:flex-row items-center">
+                    <img id="profileAvatar" src="dtowin.png" alt="Usuario" class="w-24 h-24 rounded-full border-4 border-white mb-4 md:mb-0 md:mr-6">
+                    <div class="text-center md:text-left">
+                        <h2 id="profileUsername" class="text-3xl font-bold">Cargando...</h2>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas del usuario -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Puntos</p>
+                    <p id="profilePoints" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Torneos</p>
+                    <p id="profileTournaments" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Victorias</p>
+                    <p id="profileWins" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-500 text-sm">Ranking</p>
+                    <p id="profileRanking" class="text-2xl font-bold text-gray-800">#0</p>
+                </div>
+            </div>
+            
+            <!-- Opciones de perfil (solo visibles para el propio perfil) -->
+            <div id="profileOptions" class="p-6 border-b hidden">
+                <div class="flex justify-end space-x-4">
+                    <button id="editProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                        <i class="fas fa-edit mr-2"></i>Editar Perfil
+                    </button>
+                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Pestañas de contenido -->
+            <div class="p-6">
+                <div class="border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px">
+                        <li class="mr-2">
+                            <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">
+                                <i class="fas fa-certificate mr-2"></i>Badges
+                            </a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">
+                                <i class="fas fa-trophy mr-2"></i>Torneos
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Contenido de pestañas -->
+                <div class="py-4">
+                    <!-- Badges del usuario -->
+                    <div id="badges" class="tab-content">
+                        <h3 class="text-xl font-semibold mb-4">Mis Badges</h3>
+                        <div id="userBadges">
+                            <div class="flex justify-center">
+                                <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Historial de torneos -->
+                    <div id="tournaments" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4">Historial de Torneos</h3>
+                        <div id="userTournaments">
+                            <div class="flex justify-center">
+                                <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Modal de edición de perfil - Versión corregida -->
+    <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
+            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <h3 class="text-2xl font-bold text-gray-800 text-center mb-2">Editar Perfil</h3>
+            <p class="text-gray-600 text-center mb-4">Personaliza tu perfil</p>
+            <p id="editProfileErrorMsg" class="text-red-500 mt-2 text-sm text-center hidden"></p>
+            
+            <form id="editProfileForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">Nombre de usuario</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                        id="editUsername" 
+                        type="text" 
+                        placeholder="Tu nombre de usuario">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Foto de perfil</label>
+                    <div class="flex items-center mb-2">
+                        <img id="currentProfilePhoto" src="dtowin.png" alt="Foto actual" class="w-16 h-16 rounded-full object-cover mr-4">
+                        <label for="profilePhotoInput" class="bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600 cursor-pointer">
+                            <i class="fas fa-upload mr-2"></i>Cambiar foto
+                        </label>
+                        <input id="profilePhotoInput" type="file" accept="image/*" class="hidden">
+                    </div>
+                    <div id="photoPreviewContainer" class="hidden mt-2">
+                        <p class="text-sm text-gray-700 mb-1">Vista previa:</p>
+                        <img id="photoPreview" src="" alt="Vista previa" class="w-16 h-16 rounded-full object-cover">
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Banner de perfil</label>
+                    <p class="text-sm text-gray-600 mb-2">Selecciona uno de los banners disponibles:</p>
+                    <div id="bannerSelector" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
+                        <div class="flex justify-center items-center">
+                            <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                            <p class="text-gray-500 text-sm">Cargando banners...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-6">
+                    <button type="button" id="cancelEditProfile" class="bg-gray-300 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-400 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="saveProfileChanges" class="dtowin-primary text-white px-4 py-2 rounded font-semibold hover:opacity-90 transition">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <!-- Scripts para la autenticación y la carga del perfil -->
+    <script src="perfil.js"></script>
+</body>
+</html>

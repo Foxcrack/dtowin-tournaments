@@ -1,0 +1,606 @@
+/* Estilos para el visualizador de brackets */
+
+/* Estructura principal del bracket */
+.bracket-wrapper {
+    overflow-x: auto;
+    padding: 20px 0;
+    min-height: 600px;
+}
+
+.bracket {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-width: max-content;
+    position: relative; /* Para posicionar los conectores */
+}
+
+.round {
+    display: flex;
+    flex-direction: column;
+    margin-right: 60px; /* Más espacio entre rondas para los conectores */
+    min-width: 220px;
+}
+
+.round-title {
+    text-align: center;
+    font-weight: 600;
+    padding: 8px 0;
+    margin-bottom: 15px;
+    color: #333;
+    background-color: rgba(0, 66, 255, 0.1);
+    border-radius: 4px;
+}
+
+.matches {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Estilo del match individual */
+.match {
+    width: 220px;
+    margin-bottom: 20px;
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    background-color: white;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer; /* Añadido para indicar que es clicable */
+}
+
+.match:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Espaciadores entre matches */
+.match-spacer {
+    height: 40px;
+}
+
+/* Estilo para jugadores */
+.player {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eaeaea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.player:last-child {
+    border-bottom: none;
+}
+
+.player-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    font-size: 14px;
+}
+
+/* Estilos para ganadores y perdedores */
+.player.winner {
+    background-color: #e6f7ff;
+    border-left: 3px solid #1890ff;
+}
+
+.player.loser {
+    background-color: #fff1f0;
+    border-left: 3px solid #ff4d4f;
+    opacity: 0.8;
+}
+
+.player-score {
+    font-weight: bold;
+    min-width: 25px;
+    text-align: center;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+}
+
+.player-score.winner {
+    background-color: #1890ff;
+    color: white;
+}
+
+.player-score.loser {
+    background-color: #ff4d4f;
+    color: white;
+}
+
+/* Tooltip para Discord */
+.discord-tooltip {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10;
+    white-space: nowrap;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.player:hover .discord-tooltip {
+    display: block;
+}
+
+/* Conectores entre matches */
+.match-connector {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    width: 20px;
+    height: 2px;
+    background-color: #c0c0c0;
+}
+
+/* Conectores entre rondas */
+.bracket-connector {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Conector horizontal */
+.bracket-connector:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: #c0c0c0;
+}
+
+/* Conector vertical para posición superior */
+.connector-top:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2px;
+    height: 50%;
+    background-color: #c0c0c0;
+}
+
+/* Conector vertical para posición inferior */
+.connector-bottom:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    height: 50%;
+    background-color: #c0c0c0;
+}
+
+/* Estilos para TBD (To Be Determined) */
+.player-name:empty:after {
+    content: 'TBD';
+    color: #999;
+    font-style: italic;
+}
+
+/* Modal de actualización de resultados */
+.score-modal {
+    transition: all 0.3s ease;
+}
+
+/* Loading spinner */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    .match {
+        width: 180px;
+    }
+    
+    .player-name {
+        max-width: 120px;
+        font-size: 13px;
+    }
+    
+    .round {
+        margin-right: 40px;
+    }
+}
+
+/* Estilos para destacar el camino del ganador */
+.winner-path .match-connector {
+    background-color: #52c41a;
+}
+
+.winner-path.bracket-connector:before,
+.winner-path.connector-top:after,
+.winner-path.connector-bottom:after {
+    background-color: #52c41a;
+    height: 3px;
+}
+
+/* Estilo para el match final */
+.round:last-child .match {
+    border: 2px solid gold;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+/* Estilo para la badge del ganador */
+.winner-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background-color: gold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* NUEVOS ESTILOS PARA GESTIÓN DE PARTICIPANTES */
+
+/* Estilos para gestión de participantes */
+.participant-manager-modal {
+    transition: all 0.3s ease;
+}
+
+.participant-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.participant-table th {
+    font-weight: 600;
+    padding: 12px 8px;
+    text-align: left;
+    border-bottom: 2px solid #e0e0e0;
+    color: #333;
+}
+
+.participant-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eaeaea;
+    vertical-align: middle;
+}
+
+.participant-table tr:hover {
+    background-color: rgba(0, 66, 255, 0.05);
+}
+
+.participant-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.participant-email {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.checked-in {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+}
+
+.status-badge.not-checked-in {
+    background-color: #fff1f0;
+    color: #ff4d4f;
+    border: 1px solid #ffa39e;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn.remove {
+    color: #ff4d4f;
+}
+
+.action-btn.remove:hover {
+    color: #ff1f1f;
+}
+
+.action-btn.edit {
+    color: #1890ff;
+}
+
+.action-btn.edit:hover {
+    color: #0056b3;
+}
+
+/* Estilos mejorados para modales */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    transition: opacity 0.2s ease;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 0.75rem;
+    max-width: 500px;
+    width: 100%;
+    padding: 1.5rem;
+    position: relative;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.modal-subtitle {
+    font-size: 0.875rem;
+    color: #4a5568;
+    margin-top: 0.25rem;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: #a0aec0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: #4a5568;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel {
+    color: #4a5568;
+    background: none;
+    border: none;
+}
+
+.btn-cancel:hover {
+    color: #1a202c;
+}
+
+.btn-primary {
+    background-color: #0042ff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+}
+
+.btn-primary:hover {
+    background-color: #0037d5;
+}
+
+.btn-danger {
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+}
+
+.btn-danger:hover {
+    background-color: #ff1f1f;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.375rem;
+}
+
+.form-input {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid #cbd5e0;
+    background-color: white;
+    color: #2d3748;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #0042ff;
+    box-shadow: 0 0 0 3px rgba(0, 66, 255, 0.1);
+}
+
+.form-help {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-top: 0.25rem;
+}
+
+.form-error {
+    color: #ff4d4f;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* Spinner para estados de carga */
+.spinner {
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Mejoras específicas para el modal de participantes */
+#participant-manager-modal .modal-content {
+    max-width: 800px;
+    max-height: calc(100vh - 40px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#participants-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Notificaciones mejoradas */
+.notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    background-color: white;
+    color: #2d3748;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 100;
+    min-width: 300px;
+    max-width: 400px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.notification.success {
+    background-color: #f0fff4;
+    border-left: 4px solid #48bb78;
+}
+
+.notification.error {
+    background-color: #fff5f5;
+    border-left: 4px solid #f56565;
+}
+
+.notification.warning {
+    background-color: #fffaf0;
+    border-left: 4px solid #ed8936;
+}
+
+.notification.info {
+    background-color: #ebf8ff;
+    border-left: 4px solid #4299e1;
+}
+
+.notification-icon {
+    font-size: 1.25rem;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.notification-message {
+    font-size: 0.8125rem;
+}
+
+.notification-close {
+    color: #a0aec0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 0.25rem;
+}
+
+.notification-close:hover {
+    color: #4a5568;
+}
+
+/* Modificaciones para asegurar que los puntajes sean visibles */
+.player-score {
+    min-width: 30px;
+    text-align: center;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 8px;
+}
+
+/* Asegurarse de que los botones de actualizar/eliminar sean claramente visibles */
+.remove-participant-btn {
+    padding: 6px;
+    border-radius: 50%;
+    background-color: rgba(255, 77, 79, 0.1);
+    transition: all 0.2s;
+}
+
+.remove-participant-btn:hover {
+    background-color: rgba(255, 77, 79, 0.2);
+    transform: scale(1.1);
+}

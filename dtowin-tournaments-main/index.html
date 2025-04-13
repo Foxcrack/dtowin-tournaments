@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dtowin - Plataforma de Torneos y Eventos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            margin: 0 5px;
+            color: white;
+        }
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .tournament-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .notification {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            </div>
+            <button class="md:hidden text-xl" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="md:hidden hidden">
+            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="py-16 px-4 gradient-background text-white text-center">
+        <div class="container mx-auto flex flex-col items-center">
+            <img src="dtowin.png" alt="Dtowin Mascot" class="w-32 h-32 mb-6">
+            <h2 class="text-4xl font-bold mb-6">Bienvenido a la Plataforma de Torneos Dtowin</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.</p>
+            <button id="registerBtn" class="bg-white text-red-600 px-6 py-3 rounded-lg font-bold text-lg hover:bg-gray-200 transition shadow-lg">¡Regístrate Ahora!</button>
+        </div>
+    </section>
+
+    <!-- Torneos Section -->
+    <section id="torneos" class="py-16 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Torneos y Eventos</h2>
+            
+            <!-- Torneos En Progreso -->
+            <div id="en-proceso-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">En Progreso</h3>
+                <div id="torneos-en-proceso" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos en progreso se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Torneos Abiertos -->
+            <div id="abiertos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Inscripciones Abiertas</h3>
+                <div id="torneos-abiertos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos abiertos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Torneos en Check In -->
+            <div id="checkin-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Confirma tu Asistencia</h3>
+                <div id="torneos-checkin" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los torneos en check-in se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Próximos Torneos -->
+            <div id="proximos-section" class="mb-12">
+                <h3 class="text-2xl font-bold mb-6 text-gray-700">Próximamente</h3>
+                <div id="torneos-proximos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Los próximos torneos se cargarán dinámicamente -->
+                    <div class="col-span-full flex justify-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section id="leaderboard" class="py-16 px-4 bg-gray-50">
+        <div class="container mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global</h2>
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+                <div class="gradient-background text-white p-4">
+                    <div class="grid grid-cols-12 font-semibold">
+                        <div class="col-span-1 text-center">#</div>
+                        <div class="col-span-6">Jugador</div>
+                        <div class="col-span-2 text-center">Torneos</div>
+                        <div class="col-span-3 text-center">Puntos</div>
+                    </div>
+                </div>
+                <div id="leaderboardBody" class="divide-y divide-gray-200">
+                    <!-- El leaderboard se cargará dinámicamente -->
+                    <div class="col-span-12 p-4 text-center">
+                        <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mx-auto mb-2"></div>
+                        <p class="text-gray-500">Cargando leaderboard...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Registro Modal -->
+    <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+                <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
+                <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+                <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+        
+            <div class="mb-6">
+                <button type="button" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline hover:bg-gray-50 transition flex items-center justify-center google-register-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                    Continuar con Google
+                </button>
+            </div>
+        
+            <p class="text-center text-gray-500 text-xs">
+                Al registrarte aceptas nuestros términos y condiciones
+            </p>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+        <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="text-center mb-6">
+            <img src="dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
+            <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
+            <p class="text-gray-600">Bienvenido de vuelta</p>
+            <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+        </div>
+        
+        <div class="mb-6">
+            <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline hover:bg-gray-50 transition flex items-center justify-center">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                Continuar con Google
+            </button>
+        </div>
+        
+        <p class="text-center text-gray-500 text-xs">
+            ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
+        </p>
+    </div>
+</div>
+
+    <!-- Tournament Registration Modal -->
+    <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+            <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="text-center mb-6">
+                <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción al Torneo</h3>
+                <p class="text-gray-600">Completa la información para participar</p>
+                <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+            </div>
+            
+            <form id="tournamentRegistrationForm">
+                <input type="hidden" id="current-tournament-id" value="">
+                <div class="mb-4">
+                    <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                    <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
+                    <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                    <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
+                    <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
+                </div>
+                
+                <div class="flex items-center justify-end">
+                    <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
+                        Confirmar Inscripción
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-8 px-4">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                    <h3 class="text-xl font-bold">Dtowin Torneos</h3>
+                </div>
+                <p class="text-sm opacity-80">La plataforma líder para organizar y participar en torneos competitivos.</p>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Enlaces</h4>
+                <ul class="space-y-2">
+                    <li><a href="#inicio" class="hover:text-gray-300 transition">Inicio</a></li>
+                    <li><a href="#torneos" class="hover:text-gray-300 transition">Torneos</a></li>
+                    <li><a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Blog</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Soporte</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="hover:text-gray-300 transition">FAQ</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Contacto</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Términos y Condiciones</a></li>
+                    <li><a href="#" class="hover:text-gray-300 transition">Privacidad</a></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-lg mb-4">Conóceme</h4>
+                <div class="flex space-x-4 mb-4">
+                    <a href="https://twfox.carrd.co" target="_blank" class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center hover:bg-opacity-30 transition">
+                        <i class="fas fa-link"></i>
+                    </a>
+                </div>
+                <p class="text-sm opacity-80">Suscríbete para recibir noticias</p>
+                <div class="flex mt-2">
+                    <input type="email" placeholder="Tu correo" class="px-3 py-2 rounded-l-lg w-full focus:outline-none text-gray-700">
+                    <button class="bg-white text-orange-500 px-4 py-2 rounded-r-lg font-semibold hover:bg-gray-100 transition">Enviar</button>
+                </div>
+            </div>
+        </div>
+        <div class="container mx-auto mt-8 pt-8 border-t border-white border-opacity-20 text-center">
+            <p>&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script type="module">
+    // Importar Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+    import {
+        getAuth,
+        signInWithPopup,
+        GoogleAuthProvider
+    } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+    import {
+        getFirestore,
+        collection,
+        doc,
+        getDoc,
+        setDoc,
+        updateDoc,
+        query,
+        where,
+        getDocs,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+    
+    // Configuración de Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
+    };
+    
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // Hacer disponible para scripts en línea
+    window.firebase = {
+        auth: getAuth,
+        firestore: getFirestore
+    };
+    
+    // Importar módulos principales
+    import { loadTournaments } from './torneos.js';
+    import { loadLeaderboard } from './leaderboard.js';
+    import { initRegistrationModule } from './registration.js';
+    
+    // Referencias a elementos DOM
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const loginModal = document.getElementById('loginModal');
+    const registroModal = document.getElementById('registroModal');
+    const closeLoginModal = document.getElementById('closeLoginModal');
+    const closeRegisterModal = document.getElementById('closeRegisterModal');
+    const showRegisterLink = document.getElementById('showRegisterLink');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const googleRegisterBtn = document.querySelector('.google-register-btn');
+    
+    // Función para mostrar el modal de login
+    function showLoginModal() {
+        if (loginModal) {
+            loginModal.classList.remove('hidden');
+            loginModal.classList.add('flex');
+        }
+    }
+    
+    // Eventos para mostrar/ocultar modales
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+            if (auth.currentUser) {
+                window.location.href = 'perfil.html';
+            } else {
+                showLoginModal();
+            }
+        });
+    }
+    
+    if (registerBtn) {
+        registerBtn.addEventListener('click', () => {
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+    }
+    
+    if (closeLoginModal) {
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+        });
+    }
+    
+    if (closeRegisterModal) {
+        closeRegisterModal.addEventListener('click', () => {
+            registroModal.classList.add('hidden');
+            registroModal.classList.remove('flex');
+        });
+    }
+    
+    if (showRegisterLink) {
+        showRegisterLink.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+            registroModal.classList.remove('hidden');
+            registroModal.classList.add('flex');
+        });
+    }
+    
+    // Función para actualizar la UI cuando el usuario inicia sesión
+    async function updateUIForLoggedInUser(user) {
+        console.log("Actualizando UI para usuario logueado:", user.uid);
+        
+        if (loginBtn) {
+            loginBtn.innerHTML = `
+                <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                    <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
+                </div>
+            `;
+            
+            loginBtn.removeEventListener('click', showLoginModal);
+            loginBtn.addEventListener('click', () => {
+                window.location.href = 'perfil.html';
+            });
+        }
+        
+        if (registerBtn) {
+            registerBtn.style.display = 'none';
+        }
+    }
+    
+    // Función para login con Google
+    async function loginWithGoogle() {
+        try {
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            
+            // Verificar si el usuario existe en la base de datos
+            await ensureUserProfileExists(result.user);
+            
+            return result.user;
+        } catch (error) {
+            console.error("Error al iniciar sesión con Google:", error);
+            throw error;
+        }
+    }
+    
+    // Función para verificar/crear perfil de usuario
+    async function ensureUserProfileExists(user) {
+        try {
+            // Buscar el usuario por uid
+            const usersRef = collection(db, "usuarios");
+            const q = query(usersRef, where("uid", "==", user.uid));
+            const querySnapshot = await getDocs(q);
+            
+            // Si no existe, crear el perfil
+            if (querySnapshot.empty) {
+                console.log("El usuario no existe en la base de datos, creando perfil...");
+                
+                // Datos básicos del usuario
+                const userData = {
+                    uid: user.uid,
+                    email: user.email,
+                    nombre: user.displayName || "Usuario",
+                    photoURL: user.photoURL || null,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    puntos: 0,
+                    victorias: 0,
+                    torneos: [],
+                    badges: {}
+                };
+                
+                // Guardar los datos del usuario
+                await setDoc(doc(db, "usuarios", user.uid), userData);
+                console.log("Perfil de usuario creado correctamente");
+                
+                return userData;
+            } else {
+                console.log("Usuario encontrado en la base de datos");
+                return querySnapshot.docs[0].data();
+            }
+        } catch (error) {
+            console.error("Error al verificar/crear perfil de usuario:", error);
+            throw error;
+        }
+    }
+    
+    // Configurar login con Google
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', async () => {
+            try {
+                // Mostrar carga
+                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleLoginBtn.disabled = true;
+                
+                // Intentar login
+                const user = await loginWithGoogle();
+                console.log("Login exitoso:", user);
+                
+                // Cerrar modal
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+                
+                // Actualizar UI
+                updateUIForLoggedInUser(user);
+                
+                // Mostrar mensaje
+                mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
+                
+            } catch (error) {
+                console.error("Error en inicio de sesión:", error);
+                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleLoginBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Lo mismo para registro con Google
+    if (googleRegisterBtn) {
+        googleRegisterBtn.addEventListener('click', async () => {
+            try {
+                // Mostrar carga
+                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                googleRegisterBtn.disabled = true;
+                
+                // Usar mismo método que login
+                const user = await loginWithGoogle();
+                console.log("Registro exitoso:", user);
+                
+                // Cerrar modal
+                registroModal.classList.add('hidden');
+                registroModal.classList.remove('flex');
+                
+                // Actualizar UI
+                updateUIForLoggedInUser(user);
+                
+                // Mostrar mensaje
+                mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                
+                // Recargar torneos para actualizar botones de inscripción
+                loadTournaments();
+                
+            } catch (error) {
+                console.error("Error en registro:", error);
+                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+            } finally {
+                // Restaurar botón
+                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                googleRegisterBtn.disabled = false;
+            }
+        });
+    }
+    
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+    
+    // Exponer la función globalmente
+    window.mostrarNotificacion = mostrarNotificacion;
+    
+    // Función para comprobar si el usuario es admin y mostrar el botón correspondiente
+    async function checkAndShowAdminButton() {
+        try {
+            const user = auth.currentUser;
+            
+            if (!user) {
+                console.log("No hay usuario autenticado");
+                return;
+            }
+            
+            // Verificar si el usuario es administrador
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"]; // Asegúrate de que coincida con tu UID de admin
+            const isAdmin = adminUIDs.includes(user.uid);
+            console.log("¿El usuario actual es admin?", isAdmin);
+            
+            // Si el usuario es admin, mostrar el botón de Admin
+            if (isAdmin) {
+                // Buscar el elemento de navegación donde queremos añadir el botón
+                const navLinks = document.querySelector(".hidden.md\\:flex.items-center.space-x-6");
+                
+                if (navLinks) {
+                    // Crear el botón de Admin
+                    const adminButton = document.createElement("a");
+                    adminButton.href = "admin-panel.html";
+                    adminButton.className = "bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition";
+                    adminButton.textContent = "Admin";
+                    
+                    // Insertar antes del botón de "Mi Perfil" o al final si no existe
+                    const profileLink = navLinks.querySelector('a[href="perfil.html"]');
+                    if (profileLink) {
+                        navLinks.insertBefore(adminButton, profileLink.nextSibling);
+                    } else {
+                        navLinks.appendChild(adminButton);
+                    }
+                    
+                    // También agregar al menú móvil si existe
+                    const mobileMenu = document.getElementById("mobileMenu");
+                    if (mobileMenu) {
+                        const mobileMenuLinks = mobileMenu.querySelector("div");
+                        if (mobileMenuLinks) {
+                            const mobileAdminLink = document.createElement("a");
+                            mobileAdminLink.href = "admin-panel.html";
+                            mobileAdminLink.className = "bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition inline-block";
+                            mobileAdminLink.textContent = "Admin";
+                            mobileMenuLinks.appendChild(mobileAdminLink);
+                        }
+                    }
+                    
+                    console.log("Botón de Admin añadido correctamente");
+                } else {
+                    console.error("No se pudo encontrar la barra de navegación");
+                }
+            }
+        } catch (error) {
+            console.error("Error al verificar permisos de admin:", error);
+        }
+    }
+    
+    // Configurar menú móvil
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', function() {
+            if (mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.remove('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                mobileMenu.classList.add('hidden');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
+    }
+    
+    // Cargar torneos y leaderboard al iniciar la página
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log("DOM cargado, inicializando la aplicación...");
+        
+        // Inicializar módulo de registro
+        initRegistrationModule();
+        
+        // Cargar torneos
+        await loadTournaments();
+        
+        // Cargar leaderboard
+        await loadLeaderboard();
+        
+        // Verificar si hay usuario autenticado
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                
+                // Actualizar UI para usuario logueado
+                try {
+                    await updateUIForLoggedInUser(user);
+                    
+                    // Verificar si es admin
+                    await checkAndShowAdminButton();
+                    
+                    // Recargar torneos para actualizar botones de inscripción
+                    await loadTournaments();
+                } catch (error) {
+                    console.error("Error al actualizar UI:", error);
+                }
+            } else {
+                console.log("No hay usuario autenticado");
+            }
+        });
+    });
+    </script>
+
+    <!-- Script para arreglar botones de inscripción -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Inicializando script para botones de inscripción...");
+        
+        function configurarBotonesInscripcion() {
+            // Buscar todos los botones de inscripción por su clase
+            const inscripcionBtns = document.querySelectorAll('.inscribirse-btn');
+            console.log("Botones de inscripción encontrados:", inscripcionBtns.length);
+            
+            inscripcionBtns.forEach(btn => {
+                // Reemplazar el event listener
+                const newBtn = btn.cloneNode(true);
+                if (btn.parentNode) {
+                    btn.parentNode.replaceChild(newBtn, btn);
+                }
+                
+                newBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    console.log("Botón de inscripción clickeado");
+                    
+                    // Obtener ID del torneo y nombre
+                    const torneoId = this.dataset.torneoId || this.getAttribute('data-torneo-id');
+                    const torneoNombre = this.dataset.torneoNombre || this.getAttribute('data-torneo-nombre') || "Torneo";
+                    
+                    if (!torneoId) {
+                        console.error("No se pudo encontrar el ID del torneo");
+                        alert("Error al identificar el torneo. Por favor, intenta de nuevo.");
+                        return;
+                    }
+                    
+                    console.log("Intentando inscribirse al torneo:", torneoId, torneoNombre);
+                    
+                    // Mostrar formulario de inscripción
+                    mostrarFormularioInscripcion(torneoId, torneoNombre);
+                });
+            });
+        }
+        
+        // Función para mostrar el formulario de inscripción
+        function mostrarFormularioInscripcion(torneoId, torneoNombre) {
+            // Verificar si el usuario está autenticado
+            if (!firebase.auth().currentUser) {
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) {
+                    loginModal.classList.remove('hidden');
+                    loginModal.classList.add('flex');
+                } else {
+                    alert("Debes iniciar sesión para inscribirte a un torneo");
+                }
+                return;
+            }
+            
+            // Buscar o crear el modal de inscripción
+            let registrationModal = document.getElementById('tournamentRegistrationModal');
+            
+            if (registrationModal) {
+                // Actualizar título y datos
+                const titleEl = document.getElementById('registrationTitle');
+                if (titleEl) {
+                    titleEl.textContent = `Inscripción: ${torneoNombre}`;
+                }
+                
+                // Actualizar el ID del torneo
+                const torneoIdField = document.getElementById('current-tournament-id');
+                if (torneoIdField) {
+                    torneoIdField.value = torneoId;
+                }
+                
+                // Limpiar errores y formulario
+                const errorMsg = document.getElementById('registrationErrorMsg');
+                if (errorMsg) errorMsg.textContent = '';
+                
+                const form = document.getElementById('tournamentRegistrationForm');
+                if (form) form.reset();
+                
+                // Mostrar el modal
+                registrationModal.classList.remove('hidden');
+                registrationModal.classList.add('flex');
+                console.log("Modal de inscripción mostrado correctamente");
+            } else {
+                console.error("No se encontró el modal de inscripción");
+                alert("Error al cargar el formulario de inscripción. Por favor, intenta de nuevo.");
+            }
+        }
+        
+        // Ejecutar cuando la página cargue completamente
+        setTimeout(configurarBotonesInscripcion, 1000);
+        // Intentar otra vez después de 3 segundos para asegurar que se cargaron los torneos
+        setTimeout(configurarBotonesInscripcion, 3000);
+    });
+    </script>
+
+    <!-- Script para arreglar botones check-in -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Inicializando script de arreglo para check-in...");
+    
+        function configurarBotonesCheckIn() {
+            // Buscar todos los botones de check-in (usando clase en lugar de selector inválido)
+            const checkInBtns = document.querySelectorAll('.checkin-btn');
+            console.log("Botones de check-in encontrados:", checkInBtns.length);
+        
+            checkInBtns.forEach(btn => {
+                // Reemplazar el event listener
+                const newBtn = btn.cloneNode(true);
+                if (btn.parentNode) {
+                    btn.parentNode.replaceChild(newBtn, btn);
+                }
+            
+                newBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    console.log("Botón de check-in clickeado");
+                
+                    // Obtener el ID del torneo
+                    const torneoId = this.dataset.torneoId || 
+                                    this.getAttribute('data-torneo-id');
+                                
+                    if (!torneoId) {
+                        console.error("No se pudo encontrar el ID del torneo");
+                        alert("Error al identificar el torneo. Por favor, intenta de nuevo.");
+                        return;
+                    }
+                
+                    // Mostrar estado de carga
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
+                    this.disabled = true;
+                
+                    try {
+                        // Implementación directa del check-in para evitar problemas de índices
+                        if (!firebase.auth().currentUser) {
+                            throw new Error("Debes iniciar sesión para hacer check-in");
+                        }
+                    
+                        const user = firebase.auth().currentUser;
+                        const db = firebase.firestore();
+                    
+                        // Actualizar directamente en dos pasos separados
+                        const participantInfoSnapshot = await db.collection("participant_info")
+                            .where("userId", "==", user.uid)
+                            .where("tournamentId", "==", torneoId)
+                            .get();
+                    
+                        if (!participantInfoSnapshot.empty) {
+                            await db.collection("participant_info").doc(participantInfoSnapshot.docs[0].id).update({
+                                checkedIn: true,
+                                checkedInAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        
+                            // Actualizar el documento del torneo también
+                            const torneoDoc = await db.collection("torneos").doc(torneoId).get();
+                            if (torneoDoc.exists) {
+                                const torneoData = torneoDoc.data();
+                                const checkedInParticipants = torneoData.checkedInParticipants || [];
+                            
+                                if (!checkedInParticipants.includes(user.uid)) {
+                                    await db.collection("torneos").doc(torneoId).update({
+                                        checkedInParticipants: [...checkedInParticipants, user.uid]
+                                    });
+                                }
+                            }
+                        
+                            // Actualizar UI
+                            this.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Asistencia Confirmada';
+                            this.classList.add("bg-green-500");
+                            this.classList.remove("bg-purple-600", "hover:bg-purple-700");
+                            this.disabled = true;
+                        
+                            // Mensaje de éxito
+                            window.mostrarNotificacion("¡Has confirmado tu asistencia correctamente!", "success");
+                        
+                            // Recargar página
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            throw new Error("No se encontró tu información de inscripción");
+                        }
+                    } catch (error) {
+                        console.error("Error al hacer check-in:", error);
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                        window.mostrarNotificacion("Error: " + error.message, "error");
+                    }
+                });
+            });
+        }
+    
+        // Ejecutar cuando la página cargue
+        setTimeout(configurarBotonesCheckIn, 1000);
+        setTimeout(configurarBotonesCheckIn, 3000); // Intentar otra vez después de 3 segundos para asegurar que se cargaron los torneos
+    });
+    </script>
+</body>
+</html>
