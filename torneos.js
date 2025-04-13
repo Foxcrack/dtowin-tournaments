@@ -154,10 +154,17 @@ async function getBannerForTournament(torneo) {
         }
         
         // If the tournament has a bannerId, get the corresponding banner
-        if (torneo.bannerId) {
+        if (torneo.bannerId && typeof torneo.bannerId === 'string') {
+            console.log(`Attempting to get banner with bannerId: ${torneo.bannerId}`);
             const bannerDoc = await getDoc(doc(db, "banners", torneo.bannerId));
             
             if (bannerDoc.exists()) {
+                console.log(`Banner found with bannerId: ${torneo.bannerId}`);
+                const bannerData = bannerDoc.data();
+                // Use imageData or imageUrl from the banner
+                return bannerData.imageData || bannerData.imageUrl || null;
+            } else {
+                console.log(`No banner found with bannerId: ${torneo.bannerId}`);
                 const bannerData = bannerDoc.data();
                 // Use imageData or imageUrl from the banner
                 return bannerData.imageData || bannerData.imageUrl || null;
