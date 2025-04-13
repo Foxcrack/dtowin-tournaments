@@ -1166,16 +1166,35 @@ document.addEventListener("DOMContentLoaded", function() {
                             saveProfileChanges.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
                             saveProfileChanges.disabled = true;
                         }
+
+                        if (!newProfilePhoto) {
+                            console.log("No se seleccionó nueva foto, omitiendo subida");
+                        }
                         
                         console.log("7. Subiendo nueva foto (si existe)...");
                         // Subir archivo
                         const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
                         await fileRef.put(newProfilePhoto);
                         
+                        const uploadTask = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`).put(newProfilePhoto);
+                        
+                        // Observar el progreso de la subida
+                        uploadTask.on('state_changed', 
+                            (snapshot) => {
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                console.log('Subida en progreso:', progress + '%');
+                                saveProfileChanges.textContent = `Subiendo... ${Math.round(progress)}%`;
+                            }, 
+                            (error) => {
+                                console.error("Error en la subida:", error);
+                                mostrarNotificacion("Error al subir la imagen", "error");
+                            }
+                        );
+
                         // Obtener la URL después de la subida
-                        const photoURL = await fileRef.getDownloadURL();
+                        const photoURL = await uploadTask.snapshot.ref.getDownloadURL();
                         console.log("photoURL: ", photoURL);
-                        // Actualizar foto en Auth
+                        // Actualizar foto en Auth                            
                         console.log("Actualizando foto en Auth");
                         await firebase.auth().currentUser.updateProfile({
                             photoURL: photoURL,
