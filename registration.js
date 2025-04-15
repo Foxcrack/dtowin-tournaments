@@ -257,21 +257,20 @@ export async function getTournamentParticipantsInfo(tournamentId) {
     try {
         console.log("Getting participants info for tournament:", tournamentId);
         
-        // Objeto para almacenar la información de los participantes
-        const participantsInfo = [];
+        // Array para almacenar la información de los participantes
+        const participantNames = [];
         
         // Obtener información de la colección participant_info
-         const participantInfoRef = collection(db, "participant_info");
+        const participantInfoRef = collection(db, "participant_info");
         const participantInfoQuery = query(
             participantInfoRef,
             where("tournamentId", "==", tournamentId),
             where("active", "==", true)
         );
-        
+
         const participantInfoSnapshot = await getDocs(participantInfoQuery);
-        
         console.log(`Found ${participantInfoSnapshot.size} participants in participant_info collection`);
-        
+
         // Procesar los resultados de la consulta
         participantInfoSnapshot.forEach(doc => {
             const data = doc.data();
@@ -279,16 +278,16 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                 participantsInfo.push(data.playerName);
              }
 
-        
             console.log(`Participant info from participant_info: ${data.userId} - ${data.playerName}`);
         });
-        
+
+
         // Obtener documento del torneo para obtener los participantes
         const tournamentRef = doc(db, "torneos", tournamentId);
         const tournamentSnap = await getDoc(tournamentRef);
         
         if (!tournamentSnap.exists()) {
-            console.error("El torneo no existe");
+            console.error("El torneo no existe en  getTournamentParticipantsInfo");
             return participantsInfo;
         }
         
@@ -296,14 +295,14 @@ export async function getTournamentParticipantsInfo(tournamentId) {
         const participants = tournamentData.participants || [];
         const checkedInParticipants = tournamentData.checkedInParticipants || [];
         
-        console.log(`Tournament has ${participants.length} registered participants and ${checkedInParticipants.length} checked-in participants`);
-        
-        const existingUserIds = new Set(participantInfoSnapshot.docs.map(doc => doc.data().userId));
+        console.log(`Tournament has ${participants.length} registered participants and ${checkedInParticipants.length} checked-in participants en  getTournamentParticipantsInfo`);
+
+        const existingUserIds = new Set(participantInfoSnapshot.docs.map(doc => doc.data().userId)); // Usamos Set para mejor performance
         // Para cualquier participante que no esté en participant_info, buscar en usuarios
-        const missingParticipants = participants.filter(userId => !existingUserIds.has(userId));
-        
+        const missingParticipants = participants.filter(userId => !existingUserIds.has(userId)); // Verificar si existe en la lista de users ID
+
         if (missingParticipants.length > 0) {
-            console.log(`Looking up ${missingParticipants.length} participants missing from participant_info`);
+            console.log(`Looking up ${missingParticipants.length} participants missing from participant_info en  getTournamentParticipantsInfo`);
             
             // Buscar datos en la colección de usuarios para participantes faltantes
             const usersPromises = missingParticipants.map(async (userId) => {
@@ -330,7 +329,7 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                                 
                                 console.log(`Found manual participant: ${userId} - ${manualData.playerName}`);
                                 break;
-                            }
+                            }    
                         }
                         
                         // Si no se encontró, usar datos genéricos
@@ -344,36 +343,29 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                     
                     // Buscar en la colección usuarios
                     const userRef = doc(db, "usuarios", userId);
-                    const userSnap = await getDoc(userRef);
-                    
+                    const userSnap = await getDoc(userRef);                
                     if (userSnap.exists()) {
                         const userData = userSnap.data();
-                        if(userData.nombre){
-                            participantsInfo.push(userData.nombre);
-                        }
-                        console.log(`Participant info from usuarios: ${userId} - ${userData.nombre}`);
+                        if (userData.nombre) {
+                            participantNames.push(userData.nombre);
+                           }
+                        console.log(`Participant info from usuarios: ${userId} - ${userData.nombre} en  getTournamentParticipantsInfo`);
                     } else {
-                        // Datos genéricos para usuarios que no existen
-                        participantsInfo.push(`Usuario #${userId.substring(0, 6)}`);
+                     // Datos genéricos para usuarios que no existen
+                     participantsInfo.push(`Usuario #${userId.substring(0, 6)}`);
                         
                         console.log(`No info found for participant: ${userId}, using generic name`);
                     }
                 }catch (error) {
                     console.error(`Error getting info for participant ${userId}:`, error);
-                    // Aún así, proporcionar datos genéricos
-                    participantsInfo[userId] = {
-                        playerName: `Usuario #${userId.substring(0, 6)}`,
-                        discordUsername: null,
-                        email: null,
-                        checkedIn: checkedInParticipants.includes(userId)
-                    }
+                    participantsInfo.push(`Usuario #${userId.substring(0, 6)}`);
                 }
             });
             
             // Esperar a que todas las consultas se completen
             await Promise.all(usersPromises);
         }
-
+        
         console.log(`Final participant info count: ${participantsInfo.length}`);
         return participantsInfo;
         
@@ -382,7 +374,7 @@ export async function getTournamentParticipantsInfo(tournamentId) {
         return {}; // Devolver objeto vacío en caso de error
     }
 }
-
+    
 // Get user registered tournaments
 export async function getUserTournaments() {
     try {
