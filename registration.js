@@ -685,51 +685,54 @@ export function showRegistrationModal(tournamentId, tournamentName) {
     }
 
     // Buscar o crear el modal
-    let registrationModal = document.getElementById('tournamentRegistrationModal');
-    
-    if (!registrationModal) {
-        // Crear el modal dinámicamente
-        const modalHTML = `
-        <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-                <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="text-center mb-6">
-                    <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción: ${tournamentName}</h3>
-                    <p class="text-gray-600">Completa la información para participar</p>
-                    <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
-                </div>
-                
-                <form id="tournamentRegistrationForm">
-                    <input type="hidden" id="tournamentId" value="${tournamentId}">
-                    <div class="mb-4">
-                        <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
-                        <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
-                        <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
-                    </div>
-                    
-                    <div class="mb-6">
-                        <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
-                        <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
-                        <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
-                    </div>
-                    
-                    <div class="flex items-center justify-end">
-                        <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
-                            Cancelar
-                        </button>
-                        <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">
-                            Confirmar Inscripción
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>`;
-        
+    let registrationModal = document.getElementById('tournamentRegistrationModal');    
+    let modalExists = false;
+
+    if (registrationModal) {
+        modalExists = true;
+        // Actualizar título y datos
+        document.getElementById('registrationTitle').textContent = `Inscripción: ${tournamentName}`;
+        document.getElementById('tournamentId').value = tournamentId;
+        document.getElementById('registrationErrorMsg').textContent = '';
+        document.getElementById('tournamentRegistrationForm').reset();
+
+    } else {
+        // Crear el modal dinámicamente si no existe
+          const modalHTML = `
+          <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+              <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
+                  <button id="closeRegistrationModalBtn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                      <i class="fas fa-times"></i>
+                  </button>
+                  <div class="text-center mb-6">
+                      <h3 id="registrationTitle" class="text-2xl font-bold text-gray-800">Inscripción: ${tournamentName}</h3>
+                      <p class="text-gray-600">Completa la información para participar</p>
+                      <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
+                  </div>
+                  
+                  <form id="tournamentRegistrationForm">
+                      <input type="hidden" id="tournamentId" value="${tournamentId}">
+                      <div class="mb-4">
+                          <label for="playerName" class="block text-gray-700 text-sm font-bold mb-2">Nombre de Jugador *</label>
+                          <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
+                          <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
+                      </div>
+                      <div class="mb-6">
+                          <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
+                          <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
+                          <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
+                      </div>
+                      <div class="flex items-center justify-end">
+                          <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">Cancelar</button>
+                          <button type="submit" id="registrationSubmitBtn" class="dtowin-blue text-white py-2 px-6 rounded-lg hover:opacity-90 transition font-semibold">Confirmar Inscripción</button>
+                      </div>
+                  </form>
+              </div>
+          </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        registrationModal = document.getElementById('tournamentRegistrationModal');
-        
+        registrationModal = document.getElementById('tournamentRegistrationModal');        
+    }
+
         // Configurar eventos
         document.getElementById('closeRegistrationModalBtn').addEventListener('click', () => {
             registrationModal.classList.add('hidden');
@@ -741,14 +744,10 @@ export function showRegistrationModal(tournamentId, tournamentName) {
             registrationModal.classList.remove('flex');
         });
         
-        document.getElementById('tournamentRegistrationForm').addEventListener('submit', handleRegistrationSubmit);
-    } else {
-        // Actualizar título y datos
-        document.getElementById('registrationTitle').textContent = `Inscripción: ${tournamentName}`;
-        document.getElementById('tournamentId').value = tournamentId;
-        document.getElementById('registrationErrorMsg').textContent = '';
-        document.getElementById('tournamentRegistrationForm').reset();
-    }
+        document.getElementById('tournamentRegistrationForm').addEventListener('submit', handleRegistrationSubmit);    
+
+
+   
     
     // Mostrar modal
     registrationModal.classList.remove('hidden');
@@ -867,10 +866,27 @@ export function initRegistrationModule() {
     
     // Ejecutar configuraciones cuando el DOM esté listo
     if (document.readyState === 'loading') {
+        // Si el DOM está cargando, agregar un listener para cuando termine
         document.addEventListener('DOMContentLoaded', () => {
+            // Configurar botones de check-in con un retraso de 1 segundo
             setTimeout(configurarBotonesCheckIn, 1000);
+            
+            // Importar la función configurarBotonesInscripcion
+            import('./index.js').then(module => {
+                // Configurar botones de inscripción con un retraso de 1 segundo
+                setTimeout(module.configurarBotonesInscripcion, 1000);
+            });
         });
     } else {
+        // Si el DOM ya está cargado, ejecutar configuraciones directamente
         setTimeout(configurarBotonesCheckIn, 1000);
+        
+        // Importar la función configurarBotonesInscripcion
+        import('./index.js').then(module => {
+            // Configurar botones de inscripción con un retraso de 1 segundo
+            setTimeout(module.configurarBotonesInscripcion, 1000);
+        });
     }
+
+    console.log("Módulo de registro inicializado");
 }
