@@ -768,8 +768,37 @@ async function renderTournaments(containerId, torneos) {
                             <h4 class="font-semibold text-gray-700">Participantes:</h4>
                             <span class="text-sm font-medium ${lleno ? 'text-red-500' : 'text-green-500'}">${inscritos}/${capacidad}</span>
                         </div>
-                        <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto" id="participants-${torneo.id}">
-                            <p class="text-center text-gray-500 text-xs">Cargando participantes...</p>
+                        <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto">
+                            <ul class="space-y-1">
+                                ${(() => {
+                                    let participantsHtml = '';
+                                    const maxToShow = Math.min(5, participants.length);
+                                    
+                                    for (let i = 0; i < maxToShow; i++) {
+                                        const participantId = participants[i];
+                                        const participantInfo = participantsInfoCache[torneo.id] && participantsInfoCache[torneo.id][participantId];
+                                        const playerName = participantInfo ? participantInfo.playerName : 'Usuario Desconocido';
+                                        const discordUsername = participantInfo ? participantInfo.discordUsername : null
+                                        const checkedIn = participantInfo ? participantInfo.checkedIn : false
+                                        
+                                        participantsHtml += `
+                                            <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
+                                                <i class="fas fa-user text-gray-400 mr-1"></i>
+                                                ${playerName}
+                                                ${checkedIn ? '<i class="fas fa-check-circle text-green-500 ml-1" title="Check-in completado"></i>' : ''}
+                                                ${discordUsername ? `
+                                                <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
+                                                    Discord: ${discordUsername}
+                                                </div>` : ''}
+                                            </li>
+                                        `;
+                                    }
+                                    if (participants.length > maxToShow) {
+                                        participantsHtml += `<li class="text-xs text-center text-gray-500 mt-1">Y ${participants.length - maxToShow} participantes más...</li>`;
+                                    }
+                                    return participantsHtml;
+                                })()}
+                            </ul>
                         </div>
                     </div>
                     <div class="bg-gray-100 rounded-lg p-3 mb-4">
@@ -785,11 +814,6 @@ async function renderTournaments(containerId, torneos) {
     }
     
     container.innerHTML = html;
-    
-    // Load participant list for each tournament
-    for (const torneo of torneos) {
-        await loadParticipants(torneo.id, torneo.participants || []);
-    }
 }
 
 // Load participants for a tournament
