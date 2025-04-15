@@ -154,17 +154,10 @@ async function getBannerForTournament(torneo) {
         }
         
         // If the tournament has a bannerId, get the corresponding banner
-        if (torneo.bannerId && typeof torneo.bannerId === 'string') {
-            console.log(`Attempting to get banner with bannerId: ${torneo.bannerId}`);
+        if (torneo.bannerId) {
             const bannerDoc = await getDoc(doc(db, "banners", torneo.bannerId));
             
             if (bannerDoc.exists()) {
-                console.log(`Banner found with bannerId: ${torneo.bannerId}`);
-                const bannerData = bannerDoc.data();
-                // Use imageData or imageUrl from the banner
-                return bannerData.imageData || bannerData.imageUrl || null;
-            } else {
-                console.log(`No banner found with bannerId: ${torneo.bannerId}`);
                 const bannerData = bannerDoc.data();
                 // Use imageData or imageUrl from the banner
                 return bannerData.imageData || bannerData.imageUrl || null;
@@ -581,8 +574,14 @@ async function renderTournaments(containerId, torneos) {
         const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
         
         // Check if current user is registered
-        const estaInscrito = userAuthenticated && currentUser && participants.includes(currentUser.uid) &&
-                             participantsInfoCache[torneo.id] && participantsInfoCache[torneo.id][currentUser.uid];
+        const estaInscrito = userAuthenticated && currentUser && participants.includes(currentUser.uid);
+        
+        // Check if user has registered with additional info
+        let hasAdditionalInfo = false;
+        if (estaInscrito && currentUser) {
+            hasAdditionalInfo = participantsInfoCache[torneo.id] && 
+                                participantsInfoCache[torneo.id][currentUser.uid];
+        }
         
         // Determine registration button state
         let botonInscripcion = '';
@@ -597,7 +596,7 @@ async function renderTournaments(containerId, torneos) {
                 `;
             } else if (estaInscrito) {
                 // User authenticated and registered - Show unregistration button
-                 botonInscripcion = `
+                botonInscripcion = `
                     <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
                         Desinscribirse
                     </button>
@@ -768,37 +767,8 @@ async function renderTournaments(containerId, torneos) {
                             <h4 class="font-semibold text-gray-700">Participantes:</h4>
                             <span class="text-sm font-medium ${lleno ? 'text-red-500' : 'text-green-500'}">${inscritos}/${capacidad}</span>
                         </div>
-                        <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto">
-                            <ul class="space-y-1">
-                                ${(() => {
-                                    let participantsHtml = '';
-                                    const maxToShow = Math.min(5, participants.length);
-                                    
-                                    for (let i = 0; i < maxToShow; i++) {
-                                        const participantId = participants[i];
-                                        const participantInfo = participantsInfoCache[torneo.id] && participantsInfoCache[torneo.id][participantId];
-                                        const playerName = participantInfo ? participantInfo.playerName : 'Usuario Desconocido';
-                                        const discordUsername = participantInfo ? participantInfo.discordUsername : null
-                                        const checkedIn = participantInfo ? participantInfo.checkedIn : false
-                                        
-                                        participantsHtml += `
-                                            <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
-                                                <i class="fas fa-user text-gray-400 mr-1"></i>
-                                                ${playerName}
-                                                ${checkedIn ? '<i class="fas fa-check-circle text-green-500 ml-1" title="Check-in completado"></i>' : ''}
-                                                ${discordUsername ? `
-                                                <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
-                                                    Discord: ${discordUsername}
-                                                </div>` : ''}
-                                            </li>
-                                        `;
-                                    }
-                                    if (participants.length > maxToShow) {
-                                        participantsHtml += `<li class="text-xs text-center text-gray-500 mt-1">Y ${participants.length - maxToShow} participantes más...</li>`;
-                                    }
-                                    return participantsHtml;
-                                })()}
-                            </ul>
+                        <div class="participants-list text-sm text-gray-600 max-h-20 overflow-y-auto" id="participants-${torneo.id}">
+                            <p class="text-center text-gray-500 text-xs">Cargando participantes...</p>
                         </div>
                     </div>
                     <div class="bg-gray-100 rounded-lg p-3 mb-4">
@@ -814,6 +784,11 @@ async function renderTournaments(containerId, torneos) {
     }
     
     container.innerHTML = html;
+    
+    // Load participant list for each tournament
+    for (const torneo of torneos) {
+        await loadParticipants(torneo.id, torneo.participants || []);
+    }
 }
 
 // Load participants for a tournament
@@ -826,37 +801,59 @@ async function loadParticipants(torneoId, participantIds) {
         return;
     }
     
-    try {    
-        // Use getTournamentParticipantsInfo to get player names
-        const participantNames = await getTournamentParticipantsInfo(torneoId);
-        
-        if (!participantNames || participantNames.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500 text-xs">No hay participantes inscritos</p>';
-            return;
-        }
-    
+    try {
         let html = '<ul class="space-y-1">';
-        const maxToShow = Math.min(5, participantNames.length); // Show maximum 5 participants
-    
-        for (let i = 0; i < maxToShow; i++) {
-            const { playerName, discordUsername, checkedIn } = participantNames[i];
-    
-            // Add participant to list with check-in status indicator
-            html += `
-                <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
-                    <i class="fas fa-user text-gray-400 mr-1"></i>
-                    ${playerName}
-                    ${checkedIn ? '<i class="fas fa-check-circle text-green-500 ml-1" title="Check-in completado"></i>' : ''}
-                    ${discordUsername ? `
-                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
-                            Discord: ${discordUsername}
-                        </div>
-                    ` : ''}
-                </li>
-            `;
-        }
-    
+        const maxToShow = Math.min(5, participantIds.length); // Show maximum 5 participants
         
+        // Check if we have cached participants info
+        const tournamentParticipantsInfo = participantsInfoCache[torneoId] || {};
+        
+        for (let i = 0; i < maxToShow; i++) {
+            try {
+                const uid = participantIds[i];
+                
+                // Try to get player name from cache
+                let playerName = null;
+                let discordUsername = null;
+                let checkedIn = false;
+                
+                if (tournamentParticipantsInfo[uid]) {
+                    playerName = tournamentParticipantsInfo[uid].playerName;
+                    discordUsername = tournamentParticipantsInfo[uid].discordUsername;
+                    checkedIn = tournamentParticipantsInfo[uid].checkedIn || false;
+                }
+                
+                // If not in cache, try to get from users collection
+                if (!playerName) {
+                    const usersRef = collection(db, "usuarios");
+                    const q = query(usersRef, where("uid", "==", uid), limit(1));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        const userData = querySnapshot.docs[0].data();
+                        playerName = userData.nombre || 'Usuario';
+                    } else {
+                        playerName = 'Usuario';
+                    }
+                }
+                
+                // Add participant to list with check-in status indicator
+                html += `
+                    <li class="text-xs ${discordUsername ? 'cursor-pointer hover:text-blue-600 group relative' : ''}">
+                        <i class="fas fa-user text-gray-400 mr-1"></i>
+                        ${playerName}
+                        ${checkedIn ? '<i class="fas fa-check-circle text-green-500 ml-1" title="Check-in completado"></i>' : ''}
+                        ${discordUsername ? `
+                            <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 z-10">
+                                Discord: ${discordUsername}
+                            </div>
+                        ` : ''}
+                    </li>
+                `;
+            } catch (e) {
+                console.error(`Error loading individual participant:`, e);
+            }
+        }
         
         // If there are more participants, show how many more
         if (participantIds.length > maxToShow) {
@@ -866,10 +863,10 @@ async function loadParticipants(torneoId, participantIds) {
                 </li>
             `;
         }
-    
+        
         html += '</ul>';
         container.innerHTML = html;
-    
+        
     } catch (error) {
         console.error(`Error loading participants for tournament ${torneoId}:`, error);
         container.innerHTML = '<p class="text-center text-gray-500 text-xs">Error al cargar participantes</p>';
