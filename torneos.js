@@ -581,14 +581,8 @@ async function renderTournaments(containerId, torneos) {
         const lleno = torneo.capacidad && inscritos >= torneo.capacidad;
         
         // Check if current user is registered
-        const estaInscrito = userAuthenticated && currentUser && participants.includes(currentUser.uid);
-        
-        // Check if user has registered with additional info
-        let hasAdditionalInfo = false;
-        if (estaInscrito && currentUser) {
-            hasAdditionalInfo = participantsInfoCache[torneo.id] && 
-                                participantsInfoCache[torneo.id][currentUser.uid];
-        }
+        const estaInscrito = userAuthenticated && currentUser && participants.includes(currentUser.uid) &&
+                             participantsInfoCache[torneo.id] && participantsInfoCache[torneo.id][currentUser.uid];
         
         // Determine registration button state
         let botonInscripcion = '';
@@ -603,7 +597,7 @@ async function renderTournaments(containerId, torneos) {
                 `;
             } else if (estaInscrito) {
                 // User authenticated and registered - Show unregistration button
-                botonInscripcion = `
+                 botonInscripcion = `
                     <button class="w-full dtowin-red text-white py-2 rounded-lg hover:opacity-90 transition font-semibold desinscribirse-btn" data-torneo-id="${torneo.id}">
                         Desinscribirse
                     </button>
