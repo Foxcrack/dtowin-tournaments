@@ -258,10 +258,10 @@ export async function getTournamentParticipantsInfo(tournamentId) {
         console.log("Getting participants info for tournament:", tournamentId);
         
         // Objeto para almacenar la información de los participantes
-        const participantsInfo = {};
+        const participantsInfo = [];
         
         // Obtener información de la colección participant_info
-        const participantInfoRef = collection(db, "participant_info");
+         const participantInfoRef = collection(db, "participant_info");
         const participantInfoQuery = query(
             participantInfoRef,
             where("tournamentId", "==", tournamentId),
@@ -275,13 +275,11 @@ export async function getTournamentParticipantsInfo(tournamentId) {
         // Procesar los resultados de la consulta
         participantInfoSnapshot.forEach(doc => {
             const data = doc.data();
-            participantsInfo[data.userId] = {
-                playerName: data.playerName || "Usuario",
-                discordUsername: data.discordUsername || null,
-                email: data.email || null,
-                checkedIn: data.checkedIn || false
-            };
-            
+            if (data.playerName) {
+                participantsInfo.push(data.playerName);
+             }
+
+        
             console.log(`Participant info from participant_info: ${data.userId} - ${data.playerName}`);
         });
         
@@ -300,8 +298,9 @@ export async function getTournamentParticipantsInfo(tournamentId) {
         
         console.log(`Tournament has ${participants.length} registered participants and ${checkedInParticipants.length} checked-in participants`);
         
+        const existingUserIds = new Set(participantInfoSnapshot.docs.map(doc => doc.data().userId));
         // Para cualquier participante que no esté en participant_info, buscar en usuarios
-        const missingParticipants = participants.filter(userId => !participantsInfo[userId]);
+        const missingParticipants = participants.filter(userId => !existingUserIds.has(userId));
         
         if (missingParticipants.length > 0) {
             console.log(`Looking up ${missingParticipants.length} participants missing from participant_info`);
@@ -325,13 +324,9 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                             if (manualData && manualData.createdAt && 
                                 userId.includes(manualData.createdAt.toMillis ? 
                                     manualData.createdAt.toMillis() : 0)) {
-                                
-                                participantsInfo[userId] = {
-                                    playerName: manualData.playerName || "Usuario Manual",
-                                    discordUsername: manualData.discordUsername || null,
-                                    email: manualData.email || null,
-                                    checkedIn: checkedInParticipants.includes(userId)
-                                };
+                                if (manualData.playerName){
+                                    participantsInfo.push(manualData.playerName);
+                                }
                                 
                                 console.log(`Found manual participant: ${userId} - ${manualData.playerName}`);
                                 break;
@@ -339,13 +334,9 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                         }
                         
                         // Si no se encontró, usar datos genéricos
-                        if (!participantsInfo[userId]) {
-                            participantsInfo[userId] = {
-                                playerName: `Participante #${userId.substring(0, 6)}`,
-                                discordUsername: null,
-                                email: null,
-                                checkedIn: checkedInParticipants.includes(userId)
-                            };
+                        if (!participantsInfo.find(p => p.includes(userId.substring(0,6)))) {
+                            participantsInfo.push(`Participante #${userId.substring(0, 6)}`);
+                                
                         }
                         
                         return;
@@ -357,26 +348,17 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                     
                     if (userSnap.exists()) {
                         const userData = userSnap.data();
-                        participantsInfo[userId] = {
-                            playerName: userData.nombre || "Usuario",
-                            discordUsername: userData.discordUsername || null,
-                            email: userData.email || null,
-                            checkedIn: checkedInParticipants.includes(userId)
-                        };
-                        
+                        if(userData.nombre){
+                            participantsInfo.push(userData.nombre);
+                        }
                         console.log(`Participant info from usuarios: ${userId} - ${userData.nombre}`);
                     } else {
                         // Datos genéricos para usuarios que no existen
-                        participantsInfo[userId] = {
-                            playerName: `Usuario #${userId.substring(0, 6)}`,
-                            discordUsername: null,
-                            email: null,
-                            checkedIn: checkedInParticipants.includes(userId)
-                        };
+                        participantsInfo.push(`Usuario #${userId.substring(0, 6)}`);
                         
                         console.log(`No info found for participant: ${userId}, using generic name`);
                     }
-                } catch (error) {
+                }catch (error) {
                     console.error(`Error getting info for participant ${userId}:`, error);
                     // Aún así, proporcionar datos genéricos
                     participantsInfo[userId] = {
@@ -384,29 +366,15 @@ export async function getTournamentParticipantsInfo(tournamentId) {
                         discordUsername: null,
                         email: null,
                         checkedIn: checkedInParticipants.includes(userId)
-                    };
+                    }
                 }
             });
             
             // Esperar a que todas las consultas se completen
             await Promise.all(usersPromises);
         }
-        
-        // Verificar que todos los participantes con check-in tengan información
-        for (const userId of checkedInParticipants) {
-            if (!participantsInfo[userId]) {
-                participantsInfo[userId] = {
-                    playerName: `Usuario #${userId.substring(0, 6)}`,
-                    discordUsername: null,
-                    email: null,
-                    checkedIn: true
-                };
-                
-                console.log(`Added generic info for checked-in participant: ${userId}`);
-            }
-        }
-        
-        console.log(`Final participant info count: ${Object.keys(participantsInfo).length}`);
+
+        console.log(`Final participant info count: ${participantsInfo.length}`);
         return participantsInfo;
         
     } catch (error) {
