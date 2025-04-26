@@ -728,8 +728,10 @@ export function showRegistrationModal(tournamentId, tournamentName) {
         registrationModal = document.getElementById('tournamentRegistrationModal');
     } else {
         // Si ya existe, actualizar valores
-        document.getElementById('registrationTitle').textContent = `Inscripción: ${tournamentName}`;
-        document.getElementById('tournamentId').value = tournamentId;
+        const titleEl = document.getElementById('registrationTitle');
+        const idInput = document.getElementById('tournamentId');
+        if (titleEl) titleEl.textContent = `Inscripción: ${tournamentName}`;
+        if (idInput) idInput.value = tournamentId;
         document.getElementById('registrationErrorMsg').textContent = '';
         document.getElementById('tournamentRegistrationForm').reset();
     }
