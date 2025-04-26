@@ -676,7 +676,6 @@ export async function hasUserRegisteredWithInfo(tournamentId) {
 
 // Mostrar modal de inscripción
 export function showRegistrationModal(tournamentId, tournamentName) {
-    // Verificar si el usuario está autenticado
     if (!isAuthenticated()) {
         window.mostrarNotificacion("Debes iniciar sesión para inscribirte", "error");
         const loginBtn = document.getElementById('loginBtn');
@@ -684,11 +683,10 @@ export function showRegistrationModal(tournamentId, tournamentName) {
         return;
     }
 
-    // Buscar o crear el modal
     let registrationModal = document.getElementById('tournamentRegistrationModal');
-    
+
     if (!registrationModal) {
-        // Crear el modal dinámicamente
+        // Crear el modal si no existe
         const modalHTML = `
         <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
             <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
@@ -700,7 +698,7 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                     <p class="text-gray-600">Completa la información para participar</p>
                     <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
                 </div>
-                
+
                 <form id="tournamentRegistrationForm">
                     <input type="hidden" id="tournamentId" value="${tournamentId}">
                     <div class="mb-4">
@@ -708,13 +706,13 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                         <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
                         <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
                     </div>
-                    
+
                     <div class="mb-6">
                         <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
                         <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
                         <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
                     </div>
-                    
+
                     <div class="flex items-center justify-end">
                         <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
                             Cancelar
@@ -726,31 +724,33 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                 </form>
             </div>
         </div>`;
-        
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         registrationModal = document.getElementById('tournamentRegistrationModal');
-        
-        // Configurar eventos
-        document.getElementById('closeRegistrationModalBtn').addEventListener('click', () => {
-            registrationModal.classList.add('hidden');
-            registrationModal.classList.remove('flex');
-        });
-        
-        document.getElementById('cancelRegistrationBtn').addEventListener('click', () => {
-            registrationModal.classList.add('hidden');
-            registrationModal.classList.remove('flex');
-        });
-        
-        document.getElementById('tournamentRegistrationForm').addEventListener('submit', handleRegistrationSubmit);
     } else {
-        // Actualizar título y datos
+        // Si ya existe, actualizar valores
         document.getElementById('registrationTitle').textContent = `Inscripción: ${tournamentName}`;
         document.getElementById('tournamentId').value = tournamentId;
         document.getElementById('registrationErrorMsg').textContent = '';
         document.getElementById('tournamentRegistrationForm').reset();
     }
-    
-    // Mostrar modal
+
+    // 🔄 Siempre conectar los botones (por si se perdieron los listeners)
+    document.getElementById('closeRegistrationModalBtn')?.addEventListener('click', () => {
+        registrationModal.classList.add('hidden');
+        registrationModal.classList.remove('flex');
+    });
+
+    document.getElementById('cancelRegistrationBtn')?.addEventListener('click', () => {
+        registrationModal.classList.add('hidden');
+        registrationModal.classList.remove('flex');
+    });
+
+    // ✅ Confirmar inscripción (submit)
+    const form = document.getElementById('tournamentRegistrationForm');
+    if (form) {
+        form.onsubmit = handleRegistrationSubmit; // esto evita múltiples .addEventListener
+    }
+
     registrationModal.classList.remove('hidden');
     registrationModal.classList.add('flex');
 }
