@@ -726,6 +726,32 @@ export function showRegistrationModal(tournamentId, tournamentName) {
         </div>`;
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         registrationModal = document.getElementById('tournamentRegistrationModal');
+        
+        const closeBtn = registrationModal.querySelector('#closeRegistrationModalBtn');
+        const cancelBtn = registrationModal.querySelector('#cancelRegistrationBtn');
+        const form = registrationModal.querySelector('#tournamentRegistrationForm');
+
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                registrationModal.classList.add('hidden');
+                registrationModal.classList.remove('flex');
+            };
+        }
+
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                registrationModal.classList.add('hidden');
+                registrationModal.classList.remove('flex');
+            };
+        }
+
+        if (form) {
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                handleRegistrationSubmit();
+            };
+        }
+
     } else {
         // Si ya existe, actualizar valores
         const titleEl = document.getElementById('registrationTitle');
