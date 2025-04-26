@@ -686,7 +686,6 @@ export function showRegistrationModal(tournamentId, tournamentName) {
     let registrationModal = document.getElementById('tournamentRegistrationModal');
 
     if (!registrationModal) {
-        // Crear el modal si no existe
         const modalHTML = `
         <div id="tournamentRegistrationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
             <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
@@ -698,7 +697,6 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                     <p class="text-gray-600">Completa la información para participar</p>
                     <p id="registrationErrorMsg" class="text-red-500 mt-2 text-sm"></p>
                 </div>
-
                 <form id="tournamentRegistrationForm">
                     <input type="hidden" id="tournamentId" value="${tournamentId}">
                     <div class="mb-4">
@@ -706,13 +704,11 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                         <input type="text" id="playerName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Nombre que usarás en el torneo" required>
                         <p class="text-xs text-gray-500 mt-1">Este nombre se mostrará en la lista de participantes y brackets</p>
                     </div>
-
                     <div class="mb-6">
                         <label for="discordUsername" class="block text-gray-700 text-sm font-bold mb-2">Discord (opcional)</label>
                         <input type="text" id="discordUsername" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tu usuario de Discord (ej: username#1234)">
                         <p class="text-xs text-gray-500 mt-1">Será utilizado para comunicación durante el torneo</p>
                     </div>
-
                     <div class="flex items-center justify-end">
                         <button type="button" id="cancelRegistrationBtn" class="text-gray-600 mr-4 hover:text-gray-800">
                             Cancelar
@@ -724,73 +720,55 @@ export function showRegistrationModal(tournamentId, tournamentName) {
                 </form>
             </div>
         </div>`;
+
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         registrationModal = document.getElementById('tournamentRegistrationModal');
-        
-        const closeBtn = registrationModal.querySelector('#closeRegistrationModalBtn');
-        const cancelBtn = registrationModal.querySelector('#cancelRegistrationBtn');
-        const form = registrationModal.querySelector('#tournamentRegistrationForm');
 
-        if (closeBtn) {
-            closeBtn.onclick = () => {
-                registrationModal.classList.add('hidden');
-                registrationModal.classList.remove('flex');
-            };
-        }
+        setTimeout(() => {
+            const closeBtn = registrationModal.querySelector('#closeRegistrationModalBtn');
+            const cancelBtn = registrationModal.querySelector('#cancelRegistrationBtn');
+            const form = registrationModal.querySelector('#tournamentRegistrationForm');
 
-        if (cancelBtn) {
-            cancelBtn.onclick = () => {
-                registrationModal.classList.add('hidden');
-                registrationModal.classList.remove('flex');
-            };
-        }
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    registrationModal.classList.add('hidden');
+                    registrationModal.classList.remove('flex');
+                };
+            }
 
-        if (form) {
-            form.onsubmit = (e) => {
-                e.preventDefault();
-                handleRegistrationSubmit();
-            };
-        }
+            if (cancelBtn) {
+                cancelBtn.onclick = () => {
+                    registrationModal.classList.add('hidden');
+                    registrationModal.classList.remove('flex');
+                };
+            }
+
+            if (form) {
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    handleRegistrationSubmit(e);
+                };
+            }
+
+            registrationModal.classList.remove('hidden');
+            registrationModal.classList.add('flex');
+
+        }, 0);
 
     } else {
-        // Si ya existe, actualizar valores
+        // Modal ya existía ➔ actualizar datos y mostrar
         const titleEl = document.getElementById('registrationTitle');
         const idInput = document.getElementById('tournamentId');
         if (titleEl) titleEl.textContent = `Inscripción: ${tournamentName}`;
         if (idInput) idInput.value = tournamentId;
         document.getElementById('registrationErrorMsg').textContent = '';
         document.getElementById('tournamentRegistrationForm').reset();
-    }
 
-    // 🔄 SIEMPRE reconectar botones cada vez que abrimos el modal
-    const closeBtn = document.getElementById('closeRegistrationModalBtn');
-    if (closeBtn) {
-        closeBtn.onclick = () => {
-            registrationModal.classList.add('hidden');
-            registrationModal.classList.remove('flex');
-        };
+        registrationModal.classList.remove('hidden');
+        registrationModal.classList.add('flex');
     }
+}
 
-    const cancelBtn = document.getElementById('cancelRegistrationBtn');
-    if (cancelBtn) {
-        cancelBtn.onclick = () => {
-            registrationModal.classList.add('hidden');
-            registrationModal.classList.remove('flex');
-        };
-    }
-
-    const form = document.getElementById('tournamentRegistrationForm');
-    if (form) {
-        form.onsubmit = (e) => {
-            e.preventDefault(); // Prevenir submit normal
-            handleRegistrationSubmit(); // Llama a la función que registra
-        };
-    }
-
-    // ✅ Finalmente mostrar el modal
-    registrationModal.classList.remove('hidden');
-    registrationModal.classList.add('flex');
-    }
 
 // Manejar envío del formulario de inscripción
 async function handleRegistrationSubmit(e) {
