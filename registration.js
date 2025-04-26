@@ -736,26 +736,35 @@ export function showRegistrationModal(tournamentId, tournamentName) {
         document.getElementById('tournamentRegistrationForm').reset();
     }
 
-    // 🔄 Siempre conectar los botones (por si se perdieron los listeners)
-    document.getElementById('closeRegistrationModalBtn')?.addEventListener('click', () => {
-        registrationModal.classList.add('hidden');
-        registrationModal.classList.remove('flex');
-    });
-
-    document.getElementById('cancelRegistrationBtn')?.addEventListener('click', () => {
-        registrationModal.classList.add('hidden');
-        registrationModal.classList.remove('flex');
-    });
-
-    // ✅ Confirmar inscripción (submit)
-    const form = document.getElementById('tournamentRegistrationForm');
-    if (form) {
-        form.onsubmit = handleRegistrationSubmit; // esto evita múltiples .addEventListener
+    // 🔄 SIEMPRE reconectar botones cada vez que abrimos el modal
+    const closeBtn = document.getElementById('closeRegistrationModalBtn');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            registrationModal.classList.add('hidden');
+            registrationModal.classList.remove('flex');
+        };
     }
 
+    const cancelBtn = document.getElementById('cancelRegistrationBtn');
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            registrationModal.classList.add('hidden');
+            registrationModal.classList.remove('flex');
+        };
+    }
+
+    const form = document.getElementById('tournamentRegistrationForm');
+    if (form) {
+        form.onsubmit = (e) => {
+            e.preventDefault(); // Prevenir submit normal
+            handleRegistrationSubmit(); // Llama a la función que registra
+        };
+    }
+
+    // ✅ Finalmente mostrar el modal
     registrationModal.classList.remove('hidden');
     registrationModal.classList.add('flex');
-}
+    }
 
 // Manejar envío del formulario de inscripción
 async function handleRegistrationSubmit(e) {
