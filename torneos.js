@@ -428,22 +428,20 @@ async function loadTournaments() {
             if (checkInContainer) {
                 await renderTournamentSection('checkin-section', 'torneos-checkin', torneosCheckIn);
             }
-            
-            // Configure registration/unregistration buttons
+
+            // ✅ Configurar botones después de renderizar
             setupTournamentButtons();
-            
+
             console.log("Tournaments loaded successfully");
-            
+
         } catch (error) {
             console.error("Error querying tournaments:", error);
             showErrorMessage();
         }
-        
     } catch (error) {
         console.error("Error loading tournaments:", error);
         showErrorMessage();
     }
-}
 
 // Preload participants info for all tournaments
 async function preloadAllParticipantsInfo(tournamentIds) {
