@@ -776,12 +776,15 @@ async function handleRegistrationSubmit(e) {
     const submitBtn = document.getElementById('registrationSubmitBtn');
     const errorMsg = document.getElementById('registrationErrorMsg');
     
+    // ✨ Aquí guardas el contenido original del botón
+    const originalBtnContent = submitBtn.innerHTML;
+
     if (!playerName) {
         errorMsg.textContent = "El nombre de jugador es obligatorio";
         return;
     }
     
-    // Mostrar estado de carga
+    // Mostrar estado de carga (spinner)
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
     
@@ -803,9 +806,9 @@ async function handleRegistrationSubmit(e) {
     } catch (error) {
         errorMsg.textContent = error.message || "Error al inscribirse al torneo";
         
-        // Restaurar botón
+        // Restaurar el botón original bonito
         submitBtn.disabled = false;
-        submitBtn.textContent = "Confirmar Inscripción";
+        submitBtn.innerHTML = originalBtnContent;
     }
 }
 
