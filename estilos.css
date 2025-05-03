@@ -1,0 +1,71 @@
+/* Fondo general y estilo retro */
+body {
+    font-family: 'Press Start 2P', cursive;
+    background-color: #1c1c1c;
+    color: #f5f5f5;
+    padding: 20px;
+    margin: 0;
+    text-align: center;
+  }
+  
+  /* Encabezados llamativos */
+  h1 {
+    color: #00ffcc;
+    font-size: 24px;
+    text-shadow: 2px 2px #000;
+    margin-bottom: 40px;
+  }
+  
+  h2 {
+    color: #ff66cc;
+    font-size: 20px;
+    margin-top: 40px;
+    text-shadow: 1px 1px #000;
+  }
+  
+  h3 {
+    color: #ffff66;
+    font-size: 16px;
+    margin-top: 30px;
+    text-shadow: 1px 1px #000;
+  }
+  
+  /* Lista ordenada centrada */
+  ol {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  /* Estilo para cada ítem de imagen o video */
+  li {
+    background-color: #2e2e2e;
+    border: 3px solid #444;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 0 10px #00ffcc55;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  li:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #00ffccaa;
+  }
+  
+  /* Estilo para imágenes y videos */
+  img, video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  
+  /* Enlaces de video clickeables */
+  a video {
+    cursor: pointer;
+    border: 2px solid #ff66cc;
+  }
+  
