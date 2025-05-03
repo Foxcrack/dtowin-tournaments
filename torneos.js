@@ -1008,7 +1008,8 @@ function setupTournamentButtons() {
 }
 
 // Exportar funciones para uso en otros módulos
-export {
-    loadTournaments,
-    getTournamentBadges
-};
+try {
+    export { loadTournaments, getTournamentBadges };
+} catch (e) {
+    // Si no se está ejecutando como módulo, ignoramos el error
+}
