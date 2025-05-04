@@ -1,0 +1,141 @@
+/* Estilo general */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f3f4f6;
+    color: #333;
+}
+
+/* Tarjeta del botón */
+.tournament-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tournament-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Botón dentro de la tarjeta */
+.tournament-card button {
+    background: linear-gradient(to right, #0042ff, #ff3000);
+    border: none;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tournament-card button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(to right, #0033cc, #e62900);
+}
+
+/* Texto dentro del botón */
+.tournament-card button h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+/* Header */
+header h1 {
+    color: #1f2937;
+}
+
+nav a {
+    transition: color 0.2s ease;
+}
+
+nav a:hover {
+    color: #ff6b1a;
+}
+
+/* Responsive grid */
+@media (max-width: 768px) {
+    .grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Contenedor general */
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 2rem;
+}
+
+/* Header */
+header {
+    background: white;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* Título */
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    background: linear-gradient(to right, #0042ff, #ff3000);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Navegación */
+nav a {
+    color: #4b5563;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+nav a:hover {
+    background-color: #f3f4f6;
+    color: #ff6b1a;
+}
+
+/* Main */
+main h2 {
+    font-size: 2rem;
+    color: #1f2937;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+main p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+}

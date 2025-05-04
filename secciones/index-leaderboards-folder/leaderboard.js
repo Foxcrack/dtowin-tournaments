@@ -1,5 +1,5 @@
 // leaderboard.js - Script para la gestión del leaderboard global
-import { auth, db } from './firebase.js';
+import { auth, db } from '../../firebase.js';
 import { 
     collection, 
     getDocs, 

@@ -265,246 +265,246 @@
     </div>
 
     <!-- Scripts -->
+
     <script type="module">
-    // Script principal para leaderboard-completo.html
-    import { 
-        loginWithGoogle, 
-        auth, 
-        getUserProfile, 
-        logoutUser 
-    } from './firebase.js';
-    
-    import { loadFullLeaderboard } from './leaderboard.js';
-    
-    // Referencias a elementos DOM
-    const loginBtn = document.getElementById('loginBtn');
-    const loginModal = document.getElementById('loginModal');
-    const registroModal = document.getElementById('registroModal');
-    const closeLoginModal = document.getElementById('closeLoginModal');
-    const closeRegisterModal = document.getElementById('closeRegisterModal');
-    const showRegisterLink = document.getElementById('showRegisterLink');
-    const googleLoginBtn = document.getElementById('googleLoginBtn');
-    const googleRegisterBtn = document.querySelector('.google-register-btn');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    // Función para mostrar el modal de login
-    function showLoginModal() {
-        if (loginModal) {
-            loginModal.classList.remove('hidden');
-            loginModal.classList.add('flex');
-        }
-    }
-    
-    // Eventos para mostrar/ocultar modales
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
-            if (auth.currentUser) {
-                window.location.href = 'perfil.html';
-            } else {
-                showLoginModal();
-            }
-        });
-    }
-    
-    if (closeLoginModal) {
-        closeLoginModal.addEventListener('click', () => {
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-        });
-    }
-    
-    if (closeRegisterModal) {
-        closeRegisterModal.addEventListener('click', () => {
-            registroModal.classList.add('hidden');
-            registroModal.classList.remove('flex');
-        });
-    }
-    
-    if (showRegisterLink) {
-        showRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-            registroModal.classList.remove('hidden');
-            registroModal.classList.add('flex');
-        });
-    }
-    
-    // Configurar login con Google
-    if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleLoginBtn.disabled = true;
-                
-                // Intentar login
-                const user = await loginWithGoogle();
-                console.log("Login exitoso:", user);
-                
-                // Cerrar modal
-                loginModal.classList.add('hidden');
-                loginModal.classList.remove('flex');
-                
-                // Actualizar UI
-                updateUIForLoggedInUser(user);
-                
-                // Mostrar mensaje
-                mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
-                
-                // Recargar leaderboard
-                loadFullLeaderboard();
-                
-            } catch (error) {
-                console.error("Error en inicio de sesión:", error);
-                mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleLoginBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Lo mismo para registro con Google
-    if (googleRegisterBtn) {
-        googleRegisterBtn.addEventListener('click', async () => {
-            try {
-                // Mostrar carga
-                googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
-                googleRegisterBtn.disabled = true;
-                
-                // Usar mismo método que login
-                const user = await loginWithGoogle();
-                console.log("Registro exitoso:", user);
-                
-                // Cerrar modal
-                registroModal.classList.add('hidden');
-                registroModal.classList.remove('flex');
-                
-                // Actualizar UI
-                updateUIForLoggedInUser(user);
-                
-                // Mostrar mensaje
-                mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
-                
-                // Recargar leaderboard
-                loadFullLeaderboard();
-                
-            } catch (error) {
-                console.error("Error en registro:", error);
-                mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
-            } finally {
-                // Restaurar botón
-                googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
-                googleRegisterBtn.disabled = false;
-            }
-        });
-    }
-    
-    // Función para actualizar la UI cuando el usuario inicia sesión
-    async function updateUIForLoggedInUser(user) {
-        console.log("Actualizando UI para usuario logueado:", user.uid);
+        import { 
+            loginWithGoogle, 
+            auth, 
+            getUserProfile, 
+            logoutUser 
+        } from '../../firebase.js';
         
+        import { loadFullLeaderboard } from './leaderboard.js';
+        
+        // Referencias a elementos DOM
+        const loginBtn = document.getElementById('loginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const registroModal = document.getElementById('registroModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const showRegisterLink = document.getElementById('showRegisterLink');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const googleRegisterBtn = document.querySelector('.google-register-btn');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        // Función para mostrar el modal de login
+        function showLoginModal() {
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+            }
+        }
+        
+        // Eventos para mostrar/ocultar modales
         if (loginBtn) {
-            loginBtn.innerHTML = `
-                <div class="flex items-center bg-white rounded-lg px-3 py-1">
-                    <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-                    <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
-                </div>
-            `;
-            
-            loginBtn.removeEventListener('click', showLoginModal);
-            loginBtn.addEventListener('click', () => {
-                window.location.href = 'perfil.html';
+            loginBtn.addEventListener('click', function() {
+                if (auth.currentUser) {
+                    window.location.href = 'perfil.html';
+                } else {
+                    showLoginModal();
+                }
             });
         }
-    }
-    
-    // Configurar menú móvil
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', function() {
-            if (mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.remove('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                mobileMenu.classList.add('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            }
-        });
-    }
-    
-    // Función para mostrar notificaciones
-    function mostrarNotificacion(mensaje, tipo = "info") {
-        // Verificar si ya existe una notificación
-        const existingNotification = document.querySelector('.notification');
-        if (existingNotification) {
-            existingNotification.remove();
+        
+        if (closeLoginModal) {
+            closeLoginModal.addEventListener('click', () => {
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+            });
         }
         
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        
-        // Clases según el tipo de notificación
-        let bgColor = 'bg-blue-500';
-        let icon = 'info-circle';
-        
-        if (tipo === 'success') {
-            bgColor = 'bg-green-500';
-            icon = 'check-circle';
-        } else if (tipo === 'error') {
-            bgColor = 'bg-red-500';
-            icon = 'exclamation-circle';
-        } else if (tipo === 'warning') {
-            bgColor = 'bg-yellow-500';
-            icon = 'exclamation-triangle';
+        if (closeRegisterModal) {
+            closeRegisterModal.addEventListener('click', () => {
+                registroModal.classList.add('hidden');
+                registroModal.classList.remove('flex');
+            });
         }
         
-        // Estilos de la notificación
-        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-        notification.innerHTML = `
-            <i class="fas fa-${icon} mr-2"></i>
-            <span>${mensaje}</span>
-        `;
+        if (showRegisterLink) {
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginModal.classList.add('hidden');
+                loginModal.classList.remove('flex');
+                registroModal.classList.remove('hidden');
+                registroModal.classList.add('flex');
+            });
+        }
         
-        // Añadir al DOM
-        document.body.appendChild(notification);
-        
-        // Eliminar después de 3 segundos
-        setTimeout(() => {
-            notification.classList.add('opacity-0');
-            notification.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                notification.remove();
-            }, 500);
-        }, 3000);
-    }
-    
-    // Exponer la función globalmente
-    window.mostrarNotificacion = mostrarNotificacion;
-    
-    // Verificar si hay usuario autenticado al cargar la página
-    document.addEventListener('DOMContentLoaded', async () => {
-        // Cargar leaderboard completo
-        await loadFullLeaderboard();
-        
-        // Verificar si hay usuario autenticado
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                
-                // Actualizar UI para usuario logueado
+        // Configurar login con Google
+        if (googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', async () => {
                 try {
-                    await updateUIForLoggedInUser(user);
+                    // Mostrar carga
+                    googleLoginBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleLoginBtn.disabled = true;
+                    
+                    // Intentar login
+                    const user = await loginWithGoogle();
+                    console.log("Login exitoso:", user);
+                    
+                    // Cerrar modal
+                    loginModal.classList.add('hidden');
+                    loginModal.classList.remove('flex');
+                    
+                    // Actualizar UI
+                    updateUIForLoggedInUser(user);
+                    
+                    // Mostrar mensaje
+                    mostrarNotificacion("¡Bienvenido! Has iniciado sesión correctamente.", "success");
+                    
+                    // Recargar leaderboard
+                    loadFullLeaderboard();
+                    
                 } catch (error) {
-                    console.error("Error al actualizar UI:", error);
+                    console.error("Error en inicio de sesión:", error);
+                    mostrarNotificacion("Error al iniciar sesión: " + (error.message || "Error desconocido"), "error");
+                } finally {
+                    // Restaurar botón
+                    googleLoginBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleLoginBtn.disabled = false;
                 }
-            } else {
-                console.log("No hay usuario autenticado");
+            });
+        }
+        
+        // Lo mismo para registro con Google
+        if (googleRegisterBtn) {
+            googleRegisterBtn.addEventListener('click', async () => {
+                try {
+                    // Mostrar carga
+                    googleRegisterBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-gray-700 mr-2"></div> Conectando...';
+                    googleRegisterBtn.disabled = true;
+                    
+                    // Usar mismo método que login
+                    const user = await loginWithGoogle();
+                    console.log("Registro exitoso:", user);
+                    
+                    // Cerrar modal
+                    registroModal.classList.add('hidden');
+                    registroModal.classList.remove('flex');
+                    
+                    // Actualizar UI
+                    updateUIForLoggedInUser(user);
+                    
+                    // Mostrar mensaje
+                    mostrarNotificacion("¡Bienvenido! Tu cuenta ha sido creada correctamente.", "success");
+                    
+                    // Recargar leaderboard
+                    loadFullLeaderboard();
+                    
+                } catch (error) {
+                    console.error("Error en registro:", error);
+                    mostrarNotificacion("Error al registrarse: " + (error.message || "Error desconocido"), "error");
+                } finally {
+                    // Restaurar botón
+                    googleRegisterBtn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2"> Continuar con Google';
+                    googleRegisterBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Función para actualizar la UI cuando el usuario inicia sesión
+        async function updateUIForLoggedInUser(user) {
+            console.log("Actualizando UI para usuario logueado:", user.uid);
+            
+            if (loginBtn) {
+                loginBtn.innerHTML = `
+                    <div class="flex items-center bg-white rounded-lg px-3 py-1">
+                        <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <span class="text-gray-800 font-medium">${user.displayName || 'Usuario'}</span>
+                    </div>
+                `;
+                
+                loginBtn.removeEventListener('click', showLoginModal);
+                loginBtn.addEventListener('click', () => {
+                    window.location.href = 'perfil.html';
+                });
             }
+        }
+        
+        // Configurar menú móvil
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                if (mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                }
+            });
+        }
+        
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo = "info") {
+            // Verificar si ya existe una notificación
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            
+            // Clases según el tipo de notificación
+            let bgColor = 'bg-blue-500';
+            let icon = 'info-circle';
+            
+            if (tipo === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'check-circle';
+            } else if (tipo === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'exclamation-circle';
+            } else if (tipo === 'warning') {
+                bgColor = 'bg-yellow-500';
+                icon = 'exclamation-triangle';
+            }
+            
+            // Estilos de la notificación
+            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+            notification.innerHTML = `
+                <i class="fas fa-${icon} mr-2"></i>
+                <span>${mensaje}</span>
+            `;
+            
+            // Añadir al DOM
+            document.body.appendChild(notification);
+            
+            // Eliminar después de 3 segundos
+            setTimeout(() => {
+                notification.classList.add('opacity-0');
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => {
+                    notification.remove();
+                }, 500);
+            }, 3000);
+        }
+        
+        // Exponer la función globalmente
+        window.mostrarNotificacion = mostrarNotificacion;
+        
+        // Verificar si hay usuario autenticado al cargar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cargar leaderboard completo
+            await loadFullLeaderboard();
+            
+            // Verificar si hay usuario autenticado
+            auth.onAuthStateChanged(async user => {
+                if (user) {
+                    console.log("Usuario autenticado:", user.uid);
+                    
+                    // Actualizar UI para usuario logueado
+                    try {
+                        await updateUIForLoggedInUser(user);
+                    } catch (error) {
+                        console.error("Error al actualizar UI:", error);
+                    }
+                } else {
+                    console.log("No hay usuario autenticado");
+                }
+            });
         });
-    });
     </script>
 </body>
 </html>
