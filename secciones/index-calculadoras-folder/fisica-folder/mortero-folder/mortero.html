@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Tiro de Mortero</title>
+  <link rel="stylesheet" href="mortero.css">
+</head>
+<body>
+  <main>
+    <h1>Calculadora de Tiro de Mortero 🎯</h1>
+    
+    <section id="formulario">
+      <label for="angulo">Ángulo (°):</label>
+      <input type="number" id="angulo" placeholder="Ej: 45">
+
+      <label for="velocidad">Velocidad inicial (m/s):</label>
+      <input type="number" id="velocidad" placeholder="Ej: 30">
+
+      <label for="altura">Altura inicial (m):</label>
+      <input type="number" id="altura" placeholder="Ej: 0">
+
+      <button id="calcularBtn">Calcular y Disparar</button>
+    </section>
+
+    <section id="resultados">
+      <h2>Resultados:</h2>
+      <p id="rango"></p>
+      <p id="tiempoVuelo"></p>
+      <p id="alturaMaxima"></p>
+    </section>
+
+    <canvas id="canvasTiro" width="800" height="400"></canvas>
+  </main>
+
+  <script src="mortero.js"></script>
+</body>
+</html>
