@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("Dirigir_a_FisicaIndex").addEventListener("click", () => {
-        window.location.href = "/dtowin-tournaments/secciones/index-calculadoras-folder/fisica-folder/fisica-index.html";
+        window.location.href = "/secciones/index-calculadoras-folder/fisica-folder/fisica-index.html";
     });
 
     document.getElementById("Dirigir_a_QuimicaIndex").addEventListener("click", () => {
