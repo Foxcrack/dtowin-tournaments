@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("Dirigir_a_Mortero").addEventListener("click", () => {
-        window.location.href = "/secciones/index-calculadoras-folder/fisica-folder/mortero-folder/mortero.html";
+        window.location.href = "./mortero-folder/mortero.html";
     });
 
     document.getElementById("Dirigir_a_FisicaIndex").addEventListener("click", () => {

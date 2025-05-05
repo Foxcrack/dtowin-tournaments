@@ -61,5 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
   
       dibujarFrame();
     }
-  });
-  
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    document.getElementById("regresar").addEventListener("click", () => {
+        window.location.href = "../fisica-index.html";
+    });
+});

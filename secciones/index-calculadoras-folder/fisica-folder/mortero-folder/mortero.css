@@ -75,3 +75,28 @@ body {
     border-radius: 10px;
   }
   
+  #regresar {
+    background: linear-gradient(135deg, #ff6b1a, #ff914d);
+    color: #fff;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 2rem;
+    transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 107, 26, 0.3);
+  }
+  
+  #regresar:hover {
+    background: linear-gradient(135deg, #ff914d, #ff6b1a);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 26, 0.5);
+  }
+  
+  #regresar:active {
+    transform: scale(0.97);
+    box-shadow: 0 3px 8px rgba(255, 107, 26, 0.4);
+  }
+  
