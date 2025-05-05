@@ -14,3 +14,6 @@ document.getElementById("boton_volver").addEventListener("click", () => {
     document.getElementById("botones_pregunta_e621").style.display = "block";
 });
 
+document.getElementById("boton_e621_regresar").addEventListener("click", () => {
+    window.location.href = "index.html";
+});

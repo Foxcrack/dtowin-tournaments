@@ -72,6 +72,7 @@ body {
   /* Estilo base para todos los botones */
 #boton_e621_aceptado,
 #boton_e621_denegado,
+#boton_e621_regresar,
 #boton_volver {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
@@ -93,6 +94,7 @@ body {
 /* Efecto hover */
 #boton_e621_aceptado:hover,
 #boton_e621_denegado:hover,
+#boton_e621_regresar:hover,
 #boton_volver:hover {
   background-color: #00ffd5;
   color: #1e1e2f;
@@ -103,6 +105,7 @@ body {
 /* Efecto de "clic" */
 #boton_e621_aceptado:active,
 #boton_e621_denegado:active,
+#boton_e621_regresar:active,
 #boton_volver:active {
   transform: scale(0.95);
   box-shadow: 0 0 10px #00ffd5;
