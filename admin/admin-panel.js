@@ -17,13 +17,22 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Verificación si es admin o host
+import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+
 async function isAdminOrHost(uid) {
   if (!uid) return false;
-  if (uid === "dvblFee1ZnVKJNWBOR22tSAsNet2") return true; // Admin UID directo
 
-  const docRef = doc(db, "usuarios", uid);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() && docSnap.data().isHost === true;
+  // UID directo de admin
+  if (uid === "dvblFee1ZnVKJNWBOR22tSAsNet2") return true;
+
+  const usersRef = collection(db, "usuarios");
+  const q = query(usersRef, where("uid", "==", uid));
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) return false;
+
+  const userData = querySnapshot.docs[0].data();
+  return userData.isHost === true;
 }
 
 // Esperar autenticación
