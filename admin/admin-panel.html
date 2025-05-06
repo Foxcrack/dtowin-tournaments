@@ -1,80 +1,381 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Administración - Dtowin</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <script type="module" src="admin-panel.js" defer></script>
-  <style>
-    .gradient-background {
-      background: linear-gradient(135deg, #0042ff, #ff3000);
-    }
-    .dtowin-primary { background-color: #ff6b1a; }
-    .dtowin-blue { background-color: #0042ff; }
-    .dtowin-green { background-color: #00b894; }
-    .dtowin-red { background-color: #ff3000; }
-    .dtowin-cream { background-color: #fff3e6; }
-    .spinner {
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Dtowin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-background {
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .dtowin-primary {
+            background-color: #ff6b1a;
+        }
+        .dtowin-blue {
+            background-color: #0042ff;
+        }
+        .dtowin-green {
+            background-color: #00b894;
+        }
+        .dtowin-red {
+            background-color: #ff3000;
+        }
+        .dtowin-cream {
+            background-color: #fff3e6;
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-  <!-- Navbar -->
-  <nav class="gradient-background text-white p-4 shadow-md">
-    <div class="container mx-auto flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <a href="admin-panel.html" class="flex items-center">
-          <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-          <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
-        </a>
-      </div>
-      <div class="flex items-center space-x-4">
-        <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-        <div id="userProfile" class="flex items-center space-x-2">
-          <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-          <span class="hidden md:inline">Admin</span>
+    <!-- Navbar -->
+    <nav class="gradient-background text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <a href="admin-panel.html" class="flex items-center">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                </a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-2">
+                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
+                    <span class="hidden md:inline">Admin</span>
+                </div>
+            </div>
         </div>
-      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto py-8 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <!-- Sidebar -->
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <ul>
+                        <li>
+                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
+                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-trophy mr-2"></i> Torneos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-users mr-2"></i> Participantes
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-certificate mr-2"></i> Badges
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-image mr-2"></i> Banners
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
+                                <i class="fas fa-chart-line mr-2"></i> Resultados
+                            </a>
+                        </li>
+                        <li>
+                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
+                                <i class="fas fa-cog mr-2"></i> Configuración
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-4">
+                <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+                
+                <!-- Estadísticas -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-blue-500 text-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2">Total Usuarios</h3>
+                                <p class="text-2xl font-bold" id="totalUsuariosCounter">--</p>
+                            </div>
+                            <i class="fas fa-users text-4xl opacity-80"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-500 text-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2">Torneos Activos</h3>
+                                <p class="text-2xl font-bold" id="torneosActivosCounter">--</p>
+                            </div>
+                            <i class="fas fa-trophy text-4xl opacity-80"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="dtowin-primary text-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-2">Badges Otorgados</h3>
+                                <p class="text-2xl font-bold" id="badgesOtorgadosCounter">--</p>
+                            </div>
+                            <i class="fas fa-certificate text-4xl opacity-80"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Acceso Rápido -->
+                <h3 class="text-lg font-semibold mb-4">Acceso Rápido</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <a href="admin-torneos.html" class="bg-blue-500 hover:bg-blue-600 transition text-white rounded-lg shadow p-4 flex items-center">
+                        <div class="bg-blue-600 p-3 rounded-full mr-4">
+                            <i class="fas fa-trophy text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold">Torneos</h4>
+                            <p class="text-sm opacity-90">Gestionar torneos</p>
+                        </div>
+                    </a>
+                    
+                    <a href="admin-participantes.html" class="bg-green-500 hover:bg-green-600 transition text-white rounded-lg shadow p-4 flex items-center">
+                        <div class="bg-green-600 p-3 rounded-full mr-4">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold">Participantes</h4>
+                            <p class="text-sm opacity-90">Gestionar usuarios</p>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Próximos Torneos -->
+                <h3 class="text-lg font-semibold mb-4">Próximos Torneos</h3>
+                <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nombre
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fecha
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Inscritos
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Estado
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="proximosTorneosTable">
+                            <!-- Los torneos se cargarán dinámicamente -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    <div class="flex justify-center">
+                                        <div class="spinner rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <!-- Contenido generado por JS -->
-  <div id="adminDashboardContainer" class="container mx-auto py-8 px-4"></div>
+    <!-- Footer -->
+    <footer class="gradient-background text-white py-4 px-4 mt-8">
+        <div class="container mx-auto text-center">
+            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
+        </div>
+    </footer>
 
-  <!-- Footer -->
-  <footer class="gradient-background text-white py-4 px-4 mt-8">
-    <div class="container mx-auto text-center">
-      <p>© 2025 Dtowin Torneos - Panel de Administración</p>
-    </div>
-  </footer>
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
-
-  <script>
+    <!-- Inicialización de Firebase -->
+    <script>
+    // Configuración de Firebase
     const firebaseConfig = {
-      apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-      authDomain: "dtowin-tournament.firebaseapp.com",
-      projectId: "dtowin-tournament",
-      storageBucket: "dtowin-tournament.appspot.com",
-      messagingSenderId: "991226820083",
-      appId: "1:991226820083:web:6387773cf8c76a0f6ace86"
+        apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+        authDomain: "dtowin-tournament.firebaseapp.com",
+        projectId: "dtowin-tournament",
+        storageBucket: "dtowin-tournament.appspot.com",
+        messagingSenderId: "991226820083",
+        appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+        measurementId: "G-R4Q5YKZXGY"
     };
+
+    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
+
+    // Hacer Firebase disponible globalmente
     window.firebase = firebase;
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.storage = firebase.storage();
-  </script>
+    </script>
+
+    <!-- Script principal -->
+    <script>
+    // Función para mostrar notificaciones
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        // Verificar si ya existe una notificación
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        
+        // Clases según el tipo de notificación
+        let bgColor = 'bg-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'check-circle';
+        } else if (tipo === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'exclamation-circle';
+        } else if (tipo === 'warning') {
+            bgColor = 'bg-yellow-500';
+            icon = 'exclamation-triangle';
+        }
+        
+        // Estilos de la notificación
+        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        notification.innerHTML = `
+            <i class="fas fa-${icon} mr-2"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        // Añadir al DOM
+        document.body.appendChild(notification);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            notification.classList.add('opacity-0');
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
+
+    // Función para verificar si el usuario es administrador
+    async function esUsuarioAdmin(userId) {
+        try {
+            // Lista de IDs de administradores
+            const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+            
+            // Si está en la lista directamente
+            if (adminUIDs.includes(userId)) {
+                return true;
+            }
+            
+            // Verificar en base de datos
+            const snapshot = await db.collection("usuarios")
+                .where("uid", "==", userId)
+                .where("isHost", "==", true)
+                .get();
+            
+            return !snapshot.empty;
+        } catch (error) {
+            console.error("Error al verificar si es administrador:", error);
+            return false;
+        }
+    }
+
+    // Hacer notificaciones accesibles globalmente
+    window.mostrarNotificacion = mostrarNotificacion;
+
+    // Ejecuta esto cuando la página cargue
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar autenticación
+        firebase.auth().onAuthStateChanged(async function(user) {
+            if (user) {
+                console.log("Usuario autenticado:", user.uid);
+                // Verificar si es administrador
+                const isAdmin = await esUsuarioAdmin(user.uid);
+                
+                if (!isAdmin) {
+                    mostrarNotificacion("No tienes permisos para acceder al panel de administración", "error");
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                    return;
+                }
+                
+                console.log("Usuario validado como administrador");
+                
+                // Cargar módulo principal (solo si el usuario es administrador)
+                try {
+                    // Importar módulo con su nombre correcto
+                    const dashboard = await import('./admin-panel.js');
+                    // Inicializar dashboard
+                    dashboard.initDashboard();
+                    console.log("Módulo de dashboard cargado correctamente");
+                } catch (error) {
+                    console.error("Error al cargar el módulo de dashboard:", error);
+                    mostrarNotificacion("Error al cargar el dashboard", "error");
+                }
+            } else {
+                console.log("No hay usuario autenticado");
+                window.location.href = "index.html";
+            }
+        });
+        
+        // Actualizar foto de perfil y nombre de usuario
+        const updateUserProfile = async () => {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                const userProfileElement = document.getElementById('userProfile');
+                if (userProfileElement) {
+                    const userSnapshot = await db.collection('usuarios')
+                        .where('uid', '==', user.uid)
+                        .limit(1)
+                        .get();
+                    
+                    if (!userSnapshot.empty) {
+                        const userData = userSnapshot.docs[0].data();
+                        const photoURL = userData.photoURL || user.photoURL || 'https://via.placeholder.com/40';
+                        const displayName = userData.nombre || user.displayName || 'Admin';
+                        
+                        userProfileElement.innerHTML = `
+                            <img src="${photoURL}" alt="Admin" class="w-8 h-8 rounded-full">
+                            <span class="hidden md:inline">${displayName}</span>
+                        `;
+                    }
+                }
+            }
+        };
+        
+        // Actualizar perfil después de verificar autenticación
+        firebase.auth().onAuthStateChanged(updateUserProfile);
+    });
+    </script>
+    <script src="admin-panel.js"></script>
 </body>
 </html>

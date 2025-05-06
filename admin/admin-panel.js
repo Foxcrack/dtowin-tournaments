@@ -30,6 +30,11 @@ export async function initDashboard() {
     const badgesCounter = document.getElementById("badgesOtorgadosCounter");
     const torneosTable = document.getElementById("proximosTorneosTable");
   
+    if (!usuariosCounter || !torneosCounter || !badgesCounter || !torneosTable) {
+      console.error("Uno o más elementos del DOM no se encontraron. Asegúrate de que el HTML los incluya.");
+      return;
+    }
+  
     // Cargar total de usuarios
     try {
       const usuariosSnap = await db.collection("usuarios").get();
@@ -86,7 +91,7 @@ export async function initDashboard() {
         proximosSnap.forEach(doc => {
           const torneo = doc.data();
           const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000).toLocaleDateString() : "-";
-          const inscritos = torneo.inscritos?.length || 0;
+          const inscritos = Array.isArray(torneo.inscritos) ? torneo.inscritos.length : 0;
   
           torneosTable.innerHTML += `
             <tr>
