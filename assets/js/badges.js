@@ -1,6 +1,6 @@
 // badges.js - Añadiendo función de edición
 // Importar las funciones necesarias de Firebase
-import { db, auth, storage } from './firebase.js';
+import { db, auth, storage } from '../../firebase.js';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";
 

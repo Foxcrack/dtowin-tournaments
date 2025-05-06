@@ -1,5 +1,5 @@
 // admin-torneos.js - Script para la gestión de torneos en el panel de administración
-import { auth, db, isAuthenticated } from './firebase.js';
+import { auth, db, isAuthenticated } from '../../firebase.js';
 import { 
     collection, 
     getDocs, 

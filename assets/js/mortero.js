@@ -67,6 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("regresar").addEventListener("click", () => {
-        window.location.href = "../fisica-index.html";
+        window.location.href = "fisica-index.html";
     });
 });

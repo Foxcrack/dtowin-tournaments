@@ -1,5 +1,5 @@
 // admin-panel-banners.js - Script para la gestión de banners
-import { showNotification } from './utils.js';
+import { showNotification } from '../../utils.js';
 
 // DOM elements
 const bannersContainer = document.getElementById('bannersContainer');

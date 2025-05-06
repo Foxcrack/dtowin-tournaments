@@ -1,5 +1,5 @@
 // admin-panel-config.js - Script para la gestión de configuración del panel
-import { auth, isUserHost, db, storage } from './firebase.js';
+import { auth, isUserHost, db, storage } from '../../firebase.js';
 import { showNotification } from './admin-panel.js';
 import { doc, getDoc, updateDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-storage.js";

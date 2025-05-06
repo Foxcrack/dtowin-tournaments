@@ -1,5 +1,5 @@
 // admin-panel-results.js - Script para la gestión de resultados de torneos
-import { auth, isUserHost, db } from './firebase.js';
+import { auth, isUserHost, db } from '../../firebase.js';
 import { getAllBadges, getTournamentBadges, assignBadgeToUser } from './badges.js';
 import { showNotification } from './admin-panel.js';
 import { collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
