@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("Dirigir_a_MatematicasIndex").addEventListener("click", () => {
-        window.location.href = "index-torneos.html";
+        window.location.href = "matematicas-index.html";
     });
 
     document.getElementById("Dirigir_a_FisicaIndex").addEventListener("click", () => {
