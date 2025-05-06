@@ -33,7 +33,7 @@ onAuthStateChanged(auth, async (user) => {
   if (user && adminUIDs.includes(user.uid)) {
     // Mostrar botón Admin
     const adminBtn = document.createElement("a");
-    adminBtn.href = "admin-panel.html";
+    adminBtn.href = "admin/admin-panel.html";
     adminBtn.className = "fixed top-4 right-4 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 transition z-50";
     adminBtn.innerHTML = `<i class="fas fa-tools mr-2"></i>Panel Admin`;
     document.body.appendChild(adminBtn);
