@@ -1,7 +1,7 @@
 // main.js - Script principal para la plataforma Dtowin
 import { auth, db } from '../../firebase.js';
 import { loadTournaments } from '../../torneos.js';
-import { loadLeaderboard } from '../index-leaderboards-folder/leaderboard.js';
+import { loadLeaderboard } from './leaderboard.js';
 import { initRegistrationModule } from '../../registration.js';
 
 // Inicializar la aplicación
@@ -109,3 +109,10 @@ export {
 
 // Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', initApp);
+
+
+fetch("navbar.html")
+.then(res => res.text())
+.then(html => {
+document.getElementById("navbar").innerHTML = html;
+});

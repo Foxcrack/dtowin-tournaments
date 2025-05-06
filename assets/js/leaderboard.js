@@ -1,239 +1,106 @@
-// leaderboard.js - Script para la gestión del leaderboard global
-import { auth, db } from '../../firebase.js';
-import { 
-    collection, 
-    getDocs, 
-    query, 
-    orderBy, 
-    limit 
-} from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+// Importar Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// Función para cargar el leaderboard
-export async function loadLeaderboard() {
-    try {
-        console.log("Cargando leaderboard...");
-        
-        const leaderboardContainer = document.getElementById('leaderboardBody');
-        if (!leaderboardContainer) {
-            console.error("No se encontró el contenedor del leaderboard");
-            return;
-        }
-        
-        // Mostrar indicador de carga
-        leaderboardContainer.innerHTML = `
-            <div class="p-4 text-center">
-                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mx-auto mb-2"></div>
-                <p class="text-gray-500">Cargando leaderboard...</p>
-            </div>
-        `;
-        
-        try {
-            // Obtener usuarios ordenados por puntaje (de mayor a menor)
-            const usersRef = collection(db, "usuarios");
-            const q = query(usersRef, orderBy("puntos", "desc"), limit(8)); // Limitar a 8 para la vista previa
-            const querySnapshot = await getDocs(q);
-            
-            if (querySnapshot.empty) {
-                leaderboardContainer.innerHTML = `
-                    <div class="p-4 text-center">
-                        <p class="text-gray-500">No hay datos disponibles en el leaderboard</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Generar filas del leaderboard
-            let html = '';
-            let position = 1;
-            
-            querySnapshot.forEach(doc => {
-                const userData = doc.data();
-                const userId = doc.id;
-                const username = userData.nombre || 'Usuario';
-                const photoURL = userData.photoURL || 'dtowin.png';
-                const puntos = userData.puntos || 0;
-                const torneos = userData.torneos ? userData.torneos.length : 0;
-                const badgesCount = userData.badges ? Object.keys(userData.badges).length : 0;
-                
-                // Definir clase de posición para destacar los primeros lugares
-                let positionClass = '';
-                if (position === 1) {
-                    positionClass = 'bg-yellow-100'; // Fondo para primer lugar
-                } else if (position === 2) {
-                    positionClass = 'bg-gray-100'; // Fondo para segundo lugar
-                } else if (position === 3) {
-                    positionClass = 'bg-red-100'; // Fondo ROJO para tercer lugar (según solicitud)
-                }
-                
-                html += `
-                    <a href="../../perfil.html?uid=${userData.uid}" class="block hover:bg-gray-50 transition cursor-pointer">
-                        <div class="grid grid-cols-12 py-3 px-4 items-center ${positionClass}">
-                            <div class="col-span-1 text-center font-bold text-lg">${position}</div>
-                            <div class="col-span-6 flex items-center">
-                                <img src="${photoURL}" alt="${username}" class="w-8 h-8 rounded-full mr-3">
-                                <div>
-                                    <p class="font-medium">${username}</p>
-                                    <p class="text-xs text-gray-500">
-                                        ${badgesCount > 0 ? `${badgesCount} badges` : 'Sin badges'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-span-2 text-center">${torneos}</div>
-                            <div class="col-span-3 text-center font-bold">${puntos}</div>
-                        </div>
-                    </a>
-                `;
-                
-                position++;
-            });
-            
-            // Agregar botón para ver tabla completa
-            html += `
-                <div class="p-4 text-center">
-                    <a href="leaderboard-completo.html" class="inline-block px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
-                        Ver tabla completa
-                    </a>
-                </div>
-            `;
-            
-            leaderboardContainer.innerHTML = html;
-            console.log("Leaderboard cargado correctamente");
-        } catch (error) {
-            console.error("Error al consultar leaderboard:", error);
-            leaderboardContainer.innerHTML = `
-                <div class="p-4 text-center">
-                    <p class="text-red-500">Error al cargar el leaderboard. Inténtalo de nuevo.</p>
-                    <button class="mt-2 text-blue-500 underline" onclick="window.location.reload()">
-                        Reintentar
-                    </button>
-                </div>
-            `;
-        }
-        
-    } catch (error) {
-        console.error("Error al cargar leaderboard:", error);
-        
-        const leaderboardContainer = document.getElementById('leaderboardBody');
-        if (leaderboardContainer) {
-            leaderboardContainer.innerHTML = `
-                <div class="p-4 text-center">
-                    <p class="text-red-500">Error al cargar el leaderboard. Inténtalo de nuevo.</p>
-                    <button class="mt-2 text-blue-500 underline" onclick="window.location.reload()">
-                        Reintentar
-                    </button>
-                </div>
-            `;
-        }
-    }
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+  authDomain: "dtowin-tournament.firebaseapp.com",
+  projectId: "dtowin-tournament",
+  storageBucket: "dtowin-tournament.appspot.com",
+  messagingSenderId: "991226820083",
+  appId: "1:991226820083:web:6387773cf8c76a0f6ace86"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// UIDs de administradores
+const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+
+// Mostrar loader
+const loader = document.getElementById("loader");
+loader.classList.remove("hidden");
+
+// Referencias al DOM
+const fullLeaderboardBody = document.getElementById("fullLeaderboardBody");
+
+// Escuchar cambios de autenticación
+onAuthStateChanged(auth, async (user) => {
+  if (user && adminUIDs.includes(user.uid)) {
+    // Mostrar botón Admin
+    const adminBtn = document.createElement("a");
+    adminBtn.href = "admin-panel.html";
+    adminBtn.className = "fixed top-4 right-4 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 transition z-50";
+    adminBtn.innerHTML = `<i class="fas fa-tools mr-2"></i>Panel Admin`;
+    document.body.appendChild(adminBtn);
+  }
+
+  // Cargar usuarios desde Firestore
+  const usuariosRef = collection(db, "usuarios");
+  const snapshot = await getDocs(usuariosRef);
+
+  const users = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    users.push({
+      uid: data.uid,
+      nombre: data.nombre || "Jugador",
+      puntos: data.puntos || 0,
+      torneos: Array.isArray(data.torneos) ? data.torneos.length : 0,
+      creado: data.createdAt?.seconds || 0
+    });
+  });
+
+  // Ordenar por puntos y luego por antigüedad
+  users.sort((a, b) => {
+    if (b.puntos !== a.puntos) return b.puntos - a.puntos;
+    return a.creado - b.creado;
+  });
+
+  // Mostrar usuarios
+  renderLeaderboard(users);
+
+  // Ocultar loader
+  loader.classList.add("hidden");
+});
+
+// Renderizar el leaderboard
+function renderLeaderboard(users) {
+    fullLeaderboardBody.innerHTML = users.map((user, i) => {
+      let clasePosicion = "";
+      let medalla = "";
+  
+      if (i === 0) {
+        clasePosicion = "leaderboard-gold";
+        medalla = "🥇";
+      } else if (i === 1) {
+        clasePosicion = "leaderboard-silver";
+        medalla = "🥈";
+      } else if (i === 2) {
+        clasePosicion = "leaderboard-bronze";
+        medalla = "🥉";
+      }
+  
+      const delay = i * 50; // cada fila se retrasa 50ms más que la anterior
+  
+      return `
+        <div class="grid grid-cols-12 py-3 px-4 leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
+          <div class="col-span-1 text-center font-bold">#${i + 1}</div>
+          <div class="col-span-6 font-medium text-gray-800 truncate">${medalla} ${user.nombre}</div>
+          <div class="col-span-2 text-center text-gray-600">${user.torneos}</div>
+          <div class="col-span-3 text-center text-blue-600 font-semibold">${user.puntos}</div>
+        </div>
+      `;
+    }).join("");
 }
 
-// Función para cargar el leaderboard completo (para la página leaderboard-completo.html)
-export async function loadFullLeaderboard() {
-    try {
-        console.log("Cargando leaderboard completo...");
-        
-        const fullLeaderboardContainer = document.getElementById('fullLeaderboardBody');
-        if (!fullLeaderboardContainer) {
-            console.error("No se encontró el contenedor del leaderboard completo");
-            return;
-        }
-        
-        // Mostrar indicador de carga
-        fullLeaderboardContainer.innerHTML = `
-            <div class="p-4 text-center">
-                <div class="spinner w-8 h-8 border-t-4 border-b-4 border-blue-500 rounded-full mx-auto mb-2"></div>
-                <p class="text-gray-500">Cargando todos los jugadores...</p>
-            </div>
-        `;
-        
-        try {
-            // Obtener todos los usuarios ordenados por puntaje (sin límite)
-            const usersRef = collection(db, "usuarios");
-            const q = query(usersRef, orderBy("puntos", "desc"));
-            const querySnapshot = await getDocs(q);
-            
-            if (querySnapshot.empty) {
-                fullLeaderboardContainer.innerHTML = `
-                    <div class="p-4 text-center">
-                        <p class="text-gray-500">No hay datos disponibles en el leaderboard</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Generar filas del leaderboard completo
-            let html = '';
-            let position = 1;
-            
-            querySnapshot.forEach(doc => {
-                const userData = doc.data();
-                const userId = doc.id;
-                const username = userData.nombre || 'Usuario';
-                const photoURL = userData.photoURL || 'dtowin.png';
-                const puntos = userData.puntos || 0;
-                const torneos = userData.torneos ? userData.torneos.length : 0;
-                const badgesCount = userData.badges ? Object.keys(userData.badges).length : 0;
-                
-                // Definir clase de posición para destacar los primeros lugares
-                let positionClass = '';
-                if (position === 1) {
-                    positionClass = 'bg-yellow-100'; // Fondo para primer lugar
-                } else if (position === 2) {
-                    positionClass = 'bg-gray-100'; // Fondo para segundo lugar
-                } else if (position === 3) {
-                    positionClass = 'bg-red-100'; // Fondo para tercer lugar
-                }
-                
-                html += `
-                    <a href="../../perfil.html?uid=${userData.uid}" class="block hover:bg-gray-50 transition cursor-pointer">
-                        <div class="grid grid-cols-12 py-3 px-4 items-center ${positionClass}">
-                            <div class="col-span-1 text-center font-bold text-lg">${position}</div>
-                            <div class="col-span-6 flex items-center">
-                                <img src="${photoURL}" alt="${username}" class="w-8 h-8 rounded-full mr-3">
-                                <div>
-                                    <p class="font-medium">${username}</p>
-                                    <p class="text-xs text-gray-500">
-                                        ${badgesCount > 0 ? `${badgesCount} badges` : 'Sin badges'}
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-span-2 text-center">${torneos}</div>
-                            <div class="col-span-3 text-center font-bold">${puntos}</div>
-                        </div>
-                    </a>
-                `;
-                
-                position++;
-            });
-            
-            fullLeaderboardContainer.innerHTML = html;
-            console.log("Leaderboard completo cargado correctamente");
-        } catch (error) {
-            console.error("Error al consultar leaderboard completo:", error);
-            fullLeaderboardContainer.innerHTML = `
-                <div class="p-4 text-center">
-                    <p class="text-red-500">Error al cargar el leaderboard completo. Inténtalo de nuevo.</p>
-                    <button class="mt-2 text-blue-500 underline" onclick="window.location.reload()">
-                        Reintentar
-                    </button>
-                </div>
-            `;
-        }
-        
-    } catch (error) {
-        console.error("Error al cargar leaderboard completo:", error);
-        
-        const fullLeaderboardContainer = document.getElementById('fullLeaderboardBody');
-        if (fullLeaderboardContainer) {
-            fullLeaderboardContainer.innerHTML = `
-                <div class="p-4 text-center">
-                    <p class="text-red-500">Error al cargar el leaderboard completo. Inténtalo de nuevo.</p>
-                    <button class="mt-2 text-blue-500 underline" onclick="window.location.reload()">
-                        Reintentar
-                    </button>
-                </div>
-            `;
-        }
-    }
-}
 
+fetch("navbar.html")
+.then(res => res.text())
+.then(html => {
+document.getElementById("navbar").innerHTML = html;
+});

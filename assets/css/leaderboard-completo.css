@@ -1,0 +1,84 @@
+
+/* Spinner animado para carga */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Fondo de gradiente personalizado */
+.gradient-background {
+    background: linear-gradient(135deg, #0042ff, #ff3000);
+}
+
+/* Colores temáticos personalizados de Dtowin */
+.dtowin-primary {
+    background-color: #ff6b1a;
+}
+.dtowin-blue {
+    background-color: #0042ff;
+}
+.dtowin-red {
+    background-color: #ff3000;
+}
+.dtowin-cream {
+    background-color: #fff3e6;
+}
+
+/* Notificaciones animadas */
+.notification {
+    transition: opacity 0.3s ease;
+}
+
+/* Badge circular para íconos o insignias */
+.badge {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    margin: 0 5px;
+    color: white;
+}
+
+/* Fila clickeable visualmente */
+.leaderboard-row {
+transition: background-color 0.2s ease, transform 0.1s ease;
+cursor: pointer;
+}
+.leaderboard-row:hover {
+background-color: #f3f4f6;
+transform: scale(1.005);
+}
+
+/* Estilos por posición */
+.leaderboard-gold {
+background-color: #ff6b6b; /* Oro */
+}
+.leaderboard-silver {
+background-color: #b774ff; /* Plata */
+}
+.leaderboard-bronze {
+background-color: #7184ff; /* Bronce */
+}
+
+/* Animación fade-in con desplazamiento */
+@keyframes fadeInUp {
+    0% {
+    opacity: 0;
+    transform: translateY(20px);
+    }
+    100% {
+    opacity: 1;
+    transform: translateY(0);
+    }
+}
+
+/* Clase animada para cada fila */
+.leaderboard-anim {
+    animation: fadeInUp 0.4s ease both;
+}
+  
