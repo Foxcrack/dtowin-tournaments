@@ -1,6 +1,27 @@
 // admin-panel.js
 
 export async function initDashboard() {
+    await new Promise(resolve => {
+      if (document.readyState === "complete") return resolve();
+      window.addEventListener("DOMContentLoaded", resolve);
+    });
+  
+    console.log("Cargando el panel de administración...");
+  
+    // Inicializar Firebase si no está ya inicializado
+    if (typeof window.firebase === "undefined") {
+      console.error("Firebase no está inicializado.");
+      return;
+    }
+  
+    if (typeof window.db === "undefined") {
+      console.error("Base de datos no disponible.");
+      return;
+    }
+  
+    console.log("Base de datos disponible.");
+    console.log("Inicializando el panel de administración...");
+  
     const db = window.db;
   
     // Elementos
