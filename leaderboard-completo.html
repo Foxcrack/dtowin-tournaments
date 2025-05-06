@@ -11,81 +11,81 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
         <link rel="stylesheet" href="assets/css/leaderboard-completo.css" />
     </head>
-<body class="bg-gray-100 min-h-screen">
+    <body class="bg-gray-100 min-h-screen">
 
-  <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
-                <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+    <!-- Navbar -->
+        <nav class="gradient-background text-white p-4 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
+                    <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
+                    <a href="index-torneos.html" class="hover:text-gray-300 transition">Torneos</a>
+                    <a href="leaderboard-completo.html" class="hover:text-gray-300 transition">Leaderboard</a>
+                    <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                    <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+                </div>
+                <button class="md:hidden text-xl" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
-                <a href="index-torneos.html" class="hover:text-gray-300 transition">Torneos</a>
-                <a href="leaderboard-completo.html" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
-                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
+            
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="md:hidden hidden">
+                <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
+                    <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
+                    <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
+                    <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
+                    <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+                </div>
             </div>
-            <button class="md:hidden text-xl" id="mobileMenuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <!-- Mobile Menu -->
-        <div id="mobileMenu" class="md:hidden hidden">
-            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
-                <a href="#inicio" class="hover:text-gray-300 transition">Inicio</a>
-                <a href="#torneos" class="hover:text-gray-300 transition">Torneos</a>
-                <a href="#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition">Mi Perfil</a>
+        </nav>
+
+
+
+
+    <!-- Leaderboard Section -->
+    <section class="py-16 px-4">
+        <div class="container mx-auto">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global Completo</h2>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+            <div class="gradient-background text-white p-4">
+            <div class="grid grid-cols-12 font-semibold">
+                <div class="col-span-1 text-center">#</div>
+                <div class="col-span-6">Jugador</div>
+                <div class="col-span-2 text-center">Torneos</div>
+                <div class="col-span-3 text-center">Puntos</div>
+            </div>
+            </div>
+            <div id="fullLeaderboardBody" class="divide-y divide-gray-200">
+            <!-- El leaderboard se carga dinámicamente -->
             </div>
         </div>
-    </nav>
-
-
-
-
-  <!-- Leaderboard Section -->
-  <section class="py-16 px-4">
-    <div class="container mx-auto">
-      <h2 class="text-3xl font-bold mb-8 text-center text-gray-800">Leaderboard Global Completo</h2>
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
-        <div class="gradient-background text-white p-4">
-          <div class="grid grid-cols-12 font-semibold">
-            <div class="col-span-1 text-center">#</div>
-            <div class="col-span-6">Jugador</div>
-            <div class="col-span-2 text-center">Torneos</div>
-            <div class="col-span-3 text-center">Puntos</div>
-          </div>
+        <div class="text-center mt-8">
+            <a href="index.html#leaderboard" class="inline-block px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
+            <i class="fas fa-arrow-left mr-2"></i> Volver
+            </a>
         </div>
-        <div id="fullLeaderboardBody" class="divide-y divide-gray-200">
-          <!-- El leaderboard se carga dinámicamente -->
         </div>
-      </div>
-      <div class="text-center mt-8">
-        <a href="index.html#leaderboard" class="inline-block px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">
-          <i class="fas fa-arrow-left mr-2"></i> Volver
-        </a>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- En HTML -->
-    <div id="loader" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-     <div class="spinner w-12 h-12 border-4 border-t-4 border-white rounded-full"></div>
-    </div>
-  
+    <!-- En HTML -->
+        <div id="loader" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+        <div class="spinner w-12 h-12 border-4 border-t-4 border-white rounded-full"></div>
+        </div>
+    
 
-  <!-- Footer -->
-  <footer id="footer"></footer>
+    <!-- Footer -->
+    <footer id="footer"></footer>
 
-  <!-- Modales -->
-  <div id="modales"></div>
+    <!-- Modales -->
+    <div id="modales"></div>
 
-  <!-- Scripts -->
-  <script type="module" src="assets/js/leaderboard.js"></script>
-  <script type="module" src="assets/js/ui-loader.js"></script>
+    <!-- Scripts -->
+    <script type="module" src="assets/js/leaderboard.js"></script>
+    <script type="module" src="assets/js/ui-loader.js"></script>
 
-</body>
+    </body>
 </html>

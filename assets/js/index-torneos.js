@@ -109,10 +109,3 @@ export {
 
 // Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', initApp);
-
-
-fetch("navbar.html")
-.then(res => res.text())
-.then(html => {
-document.getElementById("navbar").innerHTML = html;
-});
