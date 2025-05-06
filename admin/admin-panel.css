@@ -1,0 +1,21 @@
+body {
+    font-family: system-ui, sans-serif;
+  }
+  
+  .nav-link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    color: #4b5563;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+  
+  .nav-link:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .nav-link.text-orange-500 {
+    background-color: #fff7ed;
+  }
+  
