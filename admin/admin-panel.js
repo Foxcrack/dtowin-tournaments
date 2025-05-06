@@ -1,62 +1,90 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+// admin-panel.js
 
-// Configuración Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
-  authDomain: "dtowin-tournament.firebaseapp.com",
-  projectId: "dtowin-tournament",
-  storageBucket: "dtowin-tournament.appspot.com",
-  messagingSenderId: "991226820083",
-  appId: "1:991226820083:web:6387773cf8c76a0f6ace86"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// Verificación si es admin o host
-import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
-
-async function isAdminOrHost(uid) {
-  if (!uid) return false;
-
-  // UID directo de admin
-  if (uid === "dvblFee1ZnVKJNWBOR22tSAsNet2") return true;
-
-  const usersRef = collection(db, "usuarios");
-  const q = query(usersRef, where("uid", "==", uid));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) return false;
-
-  const userData = querySnapshot.docs[0].data();
-  return userData.isHost === true;
-}
-
-// Esperar autenticación
-onAuthStateChanged(auth, async user => {
-  if (user) {
-    const esAdmin = await isAdminOrHost(user.uid);
-    if (esAdmin) {
-      document.getElementById("unauthorized").classList.add("hidden");
-      document.getElementById("adminPanel").classList.remove("hidden");
-    } else {
-      document.getElementById("unauthorized").classList.remove("hidden");
-      document.getElementById("adminPanel").classList.add("hidden");
+export async function initDashboard() {
+    const db = window.db;
+  
+    // Elementos
+    const usuariosCounter = document.getElementById("totalUsuariosCounter");
+    const torneosCounter = document.getElementById("torneosActivosCounter");
+    const badgesCounter = document.getElementById("badgesOtorgadosCounter");
+    const torneosTable = document.getElementById("proximosTorneosTable");
+  
+    // Cargar total de usuarios
+    try {
+      const usuariosSnap = await db.collection("usuarios").get();
+      usuariosCounter.textContent = usuariosSnap.size;
+    } catch (error) {
+      console.error("Error al contar usuarios:", error);
+      usuariosCounter.textContent = "-";
     }
-  } else {
-    window.location.href = "index.html";
+  
+    // Cargar torneos activos
+    try {
+      const torneosSnap = await db
+        .collection("torneos")
+        .where("estado", "in", ["abierto", "checkin", "iniciando"])
+        .get();
+      torneosCounter.textContent = torneosSnap.size;
+    } catch (error) {
+      console.error("Error al contar torneos:", error);
+      torneosCounter.textContent = "-";
+    }
+  
+    // Cargar cantidad de badges otorgadas
+    try {
+      const userBadgesSnap = await db.collection("user_badges").get();
+      let totalBadges = 0;
+      userBadgesSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.badges && typeof data.badges === 'object') {
+          totalBadges += Object.keys(data.badges).length;
+        }
+      });
+      badgesCounter.textContent = totalBadges;
+    } catch (error) {
+      console.error("Error al contar badges otorgadas:", error);
+      badgesCounter.textContent = "-";
+    }
+  
+    // Cargar tabla de próximos torneos
+    try {
+      const proximosSnap = await db
+        .collection("torneos")
+        .where("estado", "==", "proximamente")
+        .orderBy("fecha")
+        .limit(5)
+        .get();
+  
+      torneosTable.innerHTML = ""; // Limpiar tabla
+  
+      if (proximosSnap.empty) {
+        torneosTable.innerHTML = `
+          <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay torneos próximos registrados.</td></tr>
+        `;
+      } else {
+        proximosSnap.forEach(doc => {
+          const torneo = doc.data();
+          const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000).toLocaleDateString() : "-";
+          const inscritos = torneo.inscritos?.length || 0;
+  
+          torneosTable.innerHTML += `
+            <tr>
+              <td class="px-6 py-4">${torneo.nombre || "Sin nombre"}</td>
+              <td class="px-6 py-4">${fecha}</td>
+              <td class="px-6 py-4">${inscritos}</td>
+              <td class="px-6 py-4 capitalize">${torneo.estado}</td>
+              <td class="px-6 py-4 text-right">
+                <a href="admin-torneos.html?id=${doc.id}" class="text-blue-500 hover:underline">Ver</a>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    } catch (error) {
+      console.error("Error al cargar próximos torneos:", error);
+      torneosTable.innerHTML = `
+        <tr><td colspan="5" class="text-center py-4 text-red-500">Error al cargar torneos.</td></tr>
+      `;
+    }
   }
-});
-
-// Botón Ver Sitio
-document.addEventListener("DOMContentLoaded", () => {
-  const verSitioBtn = document.getElementById("verSitioBtn");
-  if (verSitioBtn) {
-    verSitioBtn.addEventListener("click", () => {
-      window.location.href = "../index-torneos.html";
-    });
-  }
-});
+  

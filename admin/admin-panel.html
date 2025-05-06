@@ -1,43 +1,80 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel de Administración</title>
-  <link rel="stylesheet" href="admin-panel.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración - Dtowin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script type="module" src="admin-panel.js" defer></script>
+  <style>
+    .gradient-background {
+      background: linear-gradient(135deg, #0042ff, #ff3000);
+    }
+    .dtowin-primary { background-color: #ff6b1a; }
+    .dtowin-blue { background-color: #0042ff; }
+    .dtowin-green { background-color: #00b894; }
+    .dtowin-red { background-color: #ff3000; }
+    .dtowin-cream { background-color: #fff3e6; }
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div id="adminPanel" class="flex min-h-screen hidden">
-    <nav class="w-64 bg-white shadow-lg p-4">
-      <h2 class="text-xl font-bold mb-6">Dtowin Admin</h2>
-      <ul class="space-y-2">
-        <li><a href="#dashboard" class="nav-link text-orange-500 font-semibold">Dashboard</a></li>
-        <li><a href="#torneos" class="nav-link">Torneos</a></li>
-        <li><a href="#banners" class="nav-link">Banners</a></li>
-        <li><a href="#badges" class="nav-link">Badges</a></li>
-        <li><a href="#resultados" class="nav-link">Resultados</a></li>
-        <li><a href="#configuracion" class="nav-link">Configuración</a></li>
-      </ul>
-      <hr class="my-4" />
-      <button id="verSitioBtn" class="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition">
-        Ver Sitio
-      </button>
-    </nav>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Navbar -->
+  <nav class="gradient-background text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <a href="admin-panel.html" class="flex items-center">
+          <img src="dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
+          <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+        </a>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
+        <div id="userProfile" class="flex items-center space-x-2">
+          <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
+          <span class="hidden md:inline">Admin</span>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-    <main class="flex-1 p-6" id="adminContent">
-      <section id="dashboard" class="admin-section">
-        <h1 class="text-2xl font-bold mb-4">Panel principal</h1>
-        <p>Bienvenido al panel de administración de torneos Dtowin.</p>
-      </section>
-      <!-- Las otras secciones irán ocultas por defecto -->
-    </main>
-  </div>
+  <!-- Contenido generado por JS -->
+  <div id="adminDashboardContainer" class="container mx-auto py-8 px-4"></div>
 
-  <div id="unauthorized" class="text-center py-20">
-    <h1 class="text-2xl font-bold mb-4">Acceso restringido</h1>
-    <p>No tienes permisos para acceder al panel de administración.</p>
-    <a href="index.html" class="text-blue-500 underline">Volver al inicio</a>
-  </div>
+  <!-- Footer -->
+  <footer class="gradient-background text-white py-4 px-4 mt-8">
+    <div class="container mx-auto text-center">
+      <p>© 2025 Dtowin Torneos - Panel de Administración</p>
+    </div>
+  </footer>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-storage-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+      authDomain: "dtowin-tournament.firebaseapp.com",
+      projectId: "dtowin-tournament",
+      storageBucket: "dtowin-tournament.appspot.com",
+      messagingSenderId: "991226820083",
+      appId: "1:991226820083:web:6387773cf8c76a0f6ace86"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window.firebase = firebase;
+    window.db = firebase.firestore();
+    window.auth = firebase.auth();
+    window.storage = firebase.storage();
+  </script>
 </body>
 </html>
