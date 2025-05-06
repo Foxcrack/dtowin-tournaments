@@ -185,7 +185,7 @@ export async function loadFullLeaderboard() {
                 }
                 
                 html += `
-                    <a href="perfil.html?uid=${userData.uid}" class="block hover:bg-gray-50 transition cursor-pointer">
+                    <a href="../../perfil.html?uid=${userData.uid}" class="block hover:bg-gray-50 transition cursor-pointer">
                         <div class="grid grid-cols-12 py-3 px-4 items-center ${positionClass}">
                             <div class="col-span-1 text-center font-bold text-lg">${position}</div>
                             <div class="col-span-6 flex items-center">
