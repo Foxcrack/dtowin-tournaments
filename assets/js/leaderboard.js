@@ -32,6 +32,40 @@ const fullLeaderboardBody = document.getElementById("fullLeaderboardBody");
 onAuthStateChanged(auth, async (user) => {
   if (user && adminUIDs.includes(user.uid)) {
     // Mostrar botón Admin
+    const loginBtn = document.getElementById("loginBtn");
+    if (loginBtn) {
+    loginBtn.innerHTML = `
+        <div class="flex items-center bg-white rounded-lg px-3 py-1">
+        <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+        <span class="text-gray-800 font-medium">${user.displayName || 'Perfil'}</span>
+        </div>
+    `;
+    loginBtn.classList.remove("bg-white", "text-orange-500");
+    loginBtn.classList.add("cursor-pointer");
+    loginBtn.addEventListener("click", () => {
+        window.location.href = "perfil.html";
+    });
+    }
+
+    // También actualizamos el menú móvil si existe
+    const mobileMenu = document.getElementById("mobileMenu");
+    if (mobileMenu) {
+    const googleBtn = mobileMenu.querySelector("#mobileLoginBtn");
+    if (googleBtn) {
+        googleBtn.remove(); // Elimina el botón viejo
+    }
+
+    // Añadir perfil al menú móvil
+    const profileLink = document.createElement("a");
+    profileLink.href = "perfil.html";
+    profileLink.className = "flex items-center space-x-2 px-4 py-2 hover:text-gray-300 transition";
+    profileLink.innerHTML = `
+        <img src="${user.photoURL || 'dtowin.png'}" alt="Perfil" class="w-6 h-6 rounded-full">
+        <span>${user.displayName || "Perfil"}</span>
+    `;
+    mobileMenu.appendChild(profileLink);
+    }
+
     const adminBtn = document.createElement("a");
     adminBtn.href = "admin/admin-panel.html";
     adminBtn.className = "fixed top-4 right-4 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 transition z-50";
