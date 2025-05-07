@@ -1,9 +1,15 @@
-import { auth, loginWithGoogle, getUserProfile } from '../firebase.js';
+import { auth, loginWithGoogle, getUserProfile, logoutUser } from '../firebase.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
+const googleLoginBtn = document.getElementById('googleLogin');
+const logoutBtn = document.getElementById('logoutBtn');
+const userDataDiv = document.getElementById('userData');
+const adminPanelBtn = document.getElementById('adminPanel');
+
+// Mostrar el perfil si el usuario está autenticado
 async function mostrarPerfil(user) {
   const profile = await getUserProfile(user.uid);
 
-  const userDataDiv = document.getElementById('userData');
   userDataDiv.innerHTML = `
     <p>Nombre: ${profile.nombre}</p>
     <p>Correo: ${profile.email}</p>
@@ -12,27 +18,49 @@ async function mostrarPerfil(user) {
     <img src="${profile.photoURL}" width="100" height="100" />
   `;
 
+  googleLoginBtn.style.display = 'none';
+  logoutBtn.style.display = 'inline-block';
+
   if (profile.isHost) {
-    document.getElementById('adminPanel').style.display = 'inline-block';
+    adminPanelBtn.style.display = 'inline-block';
   }
 }
 
-// Detectar si ya hay sesión iniciada
+// Limpiar interfaz al cerrar sesión
+function limpiarInterfaz() {
+  userDataDiv.innerHTML = '';
+  googleLoginBtn.style.display = 'inline-block';
+  logoutBtn.style.display = 'none';
+  adminPanelBtn.style.display = 'none';
+}
+
+// Detectar sesión activa
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    console.log("Sesión existente detectada");
+    console.log("Sesión activa detectada");
     await mostrarPerfil(user);
   } else {
-    console.log("No hay sesión iniciada");
+    console.log("No hay sesión activa");
+    limpiarInterfaz();
   }
 });
 
-// Cuando haces clic en el botón de login
-document.getElementById('googleLogin').addEventListener('click', async () => {
+// Evento de login
+googleLoginBtn.addEventListener('click', async () => {
   try {
     const user = await loginWithGoogle();
     await mostrarPerfil(user);
   } catch (error) {
     alert("Error al iniciar sesión: " + error.message);
+  }
+});
+
+// Evento de logout
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await logoutUser();
+    limpiarInterfaz();
+  } catch (error) {
+    alert("Error al cerrar sesión: " + error.message);
   }
 });
