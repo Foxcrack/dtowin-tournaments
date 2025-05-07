@@ -11,7 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "calculadoras-index.html";
     });
 
+    //archivos de pruebas con el firestore
 
+    document.getElementById("Dirigir_a_Pruebas").addEventListener("click", () => {
+        window.location.href = "clases-chatgpt/login.html";
+    });
 
     document.getElementById("Dirigir_a_e621Index").addEventListener("click", () => {
         window.location.href = "e621.html";
