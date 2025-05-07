@@ -2,45 +2,56 @@ import { auth, loginWithGoogle, getUserProfile, logoutUser } from '../firebase.j
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const googleLoginBtn = document.getElementById('googleLogin');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userDataDiv = document.getElementById('userData');
-  const adminPanelBtn = document.getElementById('adminPanel');
-  const botonE621 = document.getElementById("Dirigir_a_e621Index");
+  // Botones
+  const e621Btn = document.getElementById("Dirigir_a_e621Index");
+  const userProfileHeader = document.getElementById("userProfileHeader");
 
-  // ---------------- EVENTOS DE BOTONES ----------------
+  // Navegación
   document.getElementById("Dirigir_a_TorneosIndex").addEventListener("click", () => {
-      window.location.href = "index-torneos.html";
+    window.location.href = "index-torneos.html";
   });
 
   document.getElementById("Dirigir_a_LeaderboardsIndex").addEventListener("click", () => {
-      window.location.h = "leaderboard-completo.html";
+    window.location.href = "leaderboard-completo.html";
   });
 
   document.getElementById("Dirigir_a_CalculadorasIndex").addEventListener("click", () => {
-      window.location.href = "calculadoras-index.html";
+    window.location.href = "calculadoras-index.html";
+  });
+
+  document.getElementById("Dirigir_a_JuegosIndex").addEventListener("click", () => {
+    window.location.href = "juegos-index.html";
   });
 
   document.getElementById("Dirigir_a_Pruebas").addEventListener("click", () => {
-      window.location.href = "clases-chatgpt/login.html";
+    window.location.href = "clases-chatgpt/login.html";
   });
 
   document.getElementById("Dirigir_a_e621Index").addEventListener("click", () => {
-      window.location.href = "e621.html";
+    window.location.href = "e621.html";
   });
 
-  // ---------------- DETECCIÓN DE SESIÓN ----------------
+  // Detectar sesión activa
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
         const profile = await getUserProfile(user.uid);
 
-        if (profile.isHost && botonE621) {
-          botonE621.style.display = "inline-block";
+        // Mostrar botón e621 si es admin
+        if (profile.isHost && e621Btn) {
+          e621Btn.style.display = "inline-block";
+        }
+
+        // Mostrar mini perfil en el header
+        if (userProfileHeader) {
+          userProfileHeader.innerHTML = `
+            <span class="text-gray-800 text-sm font-semibold">${profile.nombre}</span>
+            <img src="${profile.photoURL}" class="rounded-full w-8 h-8" alt="avatar">
+          `;
         }
 
       } catch (err) {
-        console.error("Error cargando perfil de usuario:", err);
+        console.error("Error obteniendo perfil del usuario:", err);
       }
     }
   });
