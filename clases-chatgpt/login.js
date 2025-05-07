@@ -22,7 +22,13 @@ async function mostrarPerfil(user) {
   logoutBtn.style.display = 'inline-block';
 
   if (profile.isHost) {
-    adminPanelBtn.style.display = 'inline-block';
+    const adminBtn = document.getElementById("adminPanel");
+    adminBtn.style.display = "inline-block";
+  
+    // Redirigir al panel e621
+    adminBtn.addEventListener("click", () => {
+      window.location.href = "../e621.html";
+    });
   }
 }
 
