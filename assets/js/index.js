@@ -1,65 +1,54 @@
-import { auth, loginWithGoogle, getUserProfile, logoutUser } from '../firebase.js';
+import { auth, loginWithGoogle, logoutUser, getUserProfile } from "../firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Elementos DOM
-  const userProfileHeader = document.getElementById("userProfileHeader");
-  const botonE621 = document.getElementById("Dirigir_a_e621Index");
+  // Botones de navegación
+  const btnTorneos = document.getElementById("Dirigir_a_TorneosIndex");
+  const btnLeaderboards = document.getElementById("Dirigir_a_LeaderboardsIndex");
+  const btnCalculadoras = document.getElementById("Dirigir_a_CalculadorasIndex");
+  const btnJuegos = document.getElementById("Dirigir_a_JuegosIndex");
+  const btnPruebas = document.getElementById("Dirigir_a_Pruebas");
+  const btnE621 = document.getElementById("Dirigir_a_e621Index");
+
+  // Botones de sesión
   const loginBtn = document.getElementById("loginBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const userProfileHeader = document.getElementById("userProfileHeader");
 
   // Navegación
-  document.getElementById("Dirigir_a_TorneosIndex")?.addEventListener("click", () => {
-    window.location.href = "index-torneos.html";
-  });
+  btnTorneos?.addEventListener("click", () => location.href = "index-torneos.html");
+  btnLeaderboards?.addEventListener("click", () => location.href = "leaderboard-completo.html");
+  btnCalculadoras?.addEventListener("click", () => location.href = "calculadoras-index.html");
+  btnJuegos?.addEventListener("click", () => location.href = "juegos-index.html");
+  btnPruebas?.addEventListener("click", () => location.href = "clases-chatgpt/login.html");
+  btnE621?.addEventListener("click", () => location.href = "e621.html");
 
-  document.getElementById("Dirigir_a_LeaderboardsIndex")?.addEventListener("click", () => {
-    window.location.href = "leaderboard-completo.html";
-  });
-
-  document.getElementById("Dirigir_a_CalculadorasIndex")?.addEventListener("click", () => {
-    window.location.href = "calculadoras-index.html";
-  });
-
-  document.getElementById("Dirigir_a_JuegosIndex")?.addEventListener("click", () => {
-    window.location.href = "juegos-index.html";
-  });
-
-  document.getElementById("Dirigir_a_Pruebas")?.addEventListener("click", () => {
-    window.location.href = "clases-chatgpt/login.html";
-  });
-
-  botonE621?.addEventListener("click", () => {
-    window.location.href = "e621.html";
-  });
-
-  // ---------------- LOGIN ----------------
-  loginBtn.addEventListener("click", async () => {
+  // Iniciar sesión
+  loginBtn?.addEventListener("click", async () => {
     try {
       const user = await loginWithGoogle();
-      mostrarPerfil(user);
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
+      if (user) await mostrarPerfil(user);
+    } catch (err) {
+      console.error("Error al iniciar sesión:", err);
     }
   });
 
-  logoutBtn.addEventListener("click", async () => {
+  // Cerrar sesión
+  logoutBtn?.addEventListener("click", async () => {
     await logoutUser();
     location.reload();
   });
 
-  // ---------------- CARGAR PERFIL SI YA ESTÁ AUTENTICADO ----------------
+  // Mantener sesión activa si ya estabas logueado
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      mostrarPerfil(user);
+      await mostrarPerfil(user);
     } else {
-      loginBtn.style.display = "inline-block";
-      logoutBtn.style.display = "none";
-      userProfileHeader.innerHTML = ""; // limpiar info
+      mostrarLogin();
     }
   });
 
-  // ---------------- FUNCIONALIDAD PERFIL ----------------
+  // Mostrar perfil en el header
   async function mostrarPerfil(user) {
     try {
       const profile = await getUserProfile(user.uid);
@@ -70,16 +59,25 @@ document.addEventListener("DOMContentLoaded", () => {
         <img src="${profile.photoURL}" class="rounded-full w-8 h-8" alt="avatar">
       `;
 
-      // Mostrar botón e621 si es admin
-      if (profile.isHost && botonE621) {
-        botonE621.style.display = "inline-block";
-      }
-
-      // Ocultar login, mostrar logout
+      // Mostrar logout, ocultar login
       loginBtn.style.display = "none";
       logoutBtn.style.display = "inline-block";
-    } catch (error) {
-      console.error("Error al cargar perfil:", error);
+
+      // Mostrar e621 solo si es admin
+      if (profile.isHost && btnE621) {
+        btnE621.style.display = "inline-block";
+      }
+
+    } catch (err) {
+      console.error("Error al mostrar perfil:", err);
     }
+  }
+
+  // Mostrar login si no hay sesión
+  function mostrarLogin() {
+    userProfileHeader.innerHTML = "";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    if (btnE621) btnE621.style.display = "none";
   }
 });
