@@ -114,7 +114,9 @@ async function loadProximosTorneos() {
         
         // Obtener torneos que no estén en estado 'Finalizado' o 'Cerrado'
         const torneosSnapshot = await firebase.firestore().collection('torneos')
-            .where('estado', 'in', ['Abierto', 'Próximamente', 'En Progreso', 'Próximo'])
+        .where("estado", "in", ["Próximamente", "Abierto", "Check In", "En Progreso"])
+            .where("fecha", ">", timestampActual) // Solo torneos futuros
+
             .orderBy('fecha', 'asc')
             .get();
         

@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const suelo = canvas.height - 20;
   
       let tiempo = 0;
-      const dt = 0.05; // resolución de la animación
+      const dt = 0.04; // resolución de la animación
   
       function dibujarFrame() {
         const x = vx * tiempo;
