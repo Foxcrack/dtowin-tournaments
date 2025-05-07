@@ -1,83 +1,77 @@
-import { auth, loginWithGoogle, logoutUser, getUserProfile } from "../firebase.js";
+import { auth, loginWithGoogle, getUserProfile, logoutUser } from '../firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
+const googleLoginBtn = document.getElementById('googleLogin');
+const logoutBtn = document.getElementById('logoutBtn');
+const userDataDiv = document.getElementById('userData');
+const adminPanelBtn = document.getElementById('adminPanel');
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Botones de navegación
-  const btnTorneos = document.getElementById("Dirigir_a_TorneosIndex");
-  const btnLeaderboards = document.getElementById("Dirigir_a_LeaderboardsIndex");
-  const btnCalculadoras = document.getElementById("Dirigir_a_CalculadorasIndex");
-  const btnJuegos = document.getElementById("Dirigir_a_JuegosIndex");
-  const btnPruebas = document.getElementById("Dirigir_a_Pruebas");
-  const btnE621 = document.getElementById("Dirigir_a_e621Index");
+    document.getElementById("Dirigir_a_TorneosIndex").addEventListener("click", () => {
+        window.location.href = "index-torneos.html";
+    });
 
-  // Botones de sesión
-  const loginBtn = document.getElementById("loginBtn");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const userProfileHeader = document.getElementById("userProfileHeader");
+    document.getElementById("Dirigir_a_LeaderboardsIndex").addEventListener("click", () => {
+        window.location.href = "leaderboard-completo.html";
+    });
 
-  // Navegación
-  btnTorneos?.addEventListener("click", () => location.href = "index-torneos.html");
-  btnLeaderboards?.addEventListener("click", () => location.href = "leaderboard-completo.html");
-  btnCalculadoras?.addEventListener("click", () => location.href = "calculadoras-index.html");
-  btnJuegos?.addEventListener("click", () => location.href = "juegos-index.html");
-  btnPruebas?.addEventListener("click", () => location.href = "clases-chatgpt/login.html");
-  btnE621?.addEventListener("click", () => location.href = "e621.html");
+    document.getElementById("Dirigir_a_CalculadorasIndex").addEventListener("click", () => {
+        window.location.href = "calculadoras-index.html";
+    });
 
-  // Iniciar sesión
-  loginBtn?.addEventListener("click", async () => {
-    try {
-      const user = await loginWithGoogle();
-      if (user) await mostrarPerfil(user);
-    } catch (err) {
-      console.error("Error al iniciar sesión:", err);
-    }
-  });
+    //archivos de pruebas con el firestore
 
-  // Cerrar sesión
-  logoutBtn?.addEventListener("click", async () => {
-    await logoutUser();
-    location.reload();
-  });
+    document.getElementById("Dirigir_a_Pruebas").addEventListener("click", () => {
+        window.location.href = "clases-chatgpt/login.html";
+    });
 
-  // Mantener sesión activa si ya estabas logueado
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      await mostrarPerfil(user);
-    } else {
-      mostrarLogin();
-    }
-  });
-
-  // Mostrar perfil en el header
-  async function mostrarPerfil(user) {
-    try {
-      const profile = await getUserProfile(user.uid);
-
-      // Mostrar nombre y avatar
-      userProfileHeader.innerHTML = `
-        <span class="text-gray-800 text-sm font-semibold">${profile.nombre}</span>
-        <img src="${profile.photoURL}" class="rounded-full w-8 h-8" alt="avatar">
-      `;
-
-      // Mostrar logout, ocultar login
-      loginBtn.style.display = "none";
-      logoutBtn.style.display = "inline-block";
-
-      // Mostrar e621 solo si es admin
-      if (profile.isHost && btnE621) {
-        btnE621.style.display = "inline-block";
-      }
-
-    } catch (err) {
-      console.error("Error al mostrar perfil:", err);
-    }
-  }
-
-  // Mostrar login si no hay sesión
-  function mostrarLogin() {
-    userProfileHeader.innerHTML = "";
-    loginBtn.style.display = "inline-block";
-    logoutBtn.style.display = "none";
-    if (btnE621) btnE621.style.display = "none";
-  }
+    document.getElementById("Dirigir_a_e621Index").addEventListener("click", () => {
+        window.location.href = "e621.html";
+    });
 });
+
+// Mostrar el perfil si el usuario está autenticado
+
+//cargar el perfil del usuario al cargar la pagina
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        console.log("Sesión activa detectada");
+        await mostrarPerfil(user);
+    } else {
+        console.log("No hay sesión activa");
+        limpiarInterfaz();
+    }
+});
+// Limpiar interfaz al cerrar sesión
+function limpiarInterfaz() {
+    userDataDiv.innerHTML = '';
+    googleLoginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    adminPanelBtn.style.display = 'none';
+}
+// Evento de login
+googleLoginBtn.addEventListener('click', async () => {
+    try {
+        const user = await loginWithGoogle();
+        await mostrarPerfil(user);
+    } catch (error) {
+        alert("Error al iniciar sesión: " + error.message);
+    }
+});
+// Evento de logout
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await logoutUser();
+        limpiarInterfaz();
+    } catch (error) {
+        alert("Error al cerrar sesión: " + error.message);
+    }
+});
+
+//hacer que el boton de document.getElementById("Dirigir_a_e621Index").addEventListener("click", () => { aparezca solo si el usuario es admin
+
+document.getElementById("Dirigir_a_e621Index").style.display = "none";
+    if (profile.isHost) {
+    document.getElementById("Dirigir_a_e621Index").style.display = "block";
+}
+
