@@ -5,14 +5,22 @@ document.getElementById('googleLogin').addEventListener('click', async () => {
     const user = await loginWithGoogle();
     const profile = await getUserProfile(user.uid);
 
+    console.log("Perfil completo:", profile);
+
     const userDataDiv = document.getElementById('userData');
     userDataDiv.innerHTML = `
       <p>Nombre: ${profile.nombre}</p>
       <p>Correo: ${profile.email}</p>
       <p>Puntos: ${profile.puntos ?? 0}</p>
+      ${profile.isHost ? `<p style="color: #00ffd5;">🛡️ Usuario administrador</p>` : ''}
       <img src="${profile.photoURL}" width="100" height="100" />
-      ${profile.esAdmin ? `<p style="color: #00ffd5;">🛡️ Usuario administrador</p>` : ''}
     `;
+
+    // Mostrar botón solo si es admin
+    if (profile.isHost === true) {
+      document.getElementById('adminPanel').style.display = 'inline-block';
+    }
+
   } catch (error) {
     alert("Error al iniciar sesión: " + error.message);
   }
