@@ -12,10 +12,10 @@ document.getElementById('googleLogin').addEventListener('click', async () => {
       <p>Puntos: ${profile.puntos ?? 0}</p>
       <img src="${profile.photoURL}" width="100" height="100" />
     `;
+    // revizar si se carga bien el perfil
+    console.log("Perfil completo:", profile);
   } catch (error) {
     alert("Error al iniciar sesión: " + error.message);
-    // Manejar el error de manera adecuada
-    console.log("Perfil completo:", profile);
-
+  
   }
 });
