@@ -11,11 +11,9 @@ document.getElementById('googleLogin').addEventListener('click', async () => {
       <p>Correo: ${profile.email}</p>
       <p>Puntos: ${profile.puntos ?? 0}</p>
       <img src="${profile.photoURL}" width="100" height="100" />
+      ${profile.esAdmin ? `<p style="color: #00ffd5;">🛡️ Usuario administrador</p>` : ''}
     `;
-    // revizar si se carga bien el perfil
-    console.log("Perfil completo:", profile);
   } catch (error) {
     alert("Error al iniciar sesión: " + error.message);
-  
   }
 });
