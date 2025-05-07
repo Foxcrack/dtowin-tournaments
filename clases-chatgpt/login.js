@@ -18,8 +18,11 @@ document.getElementById('googleLogin').addEventListener('click', async () => {
 
     // Mostrar botón solo si es admin
     if (profile.isHost === true) {
+      console.log("Mostrando botón de admin");
       document.getElementById('adminPanel').style.display = 'inline-block';
     }
+    console.log("¿Es admin?", profile.isHost);
+
 
   } catch (error) {
     alert("Error al iniciar sesión: " + error.message);
