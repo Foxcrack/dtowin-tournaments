@@ -1,4 +1,4 @@
-import { auth, loginWithGoogle, getUserProfile, logoutUser } from '../firebase.js';
+import { auth, getUserProfile } from '../firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,8 +47,17 @@ document.addEventListener("DOMContentLoaded", () => {
           userProfileHeader.innerHTML = `
             <span class="text-gray-800 text-sm font-semibold">${profile.nombre}</span>
             <img src="${profile.photoURL}" class="rounded-full w-8 h-8" alt="avatar">
+            <button id="logoutHeaderBtn" class="ml-2 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Cerrar sesión</button>
           `;
         }
+
+        document.addEventListener("click", async (e) => {
+            if (e.target.id === "logoutHeaderBtn") {
+              await logoutUser();
+              location.reload(); // recarga para limpiar perfil y mostrar login si tienes lógica para eso
+            }
+          });
+          
 
       } catch (err) {
         console.error("Error obteniendo perfil del usuario:", err);
