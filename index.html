@@ -7,47 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="./assets/css/index.css">
-    <style>
-        .badge {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 40px;
-            margin: 0 5px;
-            color: white;
-        }
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .tournament-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .notification {
-            transition: opacity 0.3s ease;
-        }
-    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Index para dirigfirte a una seccion ya sea la pagina de torneos, la pagina de calculos, o la de leaderboards-->
@@ -62,6 +21,8 @@
                 <a href=".html" class="text-gray-600 hover:text-gray-800">Contacto</a>
             </nav>
             <div id="userProfileHeader" class="flex items-center space-x-2"></div>
+            <button id="loginBtn" style="display: none;">Iniciar Sesión</button>
+            <button id="logoutBtn" style="display: none;">Cerrar sesión</button>
         </header>
         <main class="mb-4">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Bienvenido a la plataforma multifuncional de Dtowin</h2>
