@@ -70,3 +70,19 @@ logoutBtn.addEventListener('click', async () => {
     alert("Error al cerrar sesión: " + error.message);
   }
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+
+  const btnCodigos = document.getElementById("btnCodigos")
+  const e621 = document.getElementById("e621")
+
+  btnCodigos.addEventListener("click", function() {
+    const codigoIngresado = document.getElementById("Codigos").value.trim().toLowerCase();
+
+    if (codigoIngresado === "e621") {
+      e621.style.display = "block";
+    } else {
+      alert("Código inválido");
+    }
+  });
+});
