@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora MRUV - Dtowin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/calcu-mru.css">
+</head>
+<body>
+  <main>
+    <h1>Calculadora de MRUV</h1>
+    <section id="formulario">
+      <label for="calculo">¿Qué deseas calcular?</label>
+      <select id="calculo">
+        <option value="distancia">Distancia</option>
+        <option value="velocidadFinal">Velocidad Final</option>
+        <option value="tiempo">Tiempo</option>
+      </select>
+
+      <label id="label1" for="valor1">Velocidad Inicial (m/s):</label>
+      <input type="number" id="valor1" />
+
+      <label id="label2" for="valor2">Aceleración (m/s²):</label>
+      <input type="number" id="valor2" />
+
+      <label id="label3" for="valor3">Tiempo (s):</label>
+      <input type="number" id="valor3" />
+
+      <button id="calcularBtn">Calcular</button>
+    </section>
+
+    <section id="resultados"></section>
+
+    <section id="graficas">
+  <div style="margin-bottom: 2rem;">
+    <h2 style="color: #00ffd5; margin-bottom: 0.5rem;">Animación del Movimiento</h2>
+    <canvas id="canvasMRUV" width="600" height="100"></canvas>
+  </div>
+  <div style="margin-bottom: 2rem;">
+  <h2 style="color: #ff6b1a; margin-bottom: 0.5rem;">Gráfica de Velocidad vs Tiempo (v vs t)</h2>
+  <canvas id="graficaMRUV" width="600" height="150"></canvas>
+</div>
+  <div>
+  <h2 style="color: #00ffd5; margin-bottom: 0.5rem;">Gráfica de Posición vs Tiempo (x vs t)</h2>
+  <canvas id="graficaVelocidad" width="600" height="150"></canvas>
+</div>
+</section>
+    <br><br>
+    <button id="regresar" onclick="location.href='index.html'">Regresar</button>
+  </main>
+
+  <script>
+    const calculoSelect = document.getElementById("calculo");
+    const label1 = document.getElementById("label1");
+    const label2 = document.getElementById("label2");
+    const label3 = document.getElementById("label3");
+    const valor1 = document.getElementById("valor1");
+    const valor2 = document.getElementById("valor2");
+    const valor3 = document.getElementById("valor3");
+    const resultado = document.getElementById("resultados");
+    const calcularBtn = document.getElementById("calcularBtn");
+    const canvas = document.getElementById("canvasMRUV");
+    const ctx = canvas.getContext("2d");
+
+    function limpiarCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function actualizarLabels() {
+      const opcion = calculoSelect.value;
+      label1.textContent = "Velocidad Inicial (m/s):";
+      label2.textContent = "Aceleración (m/s²):";
+      label3.textContent = "Tiempo (s):";
+      valor1.disabled = false;
+      valor2.disabled = false;
+      valor3.disabled = false;
+
+      if (opcion === "tiempo") {
+        label3.textContent = "Velocidad Final (m/s):";
+      }
+
+      valor1.value = "";
+      valor2.value = "";
+      valor3.value = "";
+      resultado.innerHTML = "";
+      limpiarCanvas();
+    }
+
+    function animarMRUV(v0, a, tiempo) {
+      limpiarCanvas();
+      const pxPorMetro = 5;
+      const grafica = document.getElementById("graficaMRUV");
+      const gctx = grafica.getContext("2d");
+      gctx.clearRect(0, 0, grafica.width, grafica.height);
+      gctx.beginPath();
+      gctx.moveTo(0, grafica.height);
+
+      const graficaV = document.getElementById("graficaVelocidad");
+      const vctx = graficaV.getContext("2d");
+      vctx.clearRect(0, 0, graficaV.width, graficaV.height);
+      vctx.beginPath();
+      vctx.moveTo(0, graficaV.height);
+
+      let start = null;
+
+      function draw(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const tSeg = Math.min(elapsed / 1000, tiempo);
+        const distancia = v0 * tSeg + 0.5 * a * Math.pow(tSeg, 2);
+        const velocidad = v0 + a * tSeg;
+        const x = Math.min(distancia * pxPorMetro, canvas.width - 20);
+
+        limpiarCanvas();
+        ctx.fillStyle = "#00ffd5";
+        ctx.beginPath();
+        ctx.arc(20 + x, 50, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        const gx = (tSeg / tiempo) * grafica.width;
+        const gy = grafica.height - ((distancia / (v0 * tiempo + 0.5 * a * Math.pow(tiempo, 2))) * grafica.height);
+        gctx.lineTo(gx, gy);
+        gctx.strokeStyle = "#00ffd5";
+        gctx.stroke();
+
+        const vx = (tSeg / tiempo) * graficaV.width;
+        const vy = graficaV.height - (velocidad / (v0 + a * tiempo)) * graficaV.height;
+        vctx.lineTo(vx, vy);
+        vctx.strokeStyle = "#ff6b1a";
+        vctx.stroke();
+
+        if (tSeg < tiempo) {
+          requestAnimationFrame(draw);
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    calcularBtn.addEventListener("click", () => {
+      const opcion = calculoSelect.value;
+      const v1 = parseFloat(valor1.value);
+      const v2 = parseFloat(valor2.value);
+      const v3 = parseFloat(valor3.value);
+      resultado.innerHTML = "";
+
+      if (opcion === "distancia") {
+        if (isNaN(v1) || isNaN(v2) || isNaN(v3) || v3 <= 0) {
+          resultado.innerHTML = `<p style='color:red;'>Completa todos los campos correctamente.</p>`;
+          return;
+        }
+        const d = v1 * v3 + 0.5 * v2 * v3 ** 2;
+        resultado.innerHTML = `<p style='color:#00ffd5;'>Distancia: ${d.toFixed(2)} m</p>`;
+        animarMRUV(v1, v2, v3);
+      } else if (opcion === "velocidadFinal") {
+        if (isNaN(v1) || isNaN(v2) || isNaN(v3)) {
+          resultado.innerHTML = `<p style='color:red;'>Completa todos los campos correctamente.</p>`;
+          return;
+        }
+        const vf = v1 + v2 * v3;
+        resultado.innerHTML = `<p style='color:#00ffd5;'>Velocidad Final: ${vf.toFixed(2)} m/s</p>`;
+        animarMRUV(v1, v2, v3);
+      } else if (opcion === "tiempo") {
+        if (isNaN(v1) || isNaN(v2) || isNaN(v3) || v2 === 0) {
+          resultado.innerHTML = `<p style='color:red;'>Completa todos los campos correctamente. Aceleración no puede ser 0.</p>`;
+          return;
+        }
+        const t = (v3 - v1) / v2;
+        resultado.innerHTML = `<p style='color:#00ffd5;'>Tiempo: ${t.toFixed(2)} s</p>`;
+        animarMRUV(v1, v2, t);
+      }
+    });
+
+    calculoSelect.addEventListener("change", actualizarLabels);
+    actualizarLabels();
+  </script>
+</body>
+</html>

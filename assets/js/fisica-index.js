@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "mortero.html";
     });
 
-    document.getElementById("Dirigir_a_FisicaIndex").addEventListener("click", () => {
-        window.location.href = "fisica-index.html";
+    document.getElementById("Dirigir_a_MRU").addEventListener("click", () => {
+        window.location.href = "calcu-mru.html";
     });
 
-    document.getElementById("Dirigir_a_CalculadorasIndex").addEventListener("click", () => {
-        window.location.href = "fisica-index.html";
+    document.getElementById("Dirigir_a_MRUV").addEventListener("click", () => {
+        window.location.href = "calcu-mruv.html";
     });
 
 });

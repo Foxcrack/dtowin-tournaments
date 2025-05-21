@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora MRU - Dtowin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/calcu-mru.css">
+  <style>
+    .fade-in {
+      animation: fadeInScale 0.6s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Calculadora de MRU</h1>
+    <section id="formulario">
+      <label for="calculo">¿Qué deseas calcular?</label>
+      <select id="calculo">
+        <option value="velocidad">Velocidad (v)</option>
+        <option value="distancia">Distancia (d)</option>
+        <option value="tiempo">Tiempo (t)</option>
+      </select>
+
+      <label id="label1" for="valor1">Distancia (m):</label>
+      <input type="number" id="valor1" />
+
+      <label id="label2" for="valor2">Tiempo (s):</label>
+      <input type="number" id="valor2" />
+
+      <br>
+
+      <button id="calcularBtn">Calcular</button>
+    </section>
+
+    <section id="resultados"></section>
+
+    <canvas id="canvasMRU" width="600" height="100"></canvas>
+
+    <br>
+
+    <button id="regresar" onclick="location.href='index.html'">Regresar</button>
+  </main>
+
+  <script>
+    const calculoSelect = document.getElementById("calculo");
+    const label1 = document.getElementById("label1");
+    const label2 = document.getElementById("label2");
+    const valor1 = document.getElementById("valor1");
+    const valor2 = document.getElementById("valor2");
+    const resultado = document.getElementById("resultados");
+    const calcularBtn = document.getElementById("calcularBtn");
+    const canvas = document.getElementById("canvasMRU");
+    const ctx = canvas.getContext("2d");
+
+    function actualizarLabels() {
+      const opcion = calculoSelect.value;
+      if (opcion === "velocidad") {
+        label1.textContent = "Distancia (m):";
+        label2.textContent = "Tiempo (s):";
+      } else if (opcion === "distancia") {
+        label1.textContent = "Velocidad (m/s):";
+        label2.textContent = "Tiempo (s):";
+      } else {
+        label1.textContent = "Distancia (m):";
+        label2.textContent = "Velocidad (m/s):";
+      }
+      valor1.value = "";
+      valor2.value = "";
+      resultado.innerHTML = "";
+      limpiarCanvas();
+    }
+
+    function limpiarCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function animarMovimiento(distancia, tiempo) {
+      limpiarCanvas();
+
+      const pxPorMetro = 10; // 1 metro = 10 px
+      const totalPx = Math.min(distancia * pxPorMetro, canvas.width - 40);
+      const duracion = tiempo * 1000; // ms
+
+      let start = null;
+      function draw(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progreso = Math.min(elapsed / duracion, 1);
+        const x = progreso * totalPx;
+
+        limpiarCanvas();
+        ctx.fillStyle = "#00ffd5";
+        ctx.beginPath();
+        ctx.arc(20 + x, 50, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (progreso < 1) {
+          requestAnimationFrame(draw);
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    calculoSelect.addEventListener("change", actualizarLabels);
+
+    calcularBtn.addEventListener("click", () => {
+      const opcion = calculoSelect.value;
+      const v1 = parseFloat(valor1.value);
+      const v2 = parseFloat(valor2.value);
+
+      if (isNaN(v1) || isNaN(v2) || v1 <= 0 || v2 <= 0) {
+        resultado.innerHTML = `<p class='fade-in' style='color:red;'>Por favor ingresa valores válidos.</p>`;
+        return;
+      }
+
+      let res, texto;
+      let distanciaAnim = 0, tiempoAnim = 0;
+
+      if (opcion === "velocidad") {
+        res = v1 / v2;
+        texto = `Velocidad: ${res.toFixed(2)} m/s`;
+        distanciaAnim = v1;
+        tiempoAnim = v2;
+      } else if (opcion === "distancia") {
+        res = v1 * v2;
+        texto = `Distancia: ${res.toFixed(2)} metros`;
+        distanciaAnim = res;
+        tiempoAnim = v2;
+      } else {
+        res = v1 / v2;
+        texto = `Tiempo: ${res.toFixed(2)} segundos`;
+        distanciaAnim = v1;
+        tiempoAnim = res;
+      }
+
+      resultado.innerHTML = `<p class='fade-in' style='color:#00ffd5;'>${texto}</p>`;
+      animarMovimiento(distanciaAnim, tiempoAnim);
+    });
+
+    actualizarLabels();
+  </script>
+</body>
+</html>
