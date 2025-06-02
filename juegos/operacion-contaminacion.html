@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juego: Causas y Consecuencias</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/operacion-contaminacion.css">
+</head>
+<body>
+  <header>
+    <h1>Juego de Biología: Causas y Consecuencias</h1>
+    <p class="subtitulo">¡Aprende y diviértete con las reglas, cartas y tablero!</p>
+  </header>
+
+  <main>
+    <section class="reglas">
+      <h2>Reglas Generales</h2>
+      <ul class="reglas-lista">
+        <li class="regla-card">
+          <span class="regla-icon">🎲</span>
+          <div>
+            <strong>Tablero:</strong> 250 casillas distribuidas así:
+            <ul class="tablero-lista">
+              <li><span class="casilla rojo"></span> Rojo: 47</li>
+              <li><span class="casilla negro"></span> Negro: 47</li>
+              <li><span class="casilla amarillo"></span> Amarillo: 47</li>
+              <li><span class="casilla verde"></span> Verde: 47</li>
+              <li><span class="casilla penal"></span> Penalización: 20</li>
+              <li><span class="casilla trivia"></span> Trivia: 21</li>
+              <li><span class="casilla blanco"></span> Blanco: 21</li>
+            </ul>
+          </div>
+        </li>
+        <li class="regla-card">
+          <span class="regla-icon">🔄</span>
+          <div>
+            <strong>Rondas:</strong> Cada jugador lanza y suma puntos.
+            <ul>
+              <li>Ronda 1 y 2: Sin modificadores.</li>
+              <li>Ronda 3: Se aplica una carta de modificador negativo.</li>
+              <li>3 rondas = 1 ciclo.</li>
+            </ul>
+          </div>
+        </li>
+        <li class="regla-card">
+          <span class="regla-icon">♻️</span>
+          <div>
+            <strong>Ciclos:</strong> Al final de cada ciclo, todos reciben una carta positiva (puede ser de doble filo).
+          </div>
+        </li>
+        <li class="regla-card">
+          <span class="regla-icon">🃏</span>
+          <div>
+            <strong>Cartas negativas:</strong> En la ronda 3, se elige 1 de 4 cartas negativas al azar. Solo afecta esa ronda y luego vuelve a la baraja.
+          </div>
+        </li>
+        <li class="regla-card">
+          <span class="regla-icon">⏳</span>
+          <div>
+            <strong>Duración de cartas negativas:</strong>
+            <ul>
+              <li>Comunes (10): 3 rondas</li>
+              <li>Épicas (7): 2 rondas</li>
+              <li>Legendarias (5): 1 ronda</li>
+            </ul>
+          </div>
+        </li>
+        <li class="regla-card">
+          <span class="regla-icon">✨</span>
+          <div>
+            <strong>Cartas positivas:</strong> 30 cartas, máximo 2 por jugador, cada una tiene usos limitados.
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section class="cartas">
+      <h2>Cartas Positivas</h2>
+      <div class="cartas-grid">
+        <div>
+          <h3>🎲 Modificación de Dados</h3>
+          <ul>
+            <li><b>Dado de la Fortuna:</b> Repite un dado en tu turno.</li>
+            <li><b>Multiplicador X2:</b> Duplica el dado mayor.</li>
+            <li><b>Intercambio Astuto:</b> Intercambia tus dados con otro jugador.</li>
+            <li><b>Suma Imparable:</b> +2 a tu tirada.</li>
+            <li><b>Reroll Veloz:</b> Si sacas doble, repite ambos y suma.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>🚀 Movimiento y Posicionamiento</h3>
+          <ul>
+            <li><b>Salto Ágil:</b> +10 casillas si caes en verde.</li>
+            <li><b>Retirada Estratégica:</b> Retrocede hasta 6 casillas para evitar penalización.</li>
+            <li><b>Avance Turbo:</b> Avanza a la casilla roja más cercana.</li>
+            <li><b>Cambio de Pista:</b> Cambia a otro color de casilla.</li>
+            <li><b>Portal Rápido:</b> Avanza a la siguiente casilla del mismo color.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>🛡️ Protección y Defensa</h3>
+          <ul>
+            <li><b>Escudo Elemental:</b> Ignora el efecto negativo por 1 ciclo.</li>
+            <li><b>Resistencia Oculta:</b> Anula efecto negativo común por 3 rondas.</li>
+            <li><b>Inmunidad Total:</b> Inmune a penalizaciones 1 ronda.</li>
+            <li><b>Barrera Flexible:</b> Elige qué penalización ignorar.</li>
+            <li><b>Doble Defensa:</b> Anula negativos y avanza +3 casillas.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>🃏 Estrategia y Juego</h3>
+          <ul>
+            <li><b>Robo Sorpresa:</b> Toma una carta positiva extra.</li>
+            <li><b>Espionaje Perfecto:</b> Mira la carta negativa antes de revelarla.</li>
+            <li><b>Mano Experta:</b> Tira un dado y suma +4.</li>
+            <li><b>Intercambio Forzado:</b> Intercambia tu carta positiva con otro.</li>
+            <li><b>Cambio de Viento:</b> Cambia la carta negativa elegida.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>💎 Beneficio Especial</h3>
+          <ul>
+            <li><b>Tesoro Oculto:</b> +2 casillas al caer en rojo.</li>
+            <li><b>Energía Ilimitada:</b> Tira dos veces y elige el resultado.</li>
+            <li><b>Moneda del Destino:</b> Si sacas par, +3 casillas.</li>
+            <li><b>Dominio del Tablero:</b> Efectos positivos duplicados este ciclo.</li>
+            <li><b>Maestro del Dado:</b> Tira un tercer dado y elige dos resultados.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>⚡ Especiales de Un Solo Uso</h3>
+          <ul>
+            <li><b>Explosión de Energía:</b> +15 casillas, pierdes el siguiente turno.</li>
+            <li><b>Riesgo Calculado:</b> x3 tu tirada, si sacas menos de 11 retrocedes esa cantidad.</li>
+            <li><b>Cambio Radical:</b> Todos dan un comodín al jugador de la derecha.</li>
+            <li><b>Pacto del Dado:</b> Bloquea el valor de un dado para el ciclo.</li>
+            <li><b>Suerte Ciega:</b> Usa un comodín de otro jugador sin gastarlo.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="cartas-negativas">
+      <h2>Cartas Negativas</h2>
+      <div class="cartas-grid">
+        <div>
+          <h3>🟥 Comunes (10)</h3>
+          <ul>
+            <li><b>Pesadez Absoluta:</b> Todos retroceden 4 casillas en cada tirada.</li>
+            <li><b>Maldición del Dado:</b> Todos solo pueden tirar un dado por turno.</li>
+            <li><b>Retroceso Constante:</b> Si algún jugador cae en rojo o negro, todos retroceden 10 casillas.</li>
+            <li><b>Bloqueo Parcial:</b> Nadie puede avanzar más de 8 casillas por turno.</li>
+            <li><b>Efecto Lento:</b> Todos los efectos positivos tienen un 50% de eficacia.</li>
+            <li><b>Oscuridad Parcial:</b> Todos los dados mayores a 4 se consideran como 4.</li>
+            <li><b>Tropiezo Aleatorio:</b> Si algún jugador saca número impar, todos retroceden 3 casillas.</li>
+            <li><b>Inmovilidad Breve:</b> si sacas un numero mayor a 7 pierdes el turno y no avanzas.</li>
+            <li><b>Confusión Temporal:</b> Todos retroceden a la última casilla trivia visitada. si los dos dados dan un numero impar en las caras, si el jugador no ah visitado una casilla trivia este retrosedera 13 casillas</li>
+            <li><b>Carga Pesada:</b> Avanzar más de 6 casillas hace que todos retrocedan 2 casillas.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>🟪 Épicas (7)</h3>
+          <ul>
+            <li><b>Ciclo Maldito:</b> Para avanzar, todos deben sacar +7; si no, retroceden 12 casillas.</li>
+            <li><b>Inversión Caótica:</b> Si algún jugador saca más de 7, todos retroceden el doble de lo que avanzaron.</li>
+            <li><b>Obstáculo Invisible:</b> Nadie puede usar cartas positivas.</li>
+            <li><b>Doble Penalización:</b> Por cada casilla verde o amarilla que se pise, todos retroceden 15 casillas.</li>
+            <li><b>Restricción Total:</b> Nadie puede avanzar más de 4 casillas por turno.</li>
+            <li><b>Viento En Contra:</b> Todos restan 5 casillas a su avance.</li>
+            <li><b>Eco Negativo:</b> Cada carta positiva usada por alguien hace retroceder a todos 3 casillas.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>🟨 Legendarias (5)</h3>
+          <ul>
+            <li><b>Desastre Total:</b> Todos pierden 3/4 de sus avances acumulados.</li>
+            <li><b>Dado Invertido:</b> Todo avance x6 se convierte en retroceso.</li>
+            <li><b>Efecto Nulo:</b> Todos pierden una carta positiva; quien no tenga pierde 30 fichas.</li>
+            <li><b>Reverso Absoluto:</b> Todos regresan automáticamente a la casilla inicial.</li>
+            <li><b>Caída Inminente:</b> Todos pierden esta ronda y retroceden a la mitad del tablero.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="cartas-trivia">
+      <h2>Cartas de Trivia</h2>
+      <ol class="trivia-lista">
+        <li>
+          <b>Contaminación del Aire:</b> ¿Qué gases son responsables principales de la contaminación del aire?
+          <ul>
+            <li>✅ A. Óxidos de nitrógeno y dióxido de carbono</li>
+            <li>❌ B. Helio y argón</li>
+            <li>❌ C. Cloro y flúor</li>
+            <li>❌ D. Nitrógeno puro y oxígeno puro</li>
+          </ul>
+        </li>
+        <li>
+          <b>Contaminación del Agua:</b> ¿Cuál es una causa común de contaminación del agua?
+          <ul>
+            <li>✅ A. Descarga de desechos industriales</li>
+            <li>❌ B. Absorción natural del agua</li>
+            <li>❌ C. Deshielos naturales</li>
+            <li>❌ D. Evaporación excesiva</li>
+          </ul>
+        </li>
+        <li>
+          <b>Contaminación del Suelo:</b> ¿Cuál es el impacto de la contaminación del suelo?
+          <ul>
+            <li>✅ A. Afecta la salud de plantas y animales</li>
+            <li>❌ B. Aumenta la productividad agrícola</li>
+            <li>❌ C. Mejora la calidad del agua</li>
+            <li>❌ D. Genera oxígeno</li>
+          </ul>
+        </li>
+        <li>
+          <b>Contaminación Acústica:</b> ¿Qué tipo de contaminación causa estrés y afecta la audición?
+          <ul>
+            <li>✅ A. Acústica</li>
+            <li>❌ B. Visual</li>
+            <li>❌ C. Radiactiva</li>
+            <li>❌ D. Subterránea</li>
+          </ul>
+        </li>
+        <li>
+          <b>Cambio Climático:</b> ¿Cuál es uno de los principales gases de efecto invernadero?
+          <ul>
+            <li>✅ A. Dióxido de carbono (CO₂)</li>
+            <li>❌ B. Oxígeno (O₂)</li>
+            <li>❌ C. Helio (He)</li>
+            <li>❌ D. Cloruro de sodio (NaCl)</li>
+          </ul>
+        </li>
+        <li>
+          <b>Impacto en la Salud:</b> ¿Qué población es más vulnerable a los efectos de la contaminación?
+          <ul>
+            <li>✅ A. Niños y ancianos</li>
+            <li>❌ B. Adultos sanos</li>
+            <li>❌ C. Animales marinos</li>
+            <li>❌ D. Insectos</li>
+          </ul>
+        </li>
+        <li>
+          <b>Fomento de Energías Renovables:</b> ¿Cuál es un beneficio clave del uso de energías renovables?
+          <ul>
+            <li>✅ A. Disminuir el uso de combustibles fósiles</li>
+            <li>❌ B. Aumentar el CO₂ en la atmósfera</li>
+            <li>❌ C. Reducir costos de petróleo</li>
+            <li>❌ D. Generar más basura</li>
+          </ul>
+        </li>
+        <li>
+          <b>Estrategias contra la Contaminación:</b> ¿Cuál es una medida efectiva para mitigar la contaminación?
+          <ul>
+            <li>✅ A. Regulaciones y políticas públicas</li>
+            <li>❌ B. Incrementar combustibles fósiles</li>
+            <li>❌ C. Deforestar zonas verdes</li>
+            <li>❌ D. Usar más plástico</li>
+          </ul>
+        </li>
+        <li>
+          <b>Educación Ambiental:</b> ¿Qué busca lograr la educación ambiental?
+          <ul>
+            <li>✅ A. Concienciar y cambiar hábitos sostenibles</li>
+            <li>❌ B. Fomentar el consumo excesivo</li>
+            <li>❌ C. Eliminar áreas verdes</li>
+            <li>❌ D. Ignorar los efectos de la contaminación</li>
+          </ul>
+        </li>
+        <li>
+          <b>Actividades Industriales:</b> ¿Cuál es uno de los mayores contribuyentes a la contaminación?
+          <ul>
+            <li>✅ A. Emisión de gases y desechos por industrias</li>
+            <li>❌ B. Crecimiento de plantas</li>
+            <li>❌ C. Lluvias intensas</li>
+            <li>❌ D. Actividad volcánica</li>
+          </ul>
+        </li>
+        <li>
+          <b>Transporte y Contaminación:</b> ¿Cómo contribuye el transporte a la contaminación?
+          <ul>
+            <li>✅ A. Por quema de combustibles fósiles</li>
+            <li>❌ B. Por reducción de gases</li>
+            <li>❌ C. Por generación de energía limpia</li>
+            <li>❌ D. Por absorber CO₂</li>
+          </ul>
+        </li>
+        <li>
+          <b>Desechos Sólidos:</b> ¿Qué problema ambiental causan los desechos sólidos?
+          <ul>
+            <li>✅ A. Contaminación del suelo y del agua</li>
+            <li>❌ B. Producción de alimentos</li>
+            <li>❌ C. Mejora del aire</li>
+            <li>❌ D. Aumento de la biodiversidad</li>
+          </ul>
+        </li>
+        <li>
+          <b>Combustibles Fósiles:</b> ¿Por qué se deben reducir los combustibles fósiles?
+          <ul>
+            <li>✅ A. Generan gases contaminantes</li>
+            <li>❌ B. Son recursos renovables</li>
+            <li>❌ C. Ayudan a purificar el aire</li>
+            <li>❌ D. Mejoran el suelo</li>
+          </ul>
+        </li>
+        <li>
+          <b>Agricultura Intensiva:</b> ¿Qué problema ambiental genera la agricultura intensiva?
+          <ul>
+            <li>✅ A. Contaminación del suelo y afectación de la biodiversidad</li>
+            <li>❌ B. Aumento de agua potable</li>
+            <li>❌ C. Generación de energías renovables</li>
+            <li>❌ D. Incremento de zonas verdes</li>
+          </ul>
+        </li>
+        <li>
+          <b>Importancia de Estudiar la Contaminación:</b> ¿Por qué es importante estudiar la contaminación?
+          <ul>
+            <li>✅ A. Para desarrollar estrategias que mitiguen sus efectos</li>
+            <li>❌ B. Para aumentar emisiones contaminantes</li>
+            <li>❌ C. Para eliminar la educación ambiental</li>
+            <li>❌ D. Para fomentar prácticas insostenibles</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+  </main>
+  <footer>
+    <p>Juego creado por el equipo Sharpnes lV &copy; 2025</p>
+  </footer>
+</body>
+</html>

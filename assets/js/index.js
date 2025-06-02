@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = "clases-chatgpt/login.html";
     });
 
-    document.getElementById("Dirigir_a_e621Index").addEventListener("click", () => {
-        window.location.href = "e621.html";
+    document.getElementById("Dirigir_a_JuegosIndex").addEventListener("click", () => {
+        window.location.href = "index-juegos.html";
     });
     
 });
