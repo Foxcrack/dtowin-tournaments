@@ -1,84 +1,421 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    background: #f7f8fa;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header */
+header {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+header img {
+    height: 2rem;
+}
+
+nav a {
     color: #fff;
-  }
-  
-  /* Título principal */
-  h1 {
-    color: #ff6b1a;
-  }
-  
-  /* Subtítulo */
-  h2 {
-    font-size: 1.25rem;
+    text-decoration: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    transition: background 0.2s, color 0.2s;
+}
+
+nav a:hover {
+    background: rgba(255,255,255,0.15);
+    color: #ffe0b2;
+}
+
+/* Hero section */
+section.text-center {
+    background: linear-gradient(90deg, #2563eb 0%, #f43f5e 100%);
+}
+
+section.text-center h1 {
+    color: #fff;
+    font-size: 2.5rem;
+}
+
+section.text-center p {
+    color: #f3f4f6;
+}
+
+section.text-center button {
+    background: #fff;
+    color: #f43f5e;
     font-weight: bold;
-    color: #000000;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Texto base */
-  p {
-    color: #cfcfcf;
-  }
-  
-  /* Enlaces del navbar */
-  nav a {
-    font-weight: 500;
-    transition: color 0.3s ease;
-  }
-  
-  nav a:hover {
-    color: #ff6b1a;
-  }
-  
-  /* Botones principales de sección */
-  .tournament-card {
-    background: linear-gradient(135deg, #ff6b1a, #ff914d);
-    color: #fff;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: background 0.2s, color 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+section.text-center button:hover {
+    background: #fee2e2;
+    color: #be123c;
+}
+
+/* Sección de torneos */
+h2, h3 {
+    color: #1e293b;
+}
+
+.tournament-card {
+    background: linear-gradient(135deg, #fff 60%, #f1f5f9 100%);
+    color: #222;
     border-radius: 12px;
     padding: 1.5rem;
-    text-align: center;
     font-weight: bold;
-    font-size: 1.1rem;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-position 0.5s;
-    background-size: 200% 200%;
-    background-position: left center;
-    box-shadow: 0 6px 15px rgba(255, 107, 26, 0.4);
+    font-size: 1rem;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 6px 15px rgba(30, 41, 59, 0.08);
     border: none;
-  }
-  
-  /* Efecto al pasar el mouse */
-  .tournament-card:hover {
+    margin-bottom: 1rem;
+}
+
+.tournament-card:hover {
     transform: translateY(-4px) scale(1.02);
-    background-position: right center;
-    box-shadow: 0 12px 25px rgba(255, 107, 26, 0.5);
-  }
-  
-  /* H2 dentro del botón */
-  .tournament-card h2 {
-    font-size: 1.3rem;
-    margin: 0;
+    box-shadow: 0 12px 25px rgba(30, 41, 59, 0.12);
+}
+
+.tournament-card h4 {
+    font-size: 1.2rem;
+    margin: 0 0 0.5rem 0;
+    color: #1e293b;
+}
+
+.tournament-card p {
+    color: #64748b;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 400;
+}
+
+.tournament-card button {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 0.5rem;
+}
+
+.tournament-card button:hover {
+    background: #1d4ed8;
+}
+
+.tournament-card .checkin-btn {
+    background: #a21caf;
+}
+
+.tournament-card .checkin-btn:hover {
+    background: #701a75;
+}
+
+.tournament-card span {
+    display: inline-block;
+    margin-top: 0.5rem;
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 0.2rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Loader */
+.loader {
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg);}
+    100% { transform: rotate(360deg);}
+}
+
+/* Leaderboard - Mejorado */
+#leaderboard {
+    background: #fff;
+    color: #222;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+#leaderboard table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#leaderboard thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-  }
-  
-  
-  /* Fondo del contenedor principal */
-  .container {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 2rem;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* Ajuste responsive para móviles */
-  @media (max-width: 768px) {
-    h1 {
-      font-size: 1.5rem;
+}
+
+#leaderboard th {
+    padding: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+#leaderboard tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+#leaderboard tbody tr:hover {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#leaderboard tbody tr:nth-child(odd) {
+    background: #fafbfc;
+}
+
+#leaderboard tbody tr:nth-child(odd):hover {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+#leaderboard td {
+    padding: 1rem;
+    border: none;
+    vertical-align: middle;
+}
+
+/* Posiciones especiales mejoradas */
+.position-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.875rem;
+    margin: 0 auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.position-1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #b45309;
+    border: 2px solid #f59e0b;
+}
+
+.position-2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #e5e7eb 100%);
+    color: #374151;
+    border: 2px solid #6b7280;
+}
+
+.position-3 {
+    background: linear-gradient(135deg, #cd7f32 0%, #f97316 100%);
+    color: white;
+    border: 2px solid #ea580c;
+}
+
+.position-default {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: 2px solid #1e40af;
+}
+
+/* Perfiles de usuario mejorados */
+.user-profile {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+    background: rgba(59, 130, 246, 0.1);
+    transform: translateX(5px);
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 1rem;
+    border: 3px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.user-profile:hover .user-avatar {
+    border-color: #3b82f6;
+    transform: scale(1.1);
+}
+
+.user-info h4 {
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.user-info p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+/* Stats mejoradas */
+.stat-number {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: #1f2937;
+}
+
+.points-stat {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive mejorado */
+@media (max-width: 768px) {
+    #leaderboard th,
+    #leaderboard td {
+        padding: 0.75rem 0.5rem;
     }
-  
-    .tournament-card {
-      padding: 1.5rem;
+    
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        margin-right: 0.75rem;
     }
-  }
-  
+    
+    .position-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+    
+    .user-info h4 {
+        font-size: 0.875rem;
+    }
+    
+    .stat-number {
+        font-size: 1rem;
+    }
+}
+
+/* Footer */
+footer {
+    background: linear-gradient(90deg, #2563eb 0%, #f43f5e 100%);
+    color: #fff;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+footer a:hover {
+    color: #ffe0b2;
+    text-decoration: underline;
+}
+
+footer input[type="email"] {
+    color: #222;
+    background: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
+footer button[type="submit"] {
+    background: #fff;
+    color: #f43f5e;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+footer button[type="submit"]:hover {
+    background: #fee2e2;
+    color: #be123c;
+}
+
+/* Modales */
+.modal {
+    backdrop-filter: blur(4px);
+}
+
+/* Modal de Inscripción */
+#inscriptionModal {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+#inscriptionModal > div {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+    from { 
+        transform: translateY(-50px) scale(0.9);
+        opacity: 0;
+    }
+    to { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Inputs del formulario */
+#inscriptionModal input:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+}
+
+#inscriptionModal input::placeholder {
+    color: #9ca3af;
+}
+
+/* Botón de inscripción con efecto */
+#inscriptionModal button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+/* Responsive para móviles */
+@media (max-width: 640px) {
+    #inscriptionModal > div {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+}

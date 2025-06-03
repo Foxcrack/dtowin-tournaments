@@ -421,13 +421,14 @@ async function checkUserIsStaff(uid, tournamentId) {
     }
 }
 
-// Cargar datos del bracket
+// Cargar datos del bracket - VERSIÓN ACTUALIZADA
 async function loadBracketData() {
     try {
         // Mostrar estado de carga
         bracketContainer.innerHTML = `
-            <div class="py-12 flex justify-center">
-                <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full"></div>
+            <div class="py-12 flex justify-center items-center">
+                <div class="spinner w-12 h-12 border-t-4 border-b-4 border-blue-500 rounded-full mr-4"></div>
+                <span class="text-gray-600">Cargando bracket...</span>
             </div>
         `;
         
@@ -442,26 +443,24 @@ async function loadBracketData() {
         const tournamentData = tournamentRef.data();
         console.log("Datos del torneo cargados:", tournamentData.nombre);
         
-        // DEBUGGING: Mostrar participantes
-        console.log("Participantes registrados:", tournamentData.participants?.length || 0);
-        console.log("Participantes con check-in:", tournamentData.checkedInParticipants?.length || 0);
-        
         // Actualizar nombre y estado del torneo
         tournamentNameEl.textContent = tournamentData.nombre || "Torneo sin nombre";
         tournamentStatusEl.textContent = tournamentData.estado || "";
         
         // Verificar si el torneo tiene un bracket
         if (!tournamentData.bracketId) {
-            // Mostrar mensaje de que no hay bracket
             bracketContainer.innerHTML = `
                 <div class="p-8 text-center">
-                    <p class="text-gray-600 mb-4">Este torneo aún no tiene un bracket generado.</p>
+                    <div class="mb-4">
+                        <i class="fas fa-sitemap text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-600 mb-4">Este torneo aún no tiene un bracket generado.</p>
+                    </div>
                     ${isUserStaff ? `
-                        <button id="generate-bracket-btn" class="dtowin-blue text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                            Generar Bracket
+                        <button id="generate-bracket-btn" class="dtowin-blue text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                            <i class="fas fa-plus mr-2"></i>Generar Bracket
                         </button>
                     ` : `
-                        <p class="text-sm text-gray-500">El bracket se generará cuando el torneo comience.</p>
+                        <p class="text-sm text-gray-500">El bracket se generará cuando el torneo inicie.</p>
                     `}
                 </div>
             `;
@@ -472,9 +471,13 @@ async function loadBracketData() {
                 if (generateBracketBtn) {
                     generateBracketBtn.addEventListener('click', async () => {
                         try {
-                            const { resetTournamentBracket } = await import('./brackets.js');
-                            if (confirm("¿Quieres generar un nuevo bracket? Esto reemplazará cualquier bracket existente.")) {
-                                await resetTournamentBracket(tournamentId);
+                            if (confirm("¿Quieres generar un nuevo bracket? Esto eliminará participantes no confirmados y creará el bracket con los participantes confirmados.")) {
+                                generateBracketBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generando...';
+                                generateBracketBtn.disabled = true;
+                                
+                                const { generateTournamentBracket } = await import('./brackets-new.js');
+                                await generateTournamentBracket(tournamentId);
+                                
                                 window.mostrarNotificacion("Bracket generado correctamente", "success");
                                 await loadBracketData();
                             }
@@ -486,10 +489,10 @@ async function loadBracketData() {
                 }
             }
             
-            return; // Importante: salir de la función aquí si no hay bracket
+            return;
         }
         
-        // Si llegamos a este punto, el torneo tiene un bracket
+        // Si llegamos aquí, el torneo tiene un bracket
         const bracketRef = await db.collection("brackets").doc(tournamentData.bracketId).get();
         
         if (!bracketRef.exists) {
@@ -503,11 +506,11 @@ async function loadBracketData() {
         };
         
         console.log("Bracket datos cargados:", bracketData.id);
-        console.log("Número de partidos:", bracketData.matches?.length || 0);
-        console.log("Número de rondas:", bracketData.rounds?.length || 0);
+        console.log("Número de partidos:", bracketData.partidos?.length || 0);
+        console.log("Número de rondas:", bracketData.rondas?.length || 0);
         
         // Renderizar bracket
-        renderBracket(bracketData);
+        renderNewBracket(bracketData);
         
         // Cargar badges del torneo
         loadTournamentBadges(tournamentId);
@@ -518,9 +521,9 @@ async function loadBracketData() {
     }
 }
 
-// Renderizar bracket con mejoras en la visualización
-function renderBracket(data) {
-    if (!data || !data.rounds || !data.matches) {
+// Nueva función para renderizar el bracket mejorado
+function renderNewBracket(data) {
+    if (!data || !data.rondas || !data.partidos) {
         bracketContainer.innerHTML = `
             <div class="p-8 text-center">
                 <p class="text-gray-600">El bracket no tiene datos válidos</p>
@@ -529,90 +532,137 @@ function renderBracket(data) {
         return;
     }
     
-    console.log("Rendering bracket with data:", data);
+    console.log("Renderizando bracket con datos:", data);
     
-    // Crear un contenedor para el bracket con scroll horizontal
-    let html = '<div class="bracket-wrapper">';
-    html += '<div class="bracket">';
+    // Mostrar información si es un bracket de prueba
+    let html = '';
+    if (data.esPrueba) {
+        html += `
+            <div class="mb-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle text-yellow-500 mr-2"></i>
+                    <div>
+                        <p class="text-yellow-800 font-semibold">Bracket de Prueba</p>
+                        <p class="text-yellow-700 text-sm">Este bracket incluye jugadores bot para testing. Los resultados se pueden actualizar haciendo clic en los partidos.</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Crear contenedor principal del bracket
+    html += '<div class="bracket-wrapper overflow-x-auto">';
+    html += '<div class="bracket flex gap-8 p-4 min-w-max">';
     
     // Organizar partidos por ronda
-    const matchesByRound = {};
-    data.rounds.forEach(round => {
-        matchesByRound[round.round] = data.matches.filter(match => match.round === round.round)
-            .sort((a, b) => a.position - b.position);
+    const partidosPorRonda = {};
+    data.rondas.forEach(ronda => {
+        partidosPorRonda[ronda.numero] = data.partidos.filter(partido => 
+            partido.ronda === ronda.numero
+        ).sort((a, b) => a.posicion - b.posicion);
     });
     
-    // Registrar participantes para depuración
-    const participantsList = new Set();
-    data.matches.forEach(match => {
-        if (match.player1 && match.player1.id) participantsList.add(match.player1.id);
-        if (match.player2 && match.player2.id) participantsList.add(match.player2.id);
-    });
-    console.log(`Total unique participants in bracket: ${participantsList.size}`);
-    console.log("Participantes en el bracket:", Array.from(participantsList));
-    
-    // Generar rondas
-    data.rounds.forEach(round => {
-        const roundMatches = matchesByRound[round.round];
-        console.log(`Rendering round ${round.round} (${round.name}) with ${roundMatches.length} matches`);
+    // Generar cada ronda
+    data.rondas.forEach(ronda => {
+        const partidosRonda = partidosPorRonda[ronda.numero];
         
         html += `
-            <div class="round">
-                <div class="round-title">${round.name}</div>
-                <div class="matches">
+            <div class="round flex flex-col">
+                <div class="round-header mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 text-center">${ronda.nombre}</h3>
+                    <p class="text-sm text-gray-500 text-center">Ronda ${ronda.numero}</p>
+                </div>
+                <div class="matches flex flex-col gap-4 justify-center min-h-0">
         `;
         
-        // Calcular espacio necesario entre partidos para esta ronda
-        const matchGap = Math.pow(2, round.round - 1);
+        // Calcular espaciado entre partidos
+        const espaciado = Math.pow(2, ronda.numero - 1) * 20;
         
-        // Generar partidos para esta ronda
-        roundMatches.forEach((match, index) => {
-            const player1 = match.player1 || { name: "TBD", id: null };
-            const player2 = match.player2 || { name: "TBD", id: null };
+        partidosRonda.forEach((partido, index) => {
+            const jugador1 = partido.jugador1 || { userName: "TBD", gameUsername: "TBD" };
+            const jugador2 = partido.jugador2 || { userName: "TBD", gameUsername: "TBD" };
             
-            console.log(`Match ${match.id}: ${player1.name} vs ${player2.name}`);
+            const esGanadorJ1 = partido.ganador && partido.ganador.userId === jugador1.userId;
+            const esGanadorJ2 = partido.ganador && partido.ganador.userId === jugador2.userId;
             
-            const matchCompleted = match.status === 'completed';
-            const player1Winner = matchCompleted && match.winner && player1.id === match.winner.id;
-            const player2Winner = matchCompleted && match.winner && player2.id === match.winner.id;
+            // Determinar si es un bot
+            const esBot1 = jugador1.userId && (jugador1.userId.startsWith('bot_') || jugador1.esBot);
+            const esBot2 = jugador2.userId && (jugador2.userId.startsWith('bot_') || jugador2.esBot);
             
-            // Crear contenedor para este partido
-            html += `<div class="match" data-match-id="${match.id}" data-position="${match.position}" data-round="${match.round}">`;
-            
-            // Jugador 1
-            html += `
-                <div class="player ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
-                    <div class="player-name">${player1.name}</div>
-                    <div class="player-score ${player1Winner ? 'winner' : player1Winner === false && matchCompleted ? 'loser' : ''}">
-                        ${matchCompleted && match.scores ? match.scores.player1 || 0 : '0'}
-                    </div>
-                    ${player1.discord ? `<div class="discord-tooltip">Discord: ${player1.discord}</div>` : ''}
-                </div>
-            `;
-            
-            // Jugador 2
-            html += `
-                <div class="player ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
-                    <div class="player-name">${player2.name}</div>
-                    <div class="player-score ${player2Winner ? 'winner' : player2Winner === false && matchCompleted ? 'loser' : ''}">
-                        ${matchCompleted && match.scores ? match.scores.player2 || 0 : '0'}
-                    </div>
-                    ${player2.discord ? `<div class="discord-tooltip">Discord: ${player2.discord}</div>` : ''}
-                </div>
-            `;
-            
-            // Añadir conector con siguiente partido si existe
-            if (match.nextMatchId) {
-                html += '<div class="match-connector"></div>';
+            // Clases de estado del partido
+            let estadoClase = "";
+            if (partido.estado === "completado") {
+                estadoClase = "border-green-500";
+            } else if (partido.estado === "pendiente") {
+                estadoClase = "border-blue-500";
+            } else {
+                estadoClase = "border-gray-300";
             }
             
-            html += '</div>';
+            html += `
+                <div class="match bg-white border-2 ${estadoClase} rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow min-w-[250px] ${isUserStaff && partido.estado === 'pendiente' ? 'cursor-pointer' : ''}"
+                     data-match-id="${partido.id}" data-match-state="${partido.estado}">
+                    
+                    <!-- Jugador 1 -->
+                    <div class="player p-3 border-b border-gray-200 ${esGanadorJ1 ? 'bg-green-50 border-l-4 border-l-green-500' : esGanadorJ2 ? 'bg-red-50' : ''}">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <img src="${jugador1.userPhoto || 'dtowin.png'}" alt="${jugador1.userName}" 
+                                     class="w-8 h-8 rounded-full object-cover border">
+                                <div>
+                                    <div class="flex items-center gap-1">
+                                        <p class="font-semibold text-sm ${esGanadorJ1 ? 'text-green-700' : ''}">${jugador1.gameUsername || jugador1.userName}</p>
+                                        ${esBot1 ? '<span class="text-xs bg-blue-100 text-blue-600 px-1 rounded">BOT</span>' : ''}
+                                    </div>
+                                    ${jugador1.discordUsername ? `<p class="text-xs text-gray-500">${jugador1.discordUsername}</p>` : ''}
+                                </div>
+                            </div>
+                            <div class="score ${esGanadorJ1 ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'} px-2 py-1 rounded font-bold">
+                                ${partido.puntuacionJugador1}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Jugador 2 -->
+                    <div class="player p-3 ${esGanadorJ2 ? 'bg-green-50 border-l-4 border-l-green-500' : esGanadorJ1 ? 'bg-red-50' : ''}">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <img src="${jugador2.userPhoto || 'dtowin.png'}" alt="${jugador2.userName}" 
+                                     class="w-8 h-8 rounded-full object-cover border">
+                                <div>
+                                    <div class="flex items-center gap-1">
+                                        <p class="font-semibold text-sm ${esGanadorJ2 ? 'text-green-700' : ''}">${jugador2.gameUsername || jugador2.userName}</p>
+                                        ${esBot2 ? '<span class="text-xs bg-blue-100 text-blue-600 px-1 rounded">BOT</span>' : ''}
+                                    </div>
+                                    ${jugador2.discordUsername ? `<p class="text-xs text-gray-500">${jugador2.discordUsername}</p>` : ''}
+                                </div>
+                            </div>
+                            <div class="score ${esGanadorJ2 ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'} px-2 py-1 rounded font-bold">
+                                ${partido.puntuacionJugador2}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado del partido -->
+                    <div class="match-status p-2 text-center text-xs ${
+                        partido.estado === 'completado' ? 'bg-green-100 text-green-700' :
+                        partido.estado === 'pendiente' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-600'
+                    }">
+                        ${
+                            partido.estado === 'completado' ? 'Completado' :
+                            partido.estado === 'pendiente' ? 'En progreso' :
+                            partido.estado === 'walkover' ? 'Walkover' :
+                            'Esperando'
+                        }
+                        ${isUserStaff && partido.estado === 'pendiente' ? ' - Clic para actualizar' : ''}
+                    </div>
+                </div>
+            `;
             
-            // Añadir espaciadores entre partidos según la ronda
-            if (index < roundMatches.length - 1) {
-                for (let i = 0; i < matchGap - 1; i++) {
-                    html += '<div class="match-spacer"></div>';
-                }
+            // Añadir espaciado entre partidos si no es el último
+            if (index < partidosRonda.length - 1) {
+                html += `<div style="height: ${espaciado}px;"></div>`;
             }
         });
         
@@ -629,113 +679,37 @@ function renderBracket(data) {
     
     // Añadir event listeners para actualizar resultados si el usuario es staff
     if (isUserStaff) {
-        document.querySelectorAll('.match').forEach(matchEl => {
+        document.querySelectorAll('.match[data-match-state="pendiente"]').forEach(matchEl => {
             matchEl.addEventListener('click', (e) => {
                 const matchId = matchEl.dataset.matchId;
-                const match = data.matches.find(m => m.id === matchId);
+                const match = data.partidos.find(m => m.id === matchId);
                 
-                // Permitir actualizar cualquier partido siempre que tenga ID
-                if (match) {
-                    // Si falta algún jugador, usar TBD
-                    if (!match.player1) {
-                        match.player1 = { name: "TBD", id: "tbd_" + Date.now() };
-                    }
-                    if (!match.player2) {
-                        match.player2 = { name: "TBD", id: "tbd_" + Date.now() };
-                    }
-                    openScoreModal(match);
+                if (match && match.jugador1 && match.jugador2) {
+                    openNewScoreModal(match);
                 } else {
-                    window.mostrarNotificacion("Error al encontrar información del partido", "error");
+                    window.mostrarNotificacion("Este partido aún no está listo para jugar", "info");
                 }
             });
         });
     }
-    
-    // Añadir líneas conectoras entre rondas
-    addConnectorLines();
 }
 
-// Función para añadir líneas conectoras entre partidos
-function addConnectorLines() {
-    if (!bracketData || !bracketData.matches) return;
-    
-    // Para cada partido excepto los de la última ronda
-    bracketData.matches.forEach(match => {
-        if (match.nextMatchId) {
-            // Buscar elementos DOM
-            const currentMatchEl = document.querySelector(`.match[data-match-id="${match.id}"]`);
-            const nextMatchEl = document.querySelector(`.match[data-match-id="${match.nextMatchId}"]`);
-            
-            if (currentMatchEl && nextMatchEl) {
-                // Crear línea conectora
-                const connector = document.createElement('div');
-                connector.className = 'bracket-connector';
-                
-                // Determinar posición de la línea
-                const currentRect = currentMatchEl.getBoundingClientRect();
-                const nextRect = nextMatchEl.getBoundingClientRect();
-                const bracketRect = document.querySelector('.bracket').getBoundingClientRect();
-                
-                // Calcular posiciones relativas al contenedor del bracket
-                const startX = currentRect.right - bracketRect.left;
-                const startY = currentRect.top + (currentRect.height / 2) - bracketRect.top;
-                const endX = nextRect.left - bracketRect.left;
-                const endY = nextRect.top + (nextRect.height / 2) - bracketRect.top;
-                
-                // Determinar si este partido va a la entrada superior o inferior del siguiente
-                const isOddPosition = match.position % 2 !== 0;
-                const connectorClass = isOddPosition ? 'connector-top' : 'connector-bottom';
-                
-                // Aplicar clase para estilo
-                connector.classList.add(connectorClass);
-                
-                // Si el partido es ganador, destacar el conector
-                if (match.winner) {
-                    connector.classList.add('winner-path');
-                }
-                
-                // Establecer posición y tamaño
-                connector.style.left = `${startX}px`;
-                connector.style.top = `${startY}px`;
-                connector.style.width = `${endX - startX}px`;
-                connector.style.height = `${Math.abs(endY - startY)}px`;
-                
-                // Añadir conector al DOM
-                document.querySelector('.bracket').appendChild(connector);
-            }
-        }
-    });
-}
-
-// Abrir modal para actualizar puntaje
-function openScoreModal(match) {
+// Nueva función para abrir modal de actualización de puntaje
+function openNewScoreModal(match) {
     currentMatchId = match.id;
     
-    console.log("Abriendo modal para actualizar puntaje del partido:", match);
+    console.log("Abriendo modal para partido:", match);
     
-    // Actualizar info en el modal
+    // Actualizar información en el modal
     document.getElementById('match-id').value = match.id;
-    document.getElementById('match-info').textContent = `${match.player1.name} vs ${match.player2.name}`;
-    document.getElementById('player1-label').textContent = match.player1.name;
-    document.getElementById('player2-label').textContent = match.player2.name;
+    document.getElementById('match-info').textContent = 
+        `${match.jugador1.gameUsername || match.jugador1.userName} vs ${match.jugador2.gameUsername || match.jugador2.userName}`;
+    document.getElementById('player1-label').textContent = match.jugador1.gameUsername || match.jugador1.userName;
+    document.getElementById('player2-label').textContent = match.jugador2.gameUsername || match.jugador2.userName;
     
-    // Pre-llenar puntajes si ya existen
-    const player1ScoreInput = document.getElementById('player1-score');
-    const player2ScoreInput = document.getElementById('player2-score');
-    
-    if (match.scores && match.scores.player1 !== undefined) {
-        player1ScoreInput.value = match.scores.player1;
-    } else {
-        player1ScoreInput.value = '0';  // Valor por defecto
-    }
-    
-    if (match.scores && match.scores.player2 !== undefined) {
-        player2ScoreInput.value = match.scores.player2;
-    } else {
-        player2ScoreInput.value = '0';  // Valor por defecto
-    }
-    
-    // Limpiar mensaje de error
+    // Limpiar puntajes
+    document.getElementById('player1-score').value = '0';
+    document.getElementById('player2-score').value = '0';
     document.getElementById('score-error-msg').textContent = '';
     
     // Mostrar modal
@@ -743,67 +717,7 @@ function openScoreModal(match) {
     scoreModal.classList.add('flex');
 }
 
-// Cerrar modal de puntaje
-function closeScoreModal() {
-    scoreModal.classList.add('hidden');
-    scoreModal.classList.remove('flex');
-    currentMatchId = null;
-}
-
-// Configurar event listeners
-function setupEventListeners() {
-    // Botones del modal de puntaje
-    if (closeScoreModalBtn) {
-        closeScoreModalBtn.addEventListener('click', closeScoreModal);
-    }
-    
-    if (cancelScoreBtn) {
-        cancelScoreBtn.addEventListener('click', closeScoreModal);
-    }
-    
-    // Formulario de actualización de puntaje
-    if (scoreUpdateForm) {
-        scoreUpdateForm.addEventListener('submit', handleScoreUpdate);
-    }
-    
-    // Botón de actualizar bracket
-    const updateBracketBtn = document.getElementById('update-bracket-btn');
-    if (updateBracketBtn) {
-        updateBracketBtn.addEventListener('click', loadBracketData);
-    }
-    
-    // Menú móvil
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', () => {
-            if (mobileMenu.classList.contains('hidden')) {
-                mobileMenu.classList.remove('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                mobileMenu.classList.add('hidden');
-                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
-            }
-        });
-    }
-    
-    // Añadir listener para redimensionamiento de ventana
-    window.addEventListener('resize', debounce(addConnectorLines, 100));
-}
-
-// Función debounce para optimizar eventos frecuentes
-function debounce(func, wait) {
-    let timeout;
-    return function() {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
-}
-
-// Manejar actualización de puntaje
+// Actualizar función para manejar envío de puntajes
 async function handleScoreUpdate(e) {
     e.preventDefault();
     
@@ -825,7 +739,6 @@ async function handleScoreUpdate(e) {
             throw new Error("Los puntajes no pueden ser negativos");
         }
         
-        // Comprobar que son puntajes diferentes para que haya un ganador
         if (player1Score === player2Score) {
             throw new Error("Los puntajes no pueden ser iguales, debe haber un ganador");
         }
@@ -836,10 +749,10 @@ async function handleScoreUpdate(e) {
         submitBtn.innerHTML = '<div class="spinner w-5 h-5 border-t-2 border-b-2 border-white rounded-full mx-auto"></div>';
         
         // Importar función de actualización
-        const { updateMatchResults } = await import('./brackets.js');
+        const { updateMatchResult } = await import('./brackets-new.js');
         
         // Actualizar resultados
-        await updateMatchResults(bracketData.id, currentMatchId, player1Score, player2Score);
+        await updateMatchResult(bracketData.id, currentMatchId, player1Score, player2Score);
         
         // Cerrar modal
         closeScoreModal();
@@ -847,7 +760,7 @@ async function handleScoreUpdate(e) {
         // Mostrar mensaje de éxito
         window.mostrarNotificacion("Resultado actualizado correctamente", "success");
         
-        // Volver a cargar datos
+        // Recargar datos
         await loadBracketData();
         
     } catch (error) {

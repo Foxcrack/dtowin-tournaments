@@ -197,6 +197,10 @@
 
     <!-- Inicialización de Firebase -->
     <script>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+
     // Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
@@ -209,7 +213,9 @@
     };
 
     // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
     // Hacer Firebase disponible globalmente
     window.firebase = firebase;
@@ -274,6 +280,24 @@
     </script>
 
     <!-- Script para manejar el bracket -->
-    <script src="bracket-viewer.js" type="module"></script>
+    <!-- Elimina o comenta la siguiente línea si no usas bracket-viewer.js -->
+    <!-- <script src="bracket-viewer.js" type="module"></script> -->
+    <script type="module">
+        import { renderBracket } from './assets/js/brackets-new.js';
+
+        // Obtén el ID del bracket desde la URL o de otra fuente
+        function getBracketIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('bracketId');
+        }
+
+        const bracketId = getBracketIdFromUrl();
+        if (bracketId) {
+            renderBracket(bracketId, "bracket-container");
+        } else {
+            const container = document.getElementById("bracket-container");
+            if (container) container.innerHTML = "<div class='text-center text-red-500 py-8'>No se encontró el ID del bracket.</div>";
+        }
+    </script>
 </body>
 </html>
