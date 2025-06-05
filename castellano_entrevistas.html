@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Entrevistas - Crisis de Identidad</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="assets/img/dtowin.png">
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #222; margin: 0; }
         .container { max-width: 900px; margin: 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 2rem; }
@@ -20,10 +21,101 @@
             .container { padding: 1rem; }
             .datos span { display: block; margin-bottom: 0.3rem; }
         }
+
+        .button {
+            position: relative;
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            outline-offset: 4px;
+            transition: filter 250ms;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .shadow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            background: hsl(0deg 0% 0% / 0.25);
+            will-change: transform;
+            transform: translateY(2px);
+            transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+        }
+
+        .edge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            background: linear-gradient(
+            to left,
+            hsl(240deg 100% 16%) 0%,
+            hsl(240deg 100% 32%) 8%,
+            hsl(240deg 100% 32%) 92%,
+            hsl(240deg 100% 16%) 100%
+            );
+        }
+
+        .front {
+            display: block;
+            position: relative;
+            padding: 12px 27px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            color: white;
+            background: hsl(240deg 100% 47%);
+            will-change: transform;
+            transform: translateY(-4px);
+            transition: transform 600ms cubic-bezier(.3, .7, .4, 1);
+        }
+
+        .button:hover {
+            filter: brightness(110%);
+        }
+
+        .button:hover .front {
+            transform: translateY(-6px);
+            transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
+        }
+
+        .button:active .front {
+            transform: translateY(-2px);
+            transition: transform 34ms;
+        }
+
+        .button:hover .shadow {
+            transform: translateY(4px);
+            transition: transform 250ms cubic-bezier(.3, .7, .4, 1.5);
+        }
+
+        .button:active .shadow {
+            transform: translateY(1px);
+            transition: transform 34ms;
+        }
+
+        .button:focus:not(:focus-visible) {
+            outline: none;
+        }
     </style>
 </head>
 <body>
 <div class="container">
+    <header>
+        <a href="index.html" style="text-decoration: none; color: inherit;">
+            <button class="button">
+                <span class="shadow"></span>
+                <span class="edge"></span>
+                <span class="front">Volver al Inicio</span>
+            </button>
+        </a>
+    </header>
     <h1>Entrevistas sobre Crisis de Identidad</h1>
     <p>Proyecto de investigación: recopilación de testimonios y percepciones sobre la crisis de identidad en jóvenes y adultos.</p>
 
