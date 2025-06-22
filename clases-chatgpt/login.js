@@ -75,12 +75,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
   const btnCodigos = document.getElementById("btnCodigos")
   const e621 = document.getElementById("e621")
+  const userDataDiv = document.getElementById("userData"); // Usamos este div para el botón QR
 
   btnCodigos.addEventListener("click", function() {
     const codigoIngresado = document.getElementById("Codigos").value.trim().toLowerCase();
 
     if (codigoIngresado === "e621") {
       e621.style.display = "block";
+    } else if (codigoIngresado === "qr") {
+      // Elimina el botón QR si ya existe
+      const btnExistente = document.getElementById("btnQR");
+      if (btnExistente) btnExistente.remove();
+
+      // Crea el botón QR
+      const btnQR = document.createElement("button");
+      btnQR.id = "btnQR";
+      btnQR.textContent = "QR";
+      btnQR.style.margin = "10px";
+      btnQR.onclick = function() {
+        window.location.href = "../qr.html";
+      };
+      userDataDiv.appendChild(btnQR);
     } else {
       alert("Código inválido");
     }
