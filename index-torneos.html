@@ -14,7 +14,7 @@
     <!-- Header -->
     <header class="bg-gradient-to-r from-blue-600 to-red-500 p-6 flex justify-between items-center">
         <div class="flex items-center gap-2">
-            <img src="assets/img/logo.png" alt="Dtowin Logo" class="h-8">
+            <img src="assets/img/Foxpica.png" alt="Dtowin Logo" class="h-8">
             <span class="text-white text-2xl font-bold">Dtowin Torneos</span>
         </div>
         <nav class="flex gap-6 text-white font-semibold">
@@ -111,27 +111,18 @@
     <!-- Modal de Login -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <button id="closeLoginModal" type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="text-2xl font-bold mb-4">Iniciar Sesión</h2>
-            <form id="loginForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-                    <input type="email" id="loginEmail" class="w-full px-3 py-2 border rounded-lg" required>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
-                    <input type="password" id="loginPassword" class="w-full px-3 py-2 border rounded-lg" required>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">
-                    Iniciar Sesión
-                </button>
-            </form>
+            <!-- Solo botón de Google -->
             <div class="mt-4">
-                <button id="googleLoginBtn" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600">
-                    <i class="fab fa-google mr-2"></i>Iniciar con Google
+                <button id="googleLoginBtn" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 flex items-center justify-center gap-2">
+                    <i class="fab fa-google"></i>Iniciar con Google
                 </button>
+            </div>
+            <div class="mt-4 text-center text-gray-500 text-sm">
+                ¿No tienes cuenta? <button id="openRegisterModalBtn" class="text-blue-600 font-semibold hover:underline">Regístrate</button>
             </div>
         </div>
     </div>
@@ -139,27 +130,19 @@
     <!-- Modal de Registro -->
     <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <button id="closeRegisterModal" type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="text-2xl font-bold mb-4">Registro</h2>
-            <form id="registerForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Nombre de usuario:</label>
-                    <input type="text" id="registerUsername" class="w-full px-3 py-2 border rounded-lg" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-                    <input type="email" id="registerEmail" class="w-full px-3 py-2 border rounded-lg" required>
-                </div>
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
-                    <input type="password" id="registerPassword" class="w-full px-3 py-2 border rounded-lg" required>
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700">
-                    Registrarse
+            <!-- Solo botón de Google -->
+            <div class="mt-4">
+                <button id="googleRegisterBtn" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 flex items-center justify-center gap-2 shadow-lg">
+                    <i class="fab fa-google"></i>Registrarse con Google
                 </button>
-            </form>
+            </div>
+            <div class="mt-4 text-center text-gray-500 text-sm">
+                ¿Ya tienes cuenta? <button id="openLoginModalBtn" class="text-blue-600 font-semibold hover:underline">Inicia Sesión</button>
+            </div>
         </div>
     </div>
 
@@ -251,5 +234,102 @@
 
     <!-- Script principal -->
     <script type="module" src="assets/js/index-torneos.js"></script>
+    <script>
+    // Modal login/register: abrir/cerrar y solo Google
+    document.addEventListener('DOMContentLoaded', () => {
+        // Cerrar login modal
+        document.getElementById('closeLoginModal')?.addEventListener('click', () => {
+            document.getElementById('loginModal').classList.add('hidden');
+        });
+        // Cerrar register modal
+        document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
+            document.getElementById('registerModal').classList.add('hidden');
+        });
+        // Abrir registro desde login
+        document.getElementById('openRegisterModalBtn')?.addEventListener('click', () => {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('registerModal').classList.remove('hidden');
+        });
+        // Abrir login desde registro
+        document.getElementById('openLoginModalBtn')?.addEventListener('click', () => {
+            document.getElementById('registerModal').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+        });
+
+        // Helper para saber si el usuario está autenticado
+        function isUserLoggedIn() {
+            // window.auth es de Firebase Auth v9, pero puede no estar disponible inmediatamente
+            // onAuthStateChanged ya lo inicializó en index-torneos.js
+            if (window.auth && typeof window.auth.currentUser !== "undefined") {
+                return !!window.auth.currentUser;
+            }
+            // fallback: busca el perfil en el DOM (si ya hay menú de usuario)
+            return !!document.getElementById('userProfile');
+        }
+
+        // Botón login principal
+        document.getElementById('loginBtn')?.addEventListener('click', () => {
+            if (!isUserLoggedIn()) {
+                document.getElementById('loginModal').classList.remove('hidden');
+            }
+        });
+
+        // Botón registro principal
+        document.getElementById('registerBtn')?.addEventListener('click', () => {
+            if (!isUserLoggedIn()) {
+                document.getElementById('registerModal').classList.remove('hidden');
+            }
+        });
+
+        // Google login
+        document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {
+            try {
+                // Usa el auth y provider globales definidos en index-torneos.js
+                if (window.auth && window.provider && window.signInWithPopup) {
+                    await window.signInWithPopup(window.auth, window.provider);
+                    document.getElementById('loginModal')?.classList.add('hidden');
+                    document.getElementById('registerModal')?.classList.add('hidden');
+                } else {
+                    // fallback: intenta importar desde Firebase v9
+                    const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
+                    const auth = getAuth();
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                    document.getElementById('loginModal')?.classList.add('hidden');
+                    document.getElementById('registerModal')?.classList.add('hidden');
+                }
+            } catch (error) {
+                if (window.showNotification) {
+                    window.showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
+                } else {
+                    alert('Error al iniciar sesión con Google: ' + (error.message || error));
+                }
+            }
+        });
+        // Google register (puede ser igual a login)
+        document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
+            try {
+                if (window.auth && window.provider && window.signInWithPopup) {
+                    await window.signInWithPopup(window.auth, window.provider);
+                    document.getElementById('loginModal')?.classList.add('hidden');
+                    document.getElementById('registerModal')?.classList.add('hidden');
+                } else {
+                    const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
+                    const auth = getAuth();
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+                    document.getElementById('loginModal')?.classList.add('hidden');
+                    document.getElementById('registerModal')?.classList.add('hidden');
+                }
+            } catch (error) {
+                if (window.showNotification) {
+                    window.showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
+                } else {
+                    alert('Error al iniciar sesión con Google: ' + (error.message || error));
+                }
+            }
+        });
+    });
+    </script>
 </body>
 </html>
