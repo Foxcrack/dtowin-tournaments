@@ -131,3 +131,5 @@ function renderLeaderboard(users) {
       `;
     }).join("");
 }
+
+// Unifica la lógica y los estilos de notificaciones, tablas, etc.

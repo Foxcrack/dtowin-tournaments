@@ -1,5 +1,7 @@
 /* Estilos para el visualizador de brackets */
 
+/* Unifica colores, fuentes y decoraciones con el resto del sitio */
+
 /* Estructura principal del bracket */
 .bracket-wrapper {
     overflow-x: auto;

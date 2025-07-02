@@ -1,4 +1,3 @@
-
 /* Spinner animado para carga */
 .spinner {
     animation: spin 1s linear infinite;
@@ -81,4 +80,5 @@ background-color: #7184ff; /* Bronce */
 .leaderboard-anim {
     animation: fadeInUp 0.4s ease both;
 }
-  
+
+/* Unifica colores, fuentes y decoraciones con el resto del sitio */

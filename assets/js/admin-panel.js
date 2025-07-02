@@ -10,7 +10,7 @@ const proximosTorneosTable = document.getElementById('proximosTorneosTable');
 let isInitialized = false;
 
 // Inicializar dashboard
-async function initDashboard() {
+window.initDashboard = async function initDashboard() {
     // Evitar inicialización múltiple
     if (isInitialized) {
         console.log("El dashboard ya está inicializado");
@@ -239,6 +239,3 @@ function mostrarNotificacion(mensaje, tipo = "info") {
         console.log(`Notificación (${tipo}): ${mensaje}`);
     }
 }
-
-// Exportar la función de inicialización
-export { initDashboard };

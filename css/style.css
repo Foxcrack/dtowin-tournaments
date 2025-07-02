@@ -1,0 +1,58 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f3f4f6;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+header {
+  background: #6366f1;
+  color: #fff;
+  padding: 24px 0;
+  text-align: center;
+  box-shadow: 0 2px 8px #6366f133;
+}
+main {
+  max-width: 700px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px #6366f133;
+  padding: 32px;
+}
+h1, h2 {
+  margin: 0 0 18px 0;
+}
+#lista-torneos {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 24px;
+}
+#lista-torneos li {
+  background: #eef2ff;
+  margin-bottom: 10px;
+  padding: 12px 18px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px #6366f11a;
+  font-size: 1.05rem;
+}
+button {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  outline: none;
+}
+button:focus {
+  outline: 2px solid #3730a3;
+  outline-offset: 2px;
+}
+button:hover {
+  background: #3730a3;
+  transform: translateY(-2px) scale(1.04);
+}

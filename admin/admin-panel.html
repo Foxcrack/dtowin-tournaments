@@ -333,20 +333,24 @@
                 // Cargar módulo principal (solo si el usuario es administrador)
                 try {
                     // Importar módulo con su nombre correcto
-                    const dashboard = await import('./admin-panel.js');
-                    // Inicializar dashboard
-                    dashboard.initDashboard();
-                    console.log("Módulo de dashboard cargado correctamente");
+                    // Elimina el import dinámico y usa el script estático ya incluido abajo
+                    if (window.initDashboard) {
+                        window.initDashboard();
+                        console.log("Dashboard inicializado correctamente");
+                    } else {
+                        console.error("No se encontró la función initDashboard en admin-panel.js");
+                        mostrarNotificacion("No se pudo inicializar el dashboard", "error");
+                    }
                 } catch (error) {
                     console.error("Error al cargar el módulo de dashboard:", error);
                     mostrarNotificacion("Error al cargar el dashboard", "error");
                 }
             } else {
                 console.log("No hay usuario autenticado");
-                window.location.href = "index.html";
+                window.location.href = "../index.html";
             }
         });
-        
+
         // Actualizar foto de perfil y nombre de usuario
         const updateUserProfile = async () => {
             const user = firebase.auth().currentUser;
@@ -357,12 +361,12 @@
                         .where('uid', '==', user.uid)
                         .limit(1)
                         .get();
-                    
+
                     if (!userSnapshot.empty) {
                         const userData = userSnapshot.docs[0].data();
                         const photoURL = userData.photoURL || user.photoURL || 'https://via.placeholder.com/40';
                         const displayName = userData.nombre || user.displayName || 'Admin';
-                        
+
                         userProfileElement.innerHTML = `
                             <img src="${photoURL}" alt="Admin" class="w-8 h-8 rounded-full">
                             <span class="hidden md:inline">${displayName}</span>
@@ -371,7 +375,7 @@
                 }
             }
         };
-        
+
         // Actualizar perfil después de verificar autenticación
         firebase.auth().onAuthStateChanged(updateUserProfile);
     });

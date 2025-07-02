@@ -253,8 +253,10 @@
         measurementId: "G-R4Q5YKZXGY"
     };
 
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    // Inicializar Firebase solo si no está inicializado
+    if (!window.firebase?.apps?.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
 
     // Configurar persistencia para mantener la sesión
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
@@ -267,6 +269,6 @@
     </script>
 
     <!-- Script para gestión de badges -->
-    <script src="admin-panel-badges.js"></script>
+    <script src="../assets/js/admin-panel-badges.js"></script>
 </body>
 </html>

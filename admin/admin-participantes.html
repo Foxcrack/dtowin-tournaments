@@ -327,8 +327,10 @@
         measurementId: "G-R4Q5YKZXGY"
     };
 
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    // Inicializar Firebase solo si no está inicializado
+    if (!window.firebase?.apps?.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
 
     // Hacer Firebase disponible globalmente
     window.firebase = firebase;
@@ -431,10 +433,15 @@
                 // Cargar módulo principal (solo si el usuario es administrador)
                 try {
                     // Importar módulo de participantes
-                    const { initParticipantsPanel } = await import('./admin-panel-participants.js');
-                    // Inicializar panel de participantes
-                    initParticipantsPanel();
-                    console.log("Módulo de participantes cargado correctamente");
+                    import('../assets/js/admin-panel-participants.js')
+                        .then(mod => {
+                            mod.initParticipantsPanel();
+                            console.log("Módulo de participantes cargado correctamente");
+                        })
+                        .catch(error => {
+                            console.error("Error al cargar el módulo de participantes:", error);
+                            mostrarNotificacion("Error al cargar la gestión de participantes", "error");
+                        });
                 } catch (error) {
                     console.error("Error al cargar el módulo de participantes:", error);
                     mostrarNotificacion("Error al cargar la gestión de participantes", "error");

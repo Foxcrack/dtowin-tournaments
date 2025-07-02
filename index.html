@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Torneos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="assets/css/index.css">
+</head>
+<body>
+  <div id="redirect-animation" class="redirect-animation-bg">
+    <div>
+      <div class="redirect-logo">
+        <img src="assets/img/dtowin.png" alt="Dtowin Logo" />
+      </div>
+      <div class="redirect-text">Bienvenido a Dtowin Torneos...</div>
+    </div>
+  </div>
+  <script src="assets/js/index.js"></script>
+</body>
+</html>
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 40px #0004;
+      animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .redirect-logo img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      animation: spin 1.2s linear infinite;
+      filter: drop-shadow(0 0 10px #ff6b1a88);
+    }
+    .redirect-text {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 2.5rem;
+      text-align: center;
+      letter-spacing: 1px;
+      animation: fadeInText 1.2s;
+      text-shadow: 0 2px 12px #0008;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      80% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(20px);}
+      to   { opacity: 1; transform: translateY(0);}
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    .redirect-animation-bg.fade-out {
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="redirect-animation" class="redirect-animation-bg">
+    <div>
+      <div class="redirect-logo">
+        <img src="assets/img/dtowin.png" alt="Dtowin Logo" />
+      </div>
+      <div class="redirect-text">Bienvenido a Dtowin Torneos...</div>
+    </div>
+  </div>
+  <script src="assets/js/index.js"></script>
+  <script>
+    // Animación y redirección
+    setTimeout(() => {
+      document.getElementById('redirect-animation').classList.add('fade-out');
+    }, 1400);
+    setTimeout(() => {
+      window.location.href = "index-torneos.html";
+    }, 1800);
+  </script>
+</body>
+</html>

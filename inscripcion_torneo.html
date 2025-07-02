@@ -1,24 +1,24 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Inscripción a Torneo</title>
   <link rel="icon" type="image/png" href="assets/img/dtowin.png">
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-      padding: 40px;
-    }
-    .button {
-      position: relative;
-      border: none;
-      background: transparent;
-      padding: 0;
-      outline: none;
-      cursor: pointer;
-      font-family: sans-serif;
+  <link rel="stylesheet" href="assets/css/inscripcion_torneo.css">
+</head>
+<body>
+  <h2>Torneo de Prueba</h2>
+  <button class="button inscribirse-btn" data-torneo-id="torneo-demo">
+    <span class="shadow"></span>
+    <span class="edge"></span>
+    <div class="front">
+      <span>Inscribirse</span>
+    </div>
+  </button>
+  <ul id="lista-torneo-demo"></ul>
+  <script type="module" src="assets/js/inscripcion_torneo.js"></script>
+</body>
+</html>
     }
     .button .shadow {
       position: absolute;

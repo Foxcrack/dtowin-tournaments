@@ -74,6 +74,7 @@ function updateUserProfileUI(user) {
     }
 }
 
+// Unifica la lógica y los estilos de notificaciones, modales, etc.
 // Añadir controles adicionales para staff
 async function addStaffControls() {
     if (!staffControls) return;
