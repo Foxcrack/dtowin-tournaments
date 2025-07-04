@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +13,7 @@
     <!-- Header -->
     <header class="bg-gradient-to-r from-blue-600 to-red-500 p-6 flex justify-between items-center">
         <div class="flex items-center gap-2">
-            <img src="assets/img/Foxpica.png" alt="Dtowin Logo" class="h-8">
+            <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="h-8">
             <span class="text-white text-2xl font-bold">Dtowin Torneos</span>
         </div>
         <nav class="flex gap-6 text-white font-semibold">
@@ -28,7 +27,7 @@
 
     <!-- Hero -->
     <section class="text-center py-16 bg-gradient-to-r from-blue-600 to-red-500 text-white">
-        <img src="assets/img/mascota.png" alt="Dtowin Mascot" class="mx-auto mb-6" style="max-height: 160px;">
+        <img src="assets/img/Foxpica.png" alt="Dtowin Mascot" class="mx-auto mb-6" style="max-height: 160px;">
         <h1 class="text-4xl font-bold mb-4">Bienvenido a la Plataforma de Torneos Dtowin</h1>
         <p class="mb-6">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.</p>
         <button id="registerBtn" class="bg-white text-red-600 font-bold py-2 px-6 rounded-lg shadow hover:bg-red-100 transition">¡Regístrate Ahora!</button>
@@ -77,6 +76,11 @@
         <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">Leaderboard Global</h2>
         <div id="leaderboard" class="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
             <div class="text-center text-gray-500">Cargando leaderboard...</div>
+        </div>
+        <div class="flex justify-center mt-6">
+            <a href="leaderboard-completo.html" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+                Ver Leaderboard Completo
+            </a>
         </div>
     </section>
 
@@ -234,102 +238,5 @@
 
     <!-- Script principal -->
     <script type="module" src="assets/js/index-torneos.js"></script>
-    <script>
-    // Modal login/register: abrir/cerrar y solo Google
-    document.addEventListener('DOMContentLoaded', () => {
-        // Cerrar login modal
-        document.getElementById('closeLoginModal')?.addEventListener('click', () => {
-            document.getElementById('loginModal').classList.add('hidden');
-        });
-        // Cerrar register modal
-        document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
-            document.getElementById('registerModal').classList.add('hidden');
-        });
-        // Abrir registro desde login
-        document.getElementById('openRegisterModalBtn')?.addEventListener('click', () => {
-            document.getElementById('loginModal').classList.add('hidden');
-            document.getElementById('registerModal').classList.remove('hidden');
-        });
-        // Abrir login desde registro
-        document.getElementById('openLoginModalBtn')?.addEventListener('click', () => {
-            document.getElementById('registerModal').classList.add('hidden');
-            document.getElementById('loginModal').classList.remove('hidden');
-        });
-
-        // Helper para saber si el usuario está autenticado
-        function isUserLoggedIn() {
-            // window.auth es de Firebase Auth v9, pero puede no estar disponible inmediatamente
-            // onAuthStateChanged ya lo inicializó en index-torneos.js
-            if (window.auth && typeof window.auth.currentUser !== "undefined") {
-                return !!window.auth.currentUser;
-            }
-            // fallback: busca el perfil en el DOM (si ya hay menú de usuario)
-            return !!document.getElementById('userProfile');
-        }
-
-        // Botón login principal
-        document.getElementById('loginBtn')?.addEventListener('click', () => {
-            if (!isUserLoggedIn()) {
-                document.getElementById('loginModal').classList.remove('hidden');
-            }
-        });
-
-        // Botón registro principal
-        document.getElementById('registerBtn')?.addEventListener('click', () => {
-            if (!isUserLoggedIn()) {
-                document.getElementById('registerModal').classList.remove('hidden');
-            }
-        });
-
-        // Google login
-        document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {
-            try {
-                // Usa el auth y provider globales definidos en index-torneos.js
-                if (window.auth && window.provider && window.signInWithPopup) {
-                    await window.signInWithPopup(window.auth, window.provider);
-                    document.getElementById('loginModal')?.classList.add('hidden');
-                    document.getElementById('registerModal')?.classList.add('hidden');
-                } else {
-                    // fallback: intenta importar desde Firebase v9
-                    const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
-                    const auth = getAuth();
-                    const provider = new GoogleAuthProvider();
-                    await signInWithPopup(auth, provider);
-                    document.getElementById('loginModal')?.classList.add('hidden');
-                    document.getElementById('registerModal')?.classList.add('hidden');
-                }
-            } catch (error) {
-                if (window.showNotification) {
-                    window.showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
-                } else {
-                    alert('Error al iniciar sesión con Google: ' + (error.message || error));
-                }
-            }
-        });
-        // Google register (puede ser igual a login)
-        document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
-            try {
-                if (window.auth && window.provider && window.signInWithPopup) {
-                    await window.signInWithPopup(window.auth, window.provider);
-                    document.getElementById('loginModal')?.classList.add('hidden');
-                    document.getElementById('registerModal')?.classList.add('hidden');
-                } else {
-                    const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
-                    const auth = getAuth();
-                    const provider = new GoogleAuthProvider();
-                    await signInWithPopup(auth, provider);
-                    document.getElementById('loginModal')?.classList.add('hidden');
-                    document.getElementById('registerModal')?.classList.add('hidden');
-                }
-            } catch (error) {
-                if (window.showNotification) {
-                    window.showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
-                } else {
-                    alert('Error al iniciar sesión con Google: ' + (error.message || error));
-                }
-            }
-        });
-    });
-    </script>
-</body>
+    </body>
 </html>

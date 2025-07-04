@@ -22,7 +22,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// Variable para almacenar el usuario actual
+// Variable para almacenar el usuario currentUser
 let currentUser = null;
 
 // Función para mostrar notificaciones
@@ -507,21 +507,24 @@ async function confirmAttendance(torneoId) {
     }
 }
 
-// REEMPLAZAR la función showInscritosModal existente con esta versión mejorada:
+// REEMPLAZAR la función showInscritosModal para evitar duplicados de forma robusta:
 async function showInscritosModal(torneoId, torneoNombre) {
     try {
+        // Cerrar cualquier modal de inscritos abierto antes de crear uno nuevo (robusto)
+        document.querySelectorAll('#inscritosModal').forEach(m => m.remove());
+
         // Obtener inscritos
         const inscritos = await getInscritosByTorneo(torneoId);
         
         // Separar confirmados y no confirmados
         const confirmados = inscritos.filter(inscrito => inscrito.asistenciaConfirmada);
         const noConfirmados = inscritos.filter(inscrito => !inscrito.asistenciaConfirmada);
-        
+
         // Crear modal
         const modal = document.createElement('div');
         modal.id = 'inscritosModal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
-        
+
         modal.innerHTML = `
             <div class="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
                 <div class="p-6 border-b border-gray-200">
@@ -694,45 +697,37 @@ async function showInscritosModal(torneoId, torneoNombre) {
         
         // Agregar modal al DOM
         document.body.appendChild(modal);
-        
+
         // Event listeners para las pestañas
         const tabBtns = modal.querySelectorAll('.tab-btn');
         const tabContents = modal.querySelectorAll('.tab-content');
-        
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetTab = btn.dataset.tab;
-                
-                // Actualizar botones
                 tabBtns.forEach(b => {
                     b.classList.remove('border-blue-500', 'text-blue-600');
                     b.classList.add('border-transparent', 'text-gray-500');
                 });
                 btn.classList.add('border-blue-500', 'text-blue-600');
                 btn.classList.remove('border-transparent', 'text-gray-500');
-                
-                // Mostrar contenido correspondiente
                 tabContents.forEach(content => content.classList.add('hidden'));
-                document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
+                modal.querySelector(`#tab-${targetTab}`).classList.remove('hidden');
             });
         });
-        
+
         // Event listeners para cerrar
-        document.getElementById('closeInscritosModal').addEventListener('click', () => {
-            document.body.removeChild(modal);
+        modal.querySelector('#closeInscritosModal').addEventListener('click', () => {
+            modal.remove();
         });
-        
-        document.getElementById('closeInscritosModalBtn').addEventListener('click', () => {
-            document.body.removeChild(modal);
+        modal.querySelector('#closeInscritosModalBtn').addEventListener('click', () => {
+            modal.remove();
         });
-        
-        // Cerrar al hacer clic fuera
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                document.body.removeChild(modal);
+                modal.remove();
             }
         });
-        
+
     } catch (error) {
         console.error('Error mostrando inscritos:', error);
         showNotification('Error al cargar la lista de inscritos', 'error');
@@ -762,14 +757,8 @@ async function getInscritosByTorneo(torneoId) {
 
 // Elimina listeners duplicados y usa SOLO el event listener delegado global para desinscribirse
 function setupTournamentButtons() {
-    // Botones de inscripción
-    document.querySelectorAll('.inscribirse-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const torneoId = e.target.dataset.torneoId;
-            const torneoNombre = e.target.dataset.torneoNombre;
-            openInscriptionModal(torneoId, torneoNombre);
-        });
-    });
+    // Solo deja los listeners que no están cubiertos por el event delegation global
+    // Por ejemplo: check-in, login-required, start-tournament, checkin-state, view-bracket
 
     // Botones de check-in/confirmar asistencia - NUEVO
     document.querySelectorAll('.checkin-btn').forEach(btn => {
@@ -1021,24 +1010,40 @@ async function loadLeaderboard() {
         
         const leaderboardHTML = snapshot.docs.map((doc, index) => {
             const usuario = doc.data();
+            const uid = usuario.uid || doc.id;
             const position = index + 1;
             const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
-            
+            const nombre = usuario.nombre || usuario.displayName || usuario.email;
+            let torneos = 0;
+            if (Array.isArray(usuario.torneos)) {
+                torneos = usuario.torneos.length;
+            } else if (typeof usuario.torneos === "number") {
+                torneos = usuario.torneos;
+            }
+            let badges = 0;
+            if (usuario.badges && typeof usuario.badges === "object" && !Array.isArray(usuario.badges)) {
+                badges = Object.keys(usuario.badges).length;
+            } else if (typeof usuario.badges === "number") {
+                badges = usuario.badges;
+            }
+            // Hacer toda la tarjeta clickeable y llevar a perfil.html?uid=...
             return `
-                <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow mb-2">
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-500' : 'text-gray-500'}">${medal} #${position}</span>
-                        <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
-                        <div>
-                            <p class="font-semibold text-gray-800">${usuario.displayName || usuario.email}</p>
-                            <p class="text-sm text-gray-500">${usuario.torneos || 0} torneos</p>
+                <a href="perfil.html?uid=${encodeURIComponent(uid)}" class="block hover:bg-blue-50 rounded-lg transition group">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow mb-2 group-hover:shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-500' : 'text-gray-500'}">${medal} #${position}</span>
+                            <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800 group-hover:text-blue-700">${nombre}</p>
+                                <p class="text-sm text-gray-500">${torneos} torneos</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-blue-600">${usuario.puntos || 0} pts</p>
+                            <p class="text-xs text-gray-500">${badges} badges</p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold text-blue-600">${usuario.puntos || 0} pts</p>
-                        <p class="text-xs text-gray-500">${usuario.badges || 0} badges</p>
-                    </div>
-                </div>
+                </a>
             `;
         }).join('');
         
@@ -1137,3 +1142,134 @@ function setupEventListeners() {
         inscriptionForm.addEventListener('submit', handleInscription);
     }
 }
+
+// --- Código migrado desde el HTML para modales login/register y control de modales "ver lista" ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Modal login/register: abrir/cerrar y solo Google
+    // Cerrar login modal
+    document.getElementById('closeLoginModal')?.addEventListener('click', () => {
+        document.getElementById('loginModal').classList.add('hidden');
+    });
+    // Cerrar register modal
+    document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
+        document.getElementById('registerModal').classList.add('hidden');
+    });
+    // Abrir registro desde login
+    document.getElementById('openRegisterModalBtn')?.addEventListener('click', () => {
+        document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('registerModal').classList.remove('hidden');
+    });
+    // Abrir login desde registro
+    document.getElementById('openLoginModalBtn')?.addEventListener('click', () => {
+        document.getElementById('registerModal').classList.add('hidden');
+        document.getElementById('loginModal').classList.remove('hidden');
+    });
+
+    // Helper para saber si el usuario está autenticado
+    function isUserLoggedIn() {
+        // window.auth es de Firebase Auth v9, pero puede no estar disponible inmediatamente
+        // onAuthStateChanged ya lo inicializó en index-torneos.js
+        if (window.auth && typeof window.auth.currentUser !== "undefined") {
+            return !!window.auth.currentUser;
+        }
+        // fallback: busca el perfil en el DOM (si ya hay menú de usuario)
+        return !!document.getElementById('userProfile');
+    }
+
+    // Botón login principal
+    document.getElementById('loginBtn')?.addEventListener('click', () => {
+        if (!isUserLoggedIn()) {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+    });
+
+    // Botón registro principal
+    document.getElementById('registerBtn')?.addEventListener('click', () => {
+        if (!isUserLoggedIn()) {
+            document.getElementById('registerModal').classList.remove('hidden');
+        }
+    });
+
+    // Google login
+    document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {
+        try {
+            // Usa el auth y provider globales definidos en index-torneos.js
+            if (window.auth && window.provider && window.signInWithPopup) {
+                await window.signInWithPopup(window.auth, window.provider);
+                document.getElementById('loginModal')?.classList.add('hidden');
+                document.getElementById('registerModal')?.classList.add('hidden');
+            } else {
+                // fallback: intenta importar desde Firebase v9
+                const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
+                const auth = getAuth();
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+                document.getElementById('loginModal')?.classList.add('hidden');
+                document.getElementById('registerModal')?.classList.add('hidden');
+            }
+        } catch (error) {
+            if (typeof showNotification === "function") {
+                showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
+            } else {
+                alert('Error al iniciar sesión con Google: ' + (error.message || error));
+            }
+        }
+    });
+    // Google register (puede ser igual a login)
+    document.getElementById('googleRegisterBtn')?.addEventListener('click', async () => {
+        try {
+            if (window.auth && window.provider && window.signInWithPopup) {
+                await window.signInWithPopup(window.auth, window.provider);
+                document.getElementById('loginModal')?.classList.add('hidden');
+                document.getElementById('registerModal')?.classList.add('hidden');
+            } else {
+                const { getAuth, GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js');
+                const auth = getAuth();
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+                document.getElementById('loginModal')?.classList.add('hidden');
+                document.getElementById('registerModal')?.classList.add('hidden');
+            }
+        } catch (error) {
+            if (typeof showNotification === "function") {
+                showNotification('Error al iniciar sesión con Google: ' + (error.message || error), 'error');
+            } else {
+                alert('Error al iniciar sesión con Google: ' + (error.message || error));
+            }
+        }
+    });
+
+    // --- Solo permitir un modal de "ver lista" abierto a la vez (si aplica) ---
+    // Si tienes varios modales de participantes, usa una clase común, por ejemplo: 'modal-participantes'
+    // Si solo tienes uno, ajusta el selector según corresponda
+    const verListaBtns = document.querySelectorAll('.ver-lista-btn');
+    verListaBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.modal-participantes').forEach(modal => {
+                modal.classList.add('hidden');
+            });
+            const modalId = btn.getAttribute('data-modal-id') || 'modalParticipantes';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        });
+    });
+
+    document.querySelectorAll('.cerrar-modal-participantes').forEach(cerrarBtn => {
+        cerrarBtn.addEventListener('click', () => {
+            const modal = cerrarBtn.closest('.modal-participantes');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+
+    document.querySelectorAll('.modal-participantes').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+});
