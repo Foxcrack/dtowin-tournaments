@@ -385,14 +385,15 @@ async function loadTournaments() {
                             <!-- Botones de acción -->
                             <div class="flex flex-col gap-2 mt-2">
                                 ${
+                                    // Lógica para estado "Abierto" (la misma que ya tienes)
                                     estado === "Abierto"
                                     ? (
                                         currentUser
                                         ? (
                                             isInscrito
                                             ? `<button class="desinscribirse-btn bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition"
-                                                data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre}">
-                                                <i class="fas fa-user-minus mr-2"></i>Desinscribirse
+                                            data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre}">
+                                            <i class="fas fa-user-minus mr-2"></i>Desinscribirse
                                             </button>`
                                             : (torneo.capacidad && totalInscritos >= torneo.capacidad
                                                 ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
@@ -408,9 +409,23 @@ async function loadTournaments() {
                                             Inicia sesión para inscribirte
                                         </button>`
                                     )
+                                    // Lógica para estado "Check In" (nuevo)
+                                    : estado === "Check In"
+                                    ? (currentUser && isInscrito && !torneo.asistenciaConfirmada
+                                        ? `<button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition"
+                                            data-torneo-id="${torneo.id}">
+                                            <i class="fas fa-check-circle mr-2"></i>Hacer Check-in
+                                            </button>`
+                                        : currentUser && isInscrito && torneo.asistenciaConfirmada
+                                            ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                                <i class="fas fa-check-double mr-2"></i>Check-in Confirmado
+                                            </button>`
+                                            : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                                Check-in disponible solo para inscritos
+                                            </button>`
+                                        )
                                     : ""
                                 }
-                                <!-- ...otros botones según estado... -->
                             </div>
                         </div>
                     </div>
@@ -761,7 +776,7 @@ function setupTournamentButtons() {
     // Por ejemplo: check-in, login-required, start-tournament, checkin-state, view-bracket
 
     // Botones de check-in/confirmar asistencia - NUEVO
-    document.querySelectorAll('.checkin-btn').forEach(btn => {
+    document.querySelectorAll('.check-in-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const torneoId = e.target.dataset.torneoId;
             confirmAttendance(torneoId);
