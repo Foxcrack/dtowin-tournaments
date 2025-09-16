@@ -833,7 +833,7 @@ function closeInscriptionModal() {
 function setupTournamentButtons() {
     document.querySelectorAll('.check-in-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const torneoId = e.target.dataset.torneoId;
+            const torneoId = e.currentTarget.dataset.torneoId;
             confirmAttendance(torneoId);
         });
     });
@@ -847,8 +847,8 @@ function setupTournamentButtons() {
 
     document.querySelectorAll('.ver-inscritos-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const torneoId = e.target.dataset.torneoId;
-            const torneoNombre = e.target.dataset.torneoNombre;
+            const torneoId = e.currentTarget.dataset.torneoId;
+            const torneoNombre = e.currentTarget.dataset.torneoNombre;
             showInscritosModal(torneoId, torneoNombre);
         });
     });
@@ -923,20 +923,21 @@ async function loadLeaderboard() {
 // Setup de event listeners
 function setupEventListeners() {
     document.body.addEventListener('click', function (e) {
-        if (e.target.closest('.inscribirse-btn')) {
-            const btn = e.target.closest('.inscribirse-btn');
-            const torneoId = btn.dataset.torneoId;
-            const torneoNombre = btn.dataset.torneoNombre;
+        // En este caso, e.target.closest() es más seguro
+        const inscribirseBtn = e.target.closest('.inscribirse-btn');
+        if (inscribirseBtn) {
+            const torneoId = inscribirseBtn.dataset.torneoId;
+            const torneoNombre = inscribirseBtn.dataset.torneoNombre;
             openInscriptionModal(torneoId, torneoNombre);
         }
-        
-        if (e.target.closest('.desinscribirse-btn')) {
-            const btn = e.target.closest('.desinscribirse-btn');
-            const torneoId = btn.dataset.torneoId;
-            const torneoNombre = btn.dataset.torneoNombre;
+
+        const desinscribirseBtn = e.target.closest('.desinscribirse-btn');
+        if (desinscribirseBtn) {
+            const torneoId = desinscribirseBtn.dataset.torneoId;
+            const torneoNombre = desinscribirseBtn.dataset.torneoNombre;
             handleUnsubscribe(torneoId, torneoNombre);
         }
-        
+
         if (
             e.target.id === 'closeInscriptionModal' ||
             e.target.id === 'cancelInscriptionBtn' ||
