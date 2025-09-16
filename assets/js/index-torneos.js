@@ -1019,3 +1019,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+async function awardTournamentsPlayed(torneoId) {
+    try {
+        // 1. Obtener la lista de inscritos del torneo
+        const inscripcionesRef = collection(db, "torneos", torneoId, "inscripciones");
+        const q = query(
+            inscripcionesRef,
+            where("asistenciaConfirmada", "==", true), // Filtramos solo por los que hicieron check-in
+            where("estado", "==", "inscrito") // y que sigan inscritos
+        );
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            console.log(`No hay participantes confirmados para el torneo ${torneoId}.`);
+            return;
+        }
+
+        console.log(`Registrando torneo a ${snapshot.size} participantes que realizaron check-in.`);
+
+        // 2. Recorrer la lista de confirmados y actualizar sus datos
+        const updatePromises = snapshot.docs.map(async (inscritoDoc) => {
+            const participante = inscritoDoc.data();
+            const userRef = doc(db, "usuarios", participante.userId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                
+                // Asegurar que el campo 'torneos' es un array y agregar el torneoId
+                const userTorneos = Array.isArray(userData.torneos) ? userData.torneos : [];
+                if (!userTorneos.includes(torneoId)) {
+                    userTorneos.push(torneoId);
+                }
+
+                // Actualizar solo el array de torneos
+                await updateDoc(userRef, {
+                    torneos: userTorneos,
+                    updatedAt: new Date()
+                });
+            }
+        });
+
+        // Esperar a que todas las actualizaciones se completen
+        await Promise.all(updatePromises);
+        console.log("Torneos jugados actualizados con éxito.");
+
+    } catch (error) {
+        console.error("Error al registrar torneos jugados:", error);
+    }
+}
