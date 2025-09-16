@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,8 +30,11 @@
     <section class="text-center py-16 bg-gradient-to-r from-blue-600 to-red-500 text-white">
         <img src="assets/img/Foxpica.png" alt="Dtowin Mascot" class="mx-auto mb-6" style="max-height: 160px;">
         <h1 class="text-4xl font-bold mb-4">Bienvenido a la Plataforma de Torneos Dtowin</h1>
-        <p class="mb-6">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.</p>
-        <button id="registerBtn" class="bg-white text-red-600 font-bold py-2 px-6 rounded-lg shadow hover:bg-red-100 transition">¡Regístrate Ahora!</button>
+        <p class="mb-6">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.
+        </p>
+        <button id="registerBtn"
+            class="bg-white text-red-600 font-bold py-2 px-6 rounded-lg shadow hover:bg-red-100 transition">¡Regístrate
+            Ahora!</button>
     </section>
 
     <!-- Torneos y Eventos -->
@@ -44,7 +48,7 @@
                     <div class="loader mx-auto"></div>
                 </div>
             </div>
-            
+
             <!-- Inscripciones Abiertas -->
             <div>
                 <h3 class="text-xl font-bold mb-4 text-gray-700">Inscripciones Abiertas</h3>
@@ -52,7 +56,7 @@
                     <div class="loader mx-auto"></div>
                 </div>
             </div>
-            
+
             <!-- Check-in -->
             <div>
                 <h3 class="text-xl font-bold mb-4 text-gray-700">Confirma tu Asistencia</h3>
@@ -60,7 +64,7 @@
                     <div class="loader mx-auto"></div>
                 </div>
             </div>
-            
+
             <!-- Próximamente -->
             <div>
                 <h3 class="text-xl font-bold mb-4 text-gray-700">Próximamente</h3>
@@ -78,7 +82,8 @@
             <div class="text-center text-gray-500">Cargando leaderboard...</div>
         </div>
         <div class="flex justify-center mt-6">
-            <a href="leaderboard-completo.html" class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+            <a href="leaderboard-completo.html"
+                class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
                 Ver Leaderboard Completo
             </a>
         </div>
@@ -120,37 +125,44 @@
             <h2 class="text-2xl font-bold mb-4">Iniciar Sesión</h2>
             <!-- Solo botón de Google -->
             <div class="mt-4">
-                <button id="googleLoginBtn" class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 flex items-center justify-center gap-2">
+                <button id="googleLoginBtn"
+                    class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 flex items-center justify-center gap-2">
                     <i class="fab fa-google"></i>Iniciar con Google
                 </button>
             </div>
             <div class="mt-4 text-center text-gray-500 text-sm">
-                ¿No tienes cuenta? <button id="openRegisterModalBtn" class="text-blue-600 font-semibold hover:underline">Regístrate</button>
+                ¿No tienes cuenta? <button id="openRegisterModalBtn"
+                    class="text-blue-600 font-semibold hover:underline">Regístrate</button>
             </div>
         </div>
     </div>
 
     <!-- Modal de Registro -->
-    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+    <div id="registerModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeRegisterModal" type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+            <button id="closeRegisterModal" type="button"
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <i class="fas fa-times"></i>
             </button>
             <h2 class="text-2xl font-bold mb-4">Registro</h2>
             <!-- Solo botón de Google -->
             <div class="mt-4">
-                <button id="googleRegisterBtn" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 flex items-center justify-center gap-2 shadow-lg">
+                <button id="googleRegisterBtn"
+                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 flex items-center justify-center gap-2 shadow-lg">
                     <i class="fab fa-google"></i>Registrarse con Google
                 </button>
             </div>
             <div class="mt-4 text-center text-gray-500 text-sm">
-                ¿Ya tienes cuenta? <button id="openLoginModalBtn" class="text-blue-600 font-semibold hover:underline">Inicia Sesión</button>
+                ¿Ya tienes cuenta? <button id="openLoginModalBtn"
+                    class="text-blue-600 font-semibold hover:underline">Inicia Sesión</button>
             </div>
         </div>
     </div>
 
     <!-- Modal de Inscripción -->
-    <div id="inscriptionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div id="inscriptionModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl max-w-md w-full mx-auto shadow-2xl">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-6">
@@ -159,47 +171,35 @@
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                
+
                 <div class="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                     <p class="text-sm text-blue-700">
                         <i class="fas fa-info-circle mr-2"></i>
                         Te estás inscribiendo a: <strong id="modalTournamentName">Torneo</strong>
                     </p>
                 </div>
-                
+
                 <form id="inscriptionForm" class="space-y-4">
                     <div>
                         <label for="gameUsername" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-gamepad mr-2 text-blue-500"></i>Nombre de Juego *
                         </label>
-                        <input 
-                            type="text" 
-                            id="gameUsername" 
-                            name="gameUsername"
+                        <input type="text" id="gameUsername" name="gameUsername"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="Tu nombre en el juego"
-                            required
-                            maxlength="50"
-                        >
+                            placeholder="Tu nombre en el juego" required maxlength="50">
                         <p class="text-xs text-gray-500 mt-1">Este será tu nombre visible en el torneo</p>
                     </div>
-                    
+
                     <div>
                         <label for="discordUsername" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fab fa-discord mr-2 text-purple-500"></i>Discord *
                         </label>
-                        <input 
-                            type="text" 
-                            id="discordUsername" 
-                            name="discordUsername"
+                        <input type="text" id="discordUsername" name="discordUsername"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="usuario#1234 o @usuario"
-                            required
-                            maxlength="50"
-                        >
+                            placeholder="usuario#1234 o @usuario" required maxlength="50">
                         <p class="text-xs text-gray-500 mt-1">Para comunicación durante el torneo</p>
                     </div>
-                    
+
                     <div class="bg-gray-50 rounded-lg p-4 mt-4">
                         <h4 class="font-semibold text-gray-800 mb-2">
                             <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
@@ -211,19 +211,14 @@
                             <li>• Revisa las reglas del torneo antes de inscribirte</li>
                         </ul>
                     </div>
-                    
+
                     <div class="flex gap-3 pt-4">
-                        <button 
-                            type="button" 
-                            id="cancelInscriptionBtn"
-                            class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
-                        >
+                        <button type="button" id="cancelInscriptionBtn"
+                            class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
                             Cancelar
                         </button>
-                        <button 
-                            type="submit"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg"
-                        >
+                        <button type="submit"
+                            class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg">
                             <i class="fas fa-trophy mr-2"></i>Inscribirse
                         </button>
                     </div>
@@ -231,11 +226,13 @@
             </div>
         </div>
     </div>
+    
 
     <!-- Notificaciones -->
     <div id="notifications" class="fixed top-4 right-4 z-50"></div>
 
     <!-- Script principal -->
     <script type="module" src="assets/js/index-torneos.js"></script>
-    </body>
+</body>
+
 </html>

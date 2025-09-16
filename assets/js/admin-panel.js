@@ -21,10 +21,8 @@ window.initDashboard = async function initDashboard() {
         console.log("Inicializando dashboard...");
         isInitialized = true;
         
-        // Obtener el usuario autenticado actual
         const currentUser = firebase.auth().currentUser;
         
-        // Cargar datos para el dashboard
         await Promise.all([
             loadEstadisticasGenerales(),
             loadProximosTorneos()
@@ -43,13 +41,11 @@ async function loadEstadisticasGenerales() {
     try {
         console.log("Cargando estadísticas generales...");
         
-        // Total de usuarios
         if (totalUsuariosCounter) {
             const usuariosSnapshot = await firebase.firestore().collection('usuarios').get();
             totalUsuariosCounter.textContent = usuariosSnapshot.size.toString();
         }
         
-        // Torneos activos (estado = 'Abierto' o 'En Progreso')
         if (torneosActivosCounter) {
             const torneosActivosSnapshot = await firebase.firestore().collection('torneos')
                 .where('estado', 'in', ['Abierto', 'En Progreso'])
@@ -57,14 +53,10 @@ async function loadEstadisticasGenerales() {
             torneosActivosCounter.textContent = torneosActivosSnapshot.size.toString();
         }
         
-        // Badges otorgados
         if (badgesOtorgadosCounter) {
             let totalBadges = 0;
-            
-            // Obtener todos los usuarios
             const usuariosSnapshot = await firebase.firestore().collection('usuarios').get();
             
-            // Contar badges para cada usuario
             usuariosSnapshot.forEach(doc => {
                 const userData = doc.data();
                 if (userData.badges) {
@@ -80,10 +72,22 @@ async function loadEstadisticasGenerales() {
     } catch (error) {
         console.error("Error al cargar estadísticas generales:", error);
         
-        // Establecer valores por defecto en caso de error
         if (totalUsuariosCounter) totalUsuariosCounter.textContent = "--";
         if (torneosActivosCounter) torneosActivosCounter.textContent = "--";
         if (badgesOtorgadosCounter) badgesOtorgadosCounter.textContent = "--";
+    }
+}
+
+// Función para contar inscritos de un torneo específico
+async function contarInscritos(torneoId) {
+    try {
+        const inscripcionesRef = firebase.firestore().collection("inscripciones");
+        const q = inscripcionesRef.where("torneoId", "==", torneoId); 
+        const snapshot = await q.get();
+        return snapshot.size; 
+    } catch (error) {
+        console.error(`Error al contar inscritos para el torneo ${torneoId}:`, error);
+        return 0;
     }
 }
 
@@ -97,7 +101,6 @@ async function loadProximosTorneos() {
             return;
         }
         
-        // Mostrar spinner mientras carga
         proximosTorneosTable.innerHTML = `
             <tr>
                 <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
@@ -108,11 +111,6 @@ async function loadProximosTorneos() {
             </tr>
         `;
         
-        // Obtener la fecha actual
-        const fechaActual = new Date();
-        const timestampActual = firebase.firestore.Timestamp.fromDate(fechaActual);
-        
-        // Obtener torneos que no estén en estado 'Finalizado' o 'Cerrado'
         const torneosSnapshot = await firebase.firestore().collection('torneos')
             .where('estado', 'in', ['Abierto', 'Próximamente', 'En Progreso', 'Próximo'])
             .orderBy('fecha', 'asc')
@@ -129,25 +127,27 @@ async function loadProximosTorneos() {
             return;
         }
         
-        // Generar las filas de la tabla
+        // Mapea los documentos de torneos a un array de promesas de conteo de inscritos
+        const inscritosPromises = torneosSnapshot.docs.map(doc => contarInscritos(doc.id));
+        // Espera a que todas las promesas se resuelvan de manera simultánea
+        const inscritosCounts = await Promise.all(inscritosPromises);
+
         let html = '';
         
-        torneosSnapshot.forEach(doc => {
+        torneosSnapshot.forEach((doc, index) => {
             const torneo = {
                 id: doc.id,
                 ...doc.data()
             };
             
-            // Formatear fecha
             const fechaTorneo = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : null;
             const fechaFormateada = fechaTorneo ? formatearFecha(fechaTorneo) : 'Sin fecha';
             
-            // Calcular inscritos/capacidad
-            const inscritos = torneo.participants ? torneo.participants.length : 0;
+            // Usar el conteo de inscritos del array de resultados
+            const inscritos = inscritosCounts[index];
             const capacidad = torneo.capacidad || '∞';
             const inscritosCapacidad = `${inscritos} / ${capacidad}`;
             
-            // Determinar clase del estado
             let estadoClase, estadoTexto;
             switch (torneo.estado) {
                 case 'Abierto':
@@ -232,10 +232,8 @@ function obtenerNombreMes(numeroMes) {
 // Función para mostrar notificaciones (respaldo por si no está disponible la global)
 function mostrarNotificacion(mensaje, tipo = "info") {
     if (window.mostrarNotificacion) {
-        // Usar la función global si está disponible
         window.mostrarNotificacion(mensaje, tipo);
     } else {
-        // Implementación de respaldo
         console.log(`Notificación (${tipo}): ${mensaje}`);
     }
 }
