@@ -1,6 +1,6 @@
 // index-torneos.js - Versión refactorizada con subcolecciones
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 // Configuración de Firebase
@@ -55,7 +55,7 @@ async function checkUserInscription(userId, torneoId) {
         // Buscar en la subcolección: torneos/{torneoId}/inscripciones/{userId}
         const inscripcionRef = doc(db, "torneos", torneoId, "inscripciones", userId);
         const inscripcionDoc = await getDoc(inscripcionRef);
-        
+
         if (inscripcionDoc.exists() && inscripcionDoc.data().estado === "inscrito") {
             return inscripcionDoc;
         }
@@ -126,40 +126,60 @@ async function checkUserAttendance(userId, torneoId) {
 // Confirmar asistencia (usando subcolecciones)
 async function confirmAttendance(torneoId) {
     if (!currentUser) {
-        showNotification('Debes iniciar sesión para confirmar asistencia', 'error');
+        showNotification("Debes iniciar sesión para confirmar tu asistencia.", "error");
         return;
     }
 
+    const userInscriptionRef = doc(db, "torneos", torneoId, "inscripciones", currentUser.uid);
+    const userRef = doc(db, "usuarios", currentUser.uid);
+
     try {
-        const inscripcionRef = doc(db, "torneos", torneoId, "inscripciones", currentUser.uid);
-        const inscripcionDoc = await getDoc(inscripcionRef);
-
-        if (!inscripcionDoc.exists() || inscripcionDoc.data().estado !== "inscrito") {
-            showNotification('No estás inscrito en este torneo', 'error');
-            return;
-        }
-
-        const inscripcionData = inscripcionDoc.data();
-
-        if (inscripcionData.asistenciaConfirmada) {
-            showNotification('Ya has confirmado tu asistencia', 'info');
-            return;
-        }
-
-        // Actualizar la inscripción para confirmar asistencia
-        await setDoc(inscripcionRef, {
-            ...inscripcionData,
+        // --- Paso 1: Actualizar la asistencia del usuario en la subcolección ---
+        await updateDoc(userInscriptionRef, {
             asistenciaConfirmada: true,
-            fechaConfirmacion: new Date(),
             updatedAt: new Date()
         });
+        
+        // --- Paso 2: Obtener el nombre del torneo ---
+        const torneoDocRef = doc(db, "torneos", torneoId);
+        const torneoDoc = await getDoc(torneoDocRef);
+        let nombreTorneo = "Torneo Desconocido";
 
-        showNotification('¡Asistencia confirmada exitosamente!', 'success');
+        if (torneoDoc.exists()) {
+            nombreTorneo = torneoDoc.data().nombre;
+        }
+
+        // --- Paso 3: Actualizar el perfil del usuario ---
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Verificamos si el campo 'torneos' es null o no es un array válido.
+            if (userData.torneos === null || !Array.isArray(userData.torneos)) {
+                // Si es null, lo inicializamos como un array con el nombre del torneo.
+                await updateDoc(userRef, {
+                    torneos: [nombreTorneo]
+                });
+            } else {
+                // Si ya es un array, agregamos el nombre al array existente.
+                await updateDoc(userRef, {
+                    torneos: arrayUnion(nombreTorneo)
+                });
+            }
+        } else {
+            // Si el documento del usuario no existe, lo creamos y lo inicializamos con el array.
+            await setDoc(userRef, {
+                torneos: [nombreTorneo]
+            });
+        }
+        
+        showNotification("Asistencia confirmada. ¡Bienvenido al torneo!", "success");
         loadTournaments();
 
     } catch (error) {
-        console.error('Error al confirmar asistencia:', error);
-        showNotification('Error al confirmar asistencia: ' + error.message, 'error');
+        console.error("Error al confirmar asistencia:", error);
+        showNotification(`Error al confirmar asistencia: ${error.message}`, "error");
     }
 }
 
@@ -533,8 +553,7 @@ async function loadTournaments() {
                                 </button>
                             </div>
                             <div class="flex flex-col gap-2 mt-2">
-                                ${
-                    estado === "Abierto"
+                                ${estado === "Abierto"
                         ? (
                             currentUser
                                 ? (
@@ -877,21 +896,21 @@ async function loadLeaderboard() {
             const position = index + 1;
             const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
             const nombre = usuario.nombre || usuario.displayName || usuario.email;
-            
+
             let torneos = 0;
             if (Array.isArray(usuario.torneos)) {
                 torneos = usuario.torneos.length;
             } else if (typeof usuario.torneos === "number") {
                 torneos = usuario.torneos;
             }
-            
+
             let badges = 0;
             if (usuario.badges && typeof usuario.badges === "object" && !Array.isArray(usuario.badges)) {
                 badges = Object.keys(usuario.badges).length;
             } else if (typeof usuario.badges === "number") {
                 badges = usuario.badges;
             }
-            
+
             return `
                 <a href="perfil.html?uid=${encodeURIComponent(uid)}" class="block hover:bg-blue-50 rounded-lg transition group">
                     <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow mb-2 group-hover:shadow-lg">
@@ -968,16 +987,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeLoginModal')?.addEventListener('click', () => {
         document.getElementById('loginModal').classList.add('hidden');
     });
-    
+
     document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
         document.getElementById('registerModal').classList.add('hidden');
     });
-    
+
     document.getElementById('openRegisterModalBtn')?.addEventListener('click', () => {
         document.getElementById('loginModal').classList.add('hidden');
         document.getElementById('registerModal').classList.remove('hidden');
     });
-    
+
     document.getElementById('openLoginModalBtn')?.addEventListener('click', () => {
         document.getElementById('registerModal').classList.add('hidden');
         document.getElementById('loginModal').classList.remove('hidden');
@@ -1047,7 +1066,7 @@ async function awardTournamentsPlayed(torneoId) {
 
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-                
+
                 // Asegurar que el campo 'torneos' es un array y agregar el torneoId
                 const userTorneos = Array.isArray(userData.torneos) ? userData.torneos : [];
                 if (!userTorneos.includes(torneoId)) {
