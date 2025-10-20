@@ -1,13 +1,59 @@
 // tournaments.js - Script para la gestión de torneos en el panel de administración
 
-// Referencias a elementos DOM
-const torneosTable = document.getElementById('torneosTable');
-const createTournamentForm = document.getElementById('createTournamentForm');
-const tournamentFormSection = document.getElementById('tournamentFormSection');
-const headerCreateTournamentBtn = document.getElementById('headerCreateTournamentBtn');
-const cancelButton = document.getElementById('cancelButton');
-const submitButton = document.getElementById('submitButton');
-const formTitle = document.getElementById('formTitle');
+// Variables globales de Firebase (disponibles después de la inicialización)
+let db, auth, storage;
+
+// Funciones de utilidad para zonas horarias (inline para evitar imports)
+function getUserTimeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+function getTimeZoneName(timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    const timeZoneNames = {
+        'America/Bogota': 'COT (Colombia)',
+        'America/Mexico_City': 'CST (México)',
+        'America/Argentina/Buenos_Aires': 'ART (Argentina)',
+        'America/Santiago': 'CLT (Chile)',
+        'America/Lima': 'PET (Perú)',
+        'America/Caracas': 'VET (Venezuela)',
+        'Europe/Madrid': 'CET (España)',
+        'America/New_York': 'EST (Estados Unidos - Este)',
+        'America/Los_Angeles': 'PST (Estados Unidos - Oeste)',
+        'Europe/London': 'GMT (Reino Unido)'
+    };
+    
+    return timeZoneNames[userTimeZone] || userTimeZone;
+}
+
+function convertLocalToUTC(dateStr, timeStr, timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    console.log("Convirtiendo a UTC:", dateStr, timeStr, "Zona:", userTimeZone);
+    
+    // Crear fecha en la zona horaria local del usuario
+    const localDateTime = `${dateStr}T${timeStr}:00`;
+    console.log("DateTime string:", localDateTime);
+    
+    // Crear Date object que interprete la fecha como local
+    const localDate = new Date(localDateTime);
+    console.log("Fecha local interpretada:", localDate);
+    
+    // Obtener offset de zona horaria en minutos
+    const offsetMinutes = localDate.getTimezoneOffset();
+    console.log("Offset en minutos:", offsetMinutes);
+    
+    // Convertir a UTC sumando el offset
+    const utcDate = new Date(localDate.getTime() - (offsetMinutes * 60000));
+    console.log("Fecha UTC final:", utcDate);
+    
+    return utcDate;
+}
+
+// Variables para elementos DOM (se inicializarán cuando el DOM esté listo)
+let torneosTable, createTournamentForm, tournamentFormSection, headerCreateTournamentBtn;
+let cancelButton, submitButton, formTitle;
 
 // Modal de selección de badges
 const badgeSelectModal = document.getElementById('badgeSelectModal');
@@ -24,6 +70,41 @@ let allBanners = [];
 // Inicializar cuando el DOM esté cargado
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Inicializando admin-torneos.js...");
+    
+    // Inicializar elementos DOM
+    console.log("Buscando elementos DOM...");
+    torneosTable = document.getElementById('torneosTable');
+    createTournamentForm = document.getElementById('createTournamentForm');
+    tournamentFormSection = document.getElementById('tournamentFormSection');
+    headerCreateTournamentBtn = document.getElementById('headerCreateTournamentBtn');
+    cancelButton = document.getElementById('cancelButton');
+    submitButton = document.getElementById('submitButton');
+    formTitle = document.getElementById('formTitle');
+    
+    console.log("Elementos encontrados:", {
+        torneosTable: !!torneosTable,
+        createTournamentForm: !!createTournamentForm,
+        tournamentFormSection: !!tournamentFormSection,
+        headerCreateTournamentBtn: !!headerCreateTournamentBtn,
+        cancelButton: !!cancelButton,
+        submitButton: !!submitButton,
+        formTitle: !!formTitle
+    });
+    
+    // Verificar que Firebase esté disponible
+    if (typeof firebase === 'undefined') {
+        console.error("Firebase no está disponible");
+        return;
+    }
+    
+    console.log("Firebase disponible, inicializando variables...");
+    
+    // Inicializar variables globales de Firebase
+    db = window.db || firebase.firestore();
+    auth = window.auth || firebase.auth();
+    storage = window.storage || firebase.storage();
+    
+    console.log("Variables de Firebase inicializadas:", { db: !!db, auth: !!auth, storage: !!storage });
     
     // Verificar autenticación
     auth.onAuthStateChanged(async (user) => {
@@ -92,6 +173,9 @@ async function initializePage() {
         // Configurar event listeners
         setupEventListeners();
         
+        // Mostrar zona horaria del admin
+        updateAdminTimeZoneDisplay();
+        
         // Cargar torneos para la tabla
         await loadTorneos();
         
@@ -104,6 +188,15 @@ async function initializePage() {
     } catch (error) {
         console.error("Error al inicializar la página:", error);
         showError("Error al cargar la página. Por favor, recarga.");
+    }
+}
+
+// Actualizar display de zona horaria del admin
+function updateAdminTimeZoneDisplay() {
+    const adminTimeZoneElement = document.getElementById('adminTimeZone');
+    if (adminTimeZoneElement) {
+        const timeZoneName = getTimeZoneName();
+        adminTimeZoneElement.textContent = timeZoneName;
     }
 }
 
@@ -296,8 +389,15 @@ function selectBadge(badgeId) {
 // Cargar torneos para la tabla
 async function loadTorneos() {
     try {
-        if (!torneosTable) return;
+        console.log("Iniciando loadTorneos...");
+        console.log("torneosTable element:", torneosTable);
         
+        if (!torneosTable) {
+            console.error("Elemento torneosTable no encontrado");
+            return;
+        }
+        
+        console.log("Mostrando estado de carga...");
         // Mostrar estado de carga
         torneosTable.innerHTML = `
             <tr>
@@ -310,8 +410,10 @@ async function loadTorneos() {
             </tr>
         `;
         
+        console.log("Consultando Firestore...");
         // Consultar torneos en Firestore
         const torneosSnapshot = await db.collection("torneos").get();
+        console.log("Resultado de consulta:", torneosSnapshot.size, "torneos encontrados");
         
         // Verificar si hay torneos
         if (torneosSnapshot.empty) {
@@ -592,19 +694,51 @@ function showTournamentForm(isEditing, tournamentData = null) {
 
 // Llenar formulario con datos de un torneo
 function fillFormWithTournamentData(tournamentData) {
+    console.log("Llenando formulario con datos:", tournamentData);
+    
     // Campos básicos
     document.getElementById('nombreTorneo').value = tournamentData.nombre || '';
     document.getElementById('descripcionTorneo').value = tournamentData.descripcion || '';
     
-    // Fecha (formato YYYY-MM-DD)
-    if (tournamentData.fecha) {
+    // Manejar fecha y hora
+    if (tournamentData.fechaHora) {
+        // Nuevo formato: fechaHora en UTC, convertir a zona local del admin
+        console.log("Usando fechaHora:", tournamentData.fechaHora);
+        
+        let fechaLocal;
+        if (tournamentData.fechaHora.toDate) {
+            // Es un Timestamp de Firebase
+            fechaLocal = tournamentData.fechaHora.toDate();
+        } else {
+            // Es una fecha normal
+            fechaLocal = new Date(tournamentData.fechaHora);
+        }
+        
+        // Convertir a zona horaria local del admin
+        const adminTimeZone = getUserTimeZone();
+        const fechaEnZonaAdmin = new Date(fechaLocal.toLocaleString("en-US", { timeZone: adminTimeZone }));
+        
+        // Formatear para los inputs
+        const year = fechaEnZonaAdmin.getFullYear();
+        const month = String(fechaEnZonaAdmin.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaEnZonaAdmin.getDate()).padStart(2, '0');
+        const hours = String(fechaEnZonaAdmin.getHours()).padStart(2, '0');
+        const minutes = String(fechaEnZonaAdmin.getMinutes()).padStart(2, '0');
+        
+        document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
+        document.getElementById('horaTorneo').value = `${hours}:${minutes}`;
+        
+        console.log("Fecha local para el admin:", `${year}-${month}-${day} ${hours}:${minutes}`);
+        
+    } else if (tournamentData.fecha) {
+        // Formato anterior: fecha y hora separadas (compatibilidad hacia atrás)
+        console.log("Usando formato anterior - fecha:", tournamentData.fecha, "hora:", tournamentData.hora);
+        
         const date = new Date(tournamentData.fecha.seconds * 1000);
         const formattedDate = date.toISOString().split('T')[0];
         document.getElementById('fechaTorneo').value = formattedDate;
+        document.getElementById('horaTorneo').value = tournamentData.hora || '';
     }
-    
-    // Hora
-    document.getElementById('horaTorneo').value = tournamentData.hora || '';
     
     // Capacidad
     document.getElementById('capacidadTorneo').value = tournamentData.capacidad || '';
@@ -729,11 +863,21 @@ async function handleTournamentFormSubmit(e) {
         }
         
         // Recopilar datos del formulario
+        const fechaInput = document.getElementById('fechaTorneo').value;
+        const horaInput = document.getElementById('horaTorneo').value;
+        
+        // Convertir fecha y hora local a UTC
+        let fechaHoraUTC;
+        if (fechaInput && horaInput) {
+            fechaHoraUTC = convertLocalToUTC(fechaInput, horaInput);
+        } else {
+            fechaHoraUTC = new Date(); // Fecha actual si no se especifica
+        }
+        
         const tournamentData = {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
-            fecha: document.getElementById('fechaTorneo').value ? new Date(document.getElementById('fechaTorneo').value) : new Date(),
-            hora: document.getElementById('horaTorneo').value,
+            fechaHora: fechaHoraUTC, // Guardamos fecha y hora juntas en UTC
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,
             puntosPosicion: {
@@ -742,7 +886,9 @@ async function handleTournamentFormSubmit(e) {
                 3: parseInt(document.getElementById('puntos3').value) || 0
             },
             visible: document.getElementById('torneoVisible').checked,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            // Guardamos la zona horaria del creador para referencia
+            timeZoneCreador: getUserTimeZone()
         };
         
         // Validar campos obligatorios

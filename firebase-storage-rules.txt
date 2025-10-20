@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage para Dtowin Tournaments
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // === FOTOS DE PERFIL ===
+    // Permite a los usuarios subir y gestionar sus propias fotos de perfil
+    match /profile_photos/{userId}/{allPaths=**} {
+      // Lectura pública para mostrar fotos de perfil en toda la app
+      allow read: if true;
+      
+      // Solo el propietario puede subir/actualizar/eliminar su foto de perfil
+      // Los admins también pueden gestionar cualquier foto
+      allow write, delete: if request.auth != null && (
+        request.auth.uid == userId ||
+        // Lista de administradores (ajustar según necesites)
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"]
+      );
+    }
+    
+    // === BANNERS DE TORNEOS ===
+    // Solo para administradores/hosts
+    match /tournament-banners/{allPaths=**} {
+      // Lectura pública para mostrar banners
+      allow read: if true;
+      
+      // Solo admins pueden gestionar banners
+      allow write, delete: if request.auth != null && 
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // === BADGES/MEDALLAS ===
+    // Solo para administradores/hosts
+    match /badges/{allPaths=**} {
+      // Lectura pública para mostrar badges
+      allow read: if true;
+      
+      // Solo admins pueden gestionar badges
+      allow write, delete: if request.auth != null && 
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // === IMÁGENES GENERALES DE LA APP ===
+    match /app-images/{allPaths=**} {
+      // Lectura pública
+      allow read: if true;
+      
+      // Solo admins pueden subir imágenes generales
+      allow write, delete: if request.auth != null && 
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // === REGLA CATCH-ALL PARA SEGURIDAD ===
+    // Denegar acceso a cualquier otra ruta no especificada
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

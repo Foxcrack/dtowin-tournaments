@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // === FOTOS DE PERFIL ===
+    match /profile_photos/{userId}/{allPaths=**} {
+      // Lectura pública para mostrar fotos de perfil
+      allow read: if true;
+      
+      // Solo el propietario puede subir/actualizar su foto de perfil
+      // Los admins también pueden gestionar cualquier foto
+      allow write: if request.auth != null && (
+        request.auth.uid == userId ||
+        // Verificar si es admin (puedes ajustar esta lista)
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"]
+      );
+      
+      // Solo el propietario o admin puede eliminar
+      allow delete: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"]
+      );
+    }
+    
+    // === BANNERS DE TORNEOS (si los almacenas en Storage) ===
+    match /tournament-banners/{allPaths=**} {
+      // Lectura pública
+      allow read: if true;
+      
+      // Solo admins pueden gestionar banners
+      allow write, delete: if request.auth != null && 
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // === BADGES (si los almacenas en Storage) ===
+    match /badges/{allPaths=**} {
+      // Lectura pública
+      allow read: if true;
+      
+      // Solo admins pueden gestionar badges
+      allow write, delete: if request.auth != null && 
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // === REGLA CATCH-ALL PARA SEGURIDAD ===
+    // Denegar acceso a cualquier otra ruta no especificada
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

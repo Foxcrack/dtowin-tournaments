@@ -1,7 +1,127 @@
 // index-torneos.js - Versión refactorizada con subcolecciones
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+
+// Funciones de utilidad para zonas horarias (inline para evitar problemas de imports)
+function getUserTimeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+function getTimeZoneName(timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    const timeZoneNames = {
+        'America/Bogota': 'COT (Colombia)',
+        'America/Mexico_City': 'CST (México)',
+        'America/Argentina/Buenos_Aires': 'ART (Argentina)',
+        'America/Santiago': 'CLT (Chile)',
+        'America/Lima': 'PET (Perú)',
+        'America/Caracas': 'VET (Venezuela)',
+        'Europe/Madrid': 'CET (España)',
+        'America/New_York': 'EST (Estados Unidos - Este)',
+        'America/Los_Angeles': 'PST (Estados Unidos - Oeste)',
+        'Europe/London': 'GMT (Reino Unido)'
+    };
+    
+    return timeZoneNames[userTimeZone] || userTimeZone;
+}
+
+function formatDateTimeInLocalZone(utcDate, options = {}) {
+    const userTimeZone = getUserTimeZone();
+    
+    console.log("Formateando fecha:", utcDate, "para zona:", userTimeZone);
+    
+    // Convertir Timestamp de Firebase a Date si es necesario
+    let date = utcDate;
+    if (utcDate && typeof utcDate.toDate === 'function') {
+        date = utcDate.toDate();
+        console.log("Convertido de Timestamp:", date);
+    } else if (typeof utcDate === 'string') {
+        date = new Date(utcDate);
+        console.log("Convertido de string:", date);
+    }
+    
+    const defaultOptions = {
+        timeZone: userTimeZone,
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    };
+    
+    const formatOptions = { ...defaultOptions, ...options };
+    
+    const resultado = date.toLocaleString('es-ES', formatOptions);
+    console.log("Resultado formateado:", resultado);
+    
+    return resultado;
+}
+
+function convertUTCToLocal(utcDate, timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    // Convertir Timestamp de Firebase a Date si es necesario
+    let date = utcDate;
+    if (utcDate && typeof utcDate.toDate === 'function') {
+        date = utcDate.toDate();
+    } else if (typeof utcDate === 'string') {
+        date = new Date(utcDate);
+    }
+    
+    // Crear nueva fecha en la zona horaria local
+    return new Date(date.toLocaleString("en-US", { timeZone: userTimeZone }));
+}
+
+// Función para mostrar notificaciones (inline)
+function showNotification(message, type = "info") {
+    // Verificar si ya existe una notificación
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    
+    // Clases según el tipo de notificación
+    let bgColor = 'bg-blue-500';
+    let icon = 'info-circle';
+    
+    if (type === 'success') {
+        bgColor = 'bg-green-500';
+        icon = 'check-circle';
+    } else if (type === 'error') {
+        bgColor = 'bg-red-500';
+        icon = 'exclamation-circle';
+    } else if (type === 'warning') {
+        bgColor = 'bg-yellow-500';
+        icon = 'exclamation-triangle';
+    }
+    
+    // Estilos de la notificación
+    notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+    notification.innerHTML = `
+        <i class="fas fa-${icon} mr-2"></i>
+        <span>${message}</span>
+    `;
+    
+    // Añadir al DOM
+    document.body.appendChild(notification);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+        notification.classList.add('opacity-0');
+        notification.style.transition = 'opacity 0.5s';
+        setTimeout(() => {
+            notification.remove();
+        }, 500);
+    }, 3000);
+}
+
+console.log("🔧 index-torneos.js cargado correctamente");
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -21,14 +141,346 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 let currentUser = null;
+let torneosListener = null; // Para almacenar el listener activo
+let inscripcionesListeners = new Map(); // Para almacenar listeners de inscripciones por torneo
 
-// === FUNCIONES AUXILIARES ===
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `p-4 rounded-lg mb-4 text-white ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`;
-    notification.textContent = message;
-    document.getElementById('notifications').appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
+// === FUNCIONES DE TIEMPO REAL ===
+
+// Configurar listeners en tiempo real para torneos
+function setupRealTimeTournaments() {
+    // Limpiar listener anterior si existe
+    if (torneosListener) {
+        torneosListener();
+        torneosListener = null;
+    }
+
+    // Limpiar listeners de inscripciones anteriores
+    inscripcionesListeners.forEach(unsubscribe => unsubscribe());
+    inscripcionesListeners.clear();
+
+    const containers = {
+        "En Progreso": document.getElementById("torneos-en-proceso"),
+        "Abierto": document.getElementById("torneos-abiertos"),
+        "Check In": document.getElementById("torneos-checkin"),
+        "Próximamente": document.getElementById("torneos-proximos")
+    };
+
+    // Listener principal para torneos
+    const torneosRef = collection(db, "torneos");
+    // Sin ordenar por ahora para evitar errores con campos mixtos
+    // const q = query(torneosRef, orderBy("fechaHora", "desc"));
+    
+    console.log("🔄 Configurando listener de torneos...");
+    
+    torneosListener = onSnapshot(torneosRef, async (snapshot) => {
+        console.log("🔄 Actualizando torneos en tiempo real...");
+        console.log("Número de torneos recibidos:", snapshot.size);
+        
+        const torneosPorEstado = {
+            "En Progreso": [],
+            "Abierto": [],
+            "Check In": [],
+            "Próximamente": []
+        };
+
+        const torneos = [];
+        snapshot.forEach(docSnap => {
+            const torneo = { id: docSnap.id, ...docSnap.data() };
+            console.log("Torneo procesado:", torneo.nombre, "Estado:", torneo.estado, "Visible:", torneo.visible);
+            
+            if (torneo.visible !== false && torneosPorEstado[torneo.estado]) {
+                torneosPorEstado[torneo.estado].push(torneo);
+            }
+            torneos.push(torneo);
+        });
+
+        // Pre-cargar banners
+        const bannerPromises = torneos.map(async torneo => {
+            if (torneo.bannerId) {
+                torneo.bannerUrl = await getBannerUrl(torneo.bannerId);
+            } else if (torneo.banner) {
+                torneo.bannerUrl = torneo.banner;
+            } else {
+                torneo.bannerUrl = null;
+            }
+        });
+        await Promise.all(bannerPromises);
+
+        // Configurar listeners de inscripciones para cada torneo
+        torneos.forEach(torneo => {
+            setupInscripcionesListener(torneo.id);
+        });
+
+        // Renderizar torneos
+        await renderTorneosPorEstado(torneosPorEstado, containers);
+        
+        console.log("✅ Torneos actualizados en tiempo real");
+    }, (error) => {
+        console.error("❌ Error en listener de torneos:", error);
+        Object.values(containers).forEach(c => {
+            if (c) c.innerHTML = `<div class="text-center text-red-500 p-4">Error al cargar torneos en tiempo real</div>`;
+        });
+    });
+}
+
+// Configurar listener en tiempo real para inscripciones de un torneo específico
+function setupInscripcionesListener(torneoId) {
+    // Si ya existe un listener para este torneo, no crear otro
+    if (inscripcionesListeners.has(torneoId)) {
+        return;
+    }
+
+    const inscripcionesRef = collection(db, "torneos", torneoId, "inscripciones");
+    const q = query(inscripcionesRef, where("estado", "==", "inscrito"));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        console.log(`🔄 Actualizando inscripciones del torneo ${torneoId} en tiempo real...`);
+        
+        // Actualizar contador en la UI
+        updateTorneoInscripcionesCount(torneoId, snapshot.size);
+        
+        // Si hay un modal abierto de este torneo, actualizarlo
+        const modal = document.getElementById('inscritosModal');
+        if (modal && modal.dataset.torneoId === torneoId) {
+            updateInscritosModal(torneoId, snapshot);
+        }
+    }, (error) => {
+        console.error(`❌ Error en listener de inscripciones para torneo ${torneoId}:`, error);
+    });
+
+    inscripcionesListeners.set(torneoId, unsubscribe);
+}
+
+// Actualizar contador de inscripciones en la UI
+function updateTorneoInscripcionesCount(torneoId, count) {
+    const torneoCards = document.querySelectorAll(`.tournament-card`);
+    
+    torneoCards.forEach(card => {
+        const verInscritosBtn = card.querySelector(`[data-torneo-id="${torneoId}"]`);
+        if (verInscritosBtn) {
+            const participantesSpan = card.querySelector('.fas.fa-users').nextElementSibling;
+            if (participantesSpan) {
+                participantesSpan.textContent = `${count} participante${count !== 1 ? 's' : ''}`;
+            }
+        }
+    });
+}
+
+// Actualizar modal de inscritos en tiempo real
+async function updateInscritosModal(torneoId, snapshot) {
+    const inscritos = [];
+    snapshot.forEach(doc => {
+        inscritos.push({
+            id: doc.id,
+            ...doc.data()
+        });
+    });
+
+    const confirmados = inscritos.filter(inscrito => inscrito.asistenciaConfirmada);
+    const noConfirmados = inscritos.filter(inscrito => !inscrito.asistenciaConfirmada);
+
+    // Actualizar contadores
+    const totalElement = document.querySelector('#inscritosModal .text-blue-800');
+    const confirmadosElement = document.querySelector('#inscritosModal .text-green-800');
+    const pendientesElement = document.querySelector('#inscritosModal .text-yellow-800');
+
+    if (totalElement) totalElement.textContent = inscritos.length;
+    if (confirmadosElement) confirmadosElement.textContent = confirmados.length;
+    if (pendientesElement) pendientesElement.textContent = noConfirmados.length;
+
+    // Actualizar listas
+    const confirmadosList = document.getElementById('confirmados-list');
+    const noConfirmadosList = document.getElementById('no-confirmados-list');
+
+    if (confirmadosList) {
+        confirmadosList.innerHTML = confirmados.length > 0 ? 
+            confirmados.map(inscrito => `
+                <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-800">${inscrito.gameUsername || inscrito.displayName || 'Usuario'}</p>
+                        <p class="text-sm text-gray-600">${inscrito.discordUsername || 'Discord no disponible'}</p>
+                    </div>
+                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Confirmado</span>
+                </div>
+            `).join('') : 
+            '<div class="text-center text-gray-500 p-4">No hay participantes confirmados</div>';
+    }
+
+    if (noConfirmadosList) {
+        noConfirmadosList.innerHTML = noConfirmados.length > 0 ? 
+            noConfirmados.map(inscrito => `
+                <div class="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                    <i class="fas fa-clock text-yellow-500"></i>
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-800">${inscrito.gameUsername || inscrito.displayName || 'Usuario'}</p>
+                        <p class="text-sm text-gray-600">${inscrito.discordUsername || 'Discord no disponible'}</p>
+                    </div>
+                    <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Pendiente</span>
+                </div>
+            `).join('') : 
+            '<div class="text-center text-gray-500 p-4">Todos los participantes han confirmado</div>';
+    }
+}
+
+// Renderizar torneos por estado (función auxiliar para reutilizar código)
+async function renderTorneosPorEstado(torneosPorEstado, containers) {
+    for (const [estado, torneos] of Object.entries(torneosPorEstado)) {
+        const contenedor = containers[estado];
+        if (!contenedor) continue;
+
+        if (torneos.length === 0) {
+            contenedor.innerHTML = `<div class="text-center text-gray-400 p-4">No hay torneos</div>`;
+            continue;
+        }
+
+        const torneosHTML = await Promise.all(torneos.map(async (torneo) => {
+            let isInscrito = false;
+            let totalInscritos = 0;
+
+            // Usar funciones con subcolecciones
+            totalInscritos = await countInscriptions(torneo.id);
+
+            if (currentUser && (estado === "Abierto" || estado === "Check In")) {
+                const inscripcion = await checkUserInscription(currentUser.uid, torneo.id);
+                isInscrito = inscripcion !== null;
+                if (estado === "Check In" && isInscrito) {
+                    const asistenciaConfirmada = await checkUserAttendance(currentUser.uid, torneo.id);
+                    torneo.asistenciaConfirmada = asistenciaConfirmada;
+                }
+            }
+
+            // Formatear fecha y hora en zona local del usuario
+            let fechaFormateada = 'Fecha TBD';
+            let horaFormateada = '';
+            
+            if (torneo.fechaHora) {
+                // Si el torneo tiene el nuevo campo fechaHora (UTC)
+                fechaFormateada = formatDateTimeInLocalZone(torneo.fechaHora, {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                horaFormateada = formatDateTimeInLocalZone(torneo.fechaHora, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } else if (torneo.fecha) {
+                // Compatibilidad con torneos existentes que tienen fecha separada
+                const fechaTorneo = new Date(torneo.fecha.seconds * 1000);
+                fechaFormateada = fechaTorneo.toLocaleDateString('es-ES', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                if (torneo.hora) {
+                    horaFormateada = torneo.hora;
+                }
+            }
+
+            let bannerHtml;
+            if (torneo.bannerUrl) {
+                bannerHtml = `<img src="${torneo.bannerUrl}" alt="Banner ${torneo.nombre}" class="w-full h-full object-cover" loading="lazy"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`;
+            } else {
+                bannerHtml = '';
+            }
+
+            return `
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden tournament-card hover:shadow-xl transition-shadow duration-300" data-torneo-id="${torneo.id}">
+                    <div class="relative h-32 bg-gradient-to-r from-blue-500 to-purple-600 overflow-hidden">
+                        ${bannerHtml}
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center" style="${torneo.bannerUrl ? 'display:none;' : ''}">
+                            <i class="fas fa-trophy text-white text-3xl opacity-50"></i>
+                            <div class="absolute bottom-2 left-2 text-white text-xs opacity-75">Sin banner configurado</div>
+                        </div>
+                        <div class="absolute top-2 right-2">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-white/90 text-gray-800">
+                                ${torneo.estado}
+                            </span>
+                        </div>
+                        <div class="absolute bottom-2 right-2">
+                            <div class="bg-black/50 text-white px-2 py-1 rounded text-xs">
+                                <i class="fas fa-calendar mr-1"></i>${fechaFormateada}
+                                ${horaFormateada ? `<br><i class="fas fa-clock mr-1"></i>${horaFormateada}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h4 class="font-bold text-gray-800 mb-2 text-lg">${torneo.nombre || "Torneo sin nombre"}</h4>
+                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">${torneo.descripcion || "Sin descripción disponible"}</p>
+                        ${horaFormateada ? `
+                            <div class="flex items-center text-xs text-gray-500 mb-3">
+                                <i class="fas fa-globe-americas mr-1"></i>
+                                <span>Horario en tu zona: ${horaFormateada} - ${getTimeZoneName()}</span>
+                            </div>
+                        ` : ''}
+                        <div class="flex items-center justify-between mb-3 p-2 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-users text-blue-500"></i>
+                                <span class="text-sm font-medium text-gray-700">
+                                    ${totalInscritos} participante${totalInscritos !== 1 ? 's' : ''}
+                                </span>
+                                ${torneo.capacidad ? `<span class="text-xs text-gray-500">/ ${torneo.capacidad}</span>` : ''}
+                            </div>
+                            <button class="ver-inscritos-btn text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre}">
+                                <i class="fas fa-eye mr-1"></i>Ver Lista
+                            </button>
+                        </div>
+                        <div class="flex flex-col gap-2 mt-2">
+                            ${estado === "Abierto"
+                    ? (
+                        currentUser
+                            ? (
+                                isInscrito
+                                    ? `<button class="desinscribirse-btn bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition"
+                                        data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre}">
+                                        <i class="fas fa-user-minus mr-2"></i>Desinscribirse
+                                        </button>`
+                                    : (torneo.capacidad && totalInscritos >= torneo.capacidad
+                                        ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                                <i class="fas fa-users mr-2"></i>Torneo Lleno
+                                            </button>`
+                                        : `<button class="inscribirse-btn bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition"
+                                                data-torneo-id="${torneo.id}" data-torneo-nombre="${torneo.nombre}">
+                                                <i class="fas fa-user-plus mr-2"></i>Inscribirse
+                                            </button>`
+                                    )
+                            )
+                            : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                        Inicia sesión para inscribirte
+                                    </button>`
+                    )
+                    : estado === "Check In"
+                        ? (currentUser && isInscrito && !torneo.asistenciaConfirmada
+                            ? `<button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition"
+                                        data-torneo-id="${torneo.id}">
+                                        <i class="fas fa-check-circle mr-2"></i>Hacer Check-in
+                                        </button>`
+                            : currentUser && isInscrito && torneo.asistenciaConfirmada
+                                ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                            <i class="fas fa-check-double mr-2"></i>Check-in Confirmado
+                                        </button>`
+                                : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                            Check-in disponible solo para inscritos
+                                        </button>`
+                        )
+                        : ""
+                }
+                        </div>
+                    </div>
+                </div>
+            `;
+        }));
+
+        contenedor.innerHTML = torneosHTML.join("");
+    }
+
+    setupTournamentButtons();
 }
 
 async function checkIfUserIsAdmin(user) {
@@ -175,7 +627,7 @@ async function confirmAttendance(torneoId) {
         }
         
         showNotification("Asistencia confirmada. ¡Bienvenido al torneo!", "success");
-        loadTournaments();
+        // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
         console.error("Error al confirmar asistencia:", error);
@@ -245,7 +697,7 @@ async function handleInscription(e) {
 
         showNotification('¡Inscripción exitosa! Te has registrado en el torneo.', 'success');
         closeInscriptionModal();
-        loadTournaments();
+        // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
         console.error('Error en inscripción:', error);
@@ -284,7 +736,7 @@ async function handleUnsubscribe(torneoId, torneoNombre) {
         });
 
         showNotification('Te has desinscrito del torneo correctamente', 'success');
-        loadTournaments();
+        // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
         console.error('Error al desinscribirse:', error);
@@ -625,6 +1077,7 @@ async function showInscritosModal(torneoId, torneoNombre) {
         const modal = document.createElement('div');
         modal.id = 'inscritosModal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.dataset.torneoId = torneoId; // Añadir dataset para identificar el torneo
 
         modal.innerHTML = `
             <div class="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
@@ -974,12 +1427,19 @@ function setupEventListeners() {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Inicializando index-torneos...");
+    
     onAuthStateChanged(auth, (user) => {
+        console.log("👤 Estado de autenticación cambiado:", !!user);
         updateAuthUI(user);
-        loadTournaments();
+        // Solo configurar una vez cuando cambie el estado de auth
+        if (!torneosListener) {
+            setupRealTimeTournaments();
+        }
     });
 
-    loadTournaments();
+    // Configurar solo una vez al cargar
+    setupRealTimeTournaments();
     loadLeaderboard();
     setupEventListeners();
 

@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función para verificar si un usuario es administrador o host
+    function isAdminOrHost() {
+      return request.auth != null && (
+        // Lista explícita de UIDs de administradores
+        request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"] || 
+        // O verificar si tiene el rol de host en su documento
+        exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.isHost == true
+      );
+    }
+    
+    // Función para verificar si el usuario es admin
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.uid in ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
+    }
+    
+    // Función para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Función para verificar si es el propietario del documento
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Función para verificar si el usuario puede actualizar el documento
+    // Considera tanto documentos identificados por UID como documentos con campo uid
+    function canUpdateUser(docId) {
+      return request.auth != null && (
+        // El documento está identificado por UID del usuario
+        request.auth.uid == docId ||
+        // O el documento tiene un campo uid que coincide
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        // O es admin/host
+        isAdminOrHost()
+      );
+    }
+
+    // === COLECCIÓN USUARIOS ===
+    match /usuarios/{docId} {
+      // Permitir lectura pública para leaderboards y perfiles
+      allow read: if true;
+      
+      // Permitir crear documento si:
+      // - Es el propio usuario creando su documento (docId == UID)
+      // - O el documento que se crea tiene uid igual al usuario autenticado
+      // - O es admin/host
+      allow create: if isAuthenticated() && (
+        request.auth.uid == docId ||
+        request.resource.data.uid == request.auth.uid ||
+        isAdminOrHost()
+      );
+      
+      // Permitir actualizar si puede actualizar el documento
+      allow update: if canUpdateUser(docId);
+      
+      // Solo el propietario o admin puede eliminar
+      allow delete: if canUpdateUser(docId);
+    }
+
+    // === COLECCIÓN TORNEOS ===
+    match /torneos/{torneoId} {
+      // Permitir lectura pública de torneos
+      allow read: if true;
+      
+      // Solo admins/hosts pueden crear, actualizar o eliminar torneos
+      allow create, update, delete: if isAdminOrHost();
+
+      // === SUBCOLECCIÓN INSCRIPCIONES ===
+      match /inscripciones/{userId} {
+        // Permitir lectura pública para mostrar listas de participantes
+        allow read: if true;
+        
+        // El usuario puede crear su propia inscripción o admin/host puede crear cualquiera
+        allow create: if isAuthenticated() && (isOwner(userId) || isAdminOrHost());
+        
+        // El usuario propietario puede actualizar su inscripción (para check-in, etc.)
+        // Los admins/hosts también pueden actualizar cualquier inscripción
+        allow update: if isAuthenticated() && (isOwner(userId) || isAdminOrHost());
+        
+        // Solo el usuario propietario o admin/host puede eliminar
+        allow delete: if isAuthenticated() && (isOwner(userId) || isAdminOrHost());
+      }
+    }
+
+    // === COLECCIÓN INSCRIPCIONES (GLOBAL) ===
+    match /inscripciones/{inscripcionId} {
+      // Permitir lectura pública
+      allow read: if true;
+
+      // Permitir a admin/host crear inscripciones para cualquier userId (incluyendo bots)
+      // O permitir al usuario crear su propia inscripción
+      allow create: if request.auth != null && (
+        (request.resource.data.userId == request.auth.uid &&
+          request.resource.data.keys().hasAll(['userId', 'torneoId', 'gameUsername', 'discordUsername', 'estado']) &&
+          request.resource.data.estado == 'inscrito'
+        ) ||
+        isAdminOrHost()
+      );
+
+      // Permitir actualizar si es el dueño de la inscripción o admin/host
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        isAdminOrHost()
+      );
+
+      // Permitir eliminar si es el dueño de la inscripción o admin/host
+      allow delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        isAdminOrHost()
+      );
+    }
+
+    // === COLECCIÓN BANNERS ===
+    match /banners/{bannerId} {
+      // Lectura pública para mostrar banners en torneos
+      allow read: if true;
+      
+      // Solo admins/hosts pueden gestionar banners
+      allow create, update, delete: if isAdminOrHost();
+    }
+
+    // === COLECCIÓN BADGES ===
+    match /badges/{badgeId} {
+      // Lectura pública para mostrar badges
+      allow read: if true;
+      
+      // Solo admins/hosts pueden gestionar badges
+      allow create, update, delete: if isAdminOrHost();
+    }
+
+    // === COLECCIÓN BRACKETS ===
+    match /brackets/{bracketId} {
+      // Lectura pública para ver brackets
+      allow read: if true;
+      
+      // Solo admins/hosts pueden gestionar brackets
+      allow create, update, delete: if isAdminOrHost();
+    }
+
+    // === COLECCIÓN TOURNAMENT_BADGES ===
+    match /tournament_badges/{badgeId} {
+      // Lectura pública
+      allow read: if true;
+      
+      // Solo admins/hosts pueden gestionar
+      allow create, update, delete: if isAdminOrHost();
+    }
+
+    // === COLECCIÓN USER_BADGES ===
+    match /user_badges/{badgeId} {
+      // Lectura pública
+      allow read: if true;
+      
+      // Usuarios pueden crear sus propios badges, admins/hosts pueden crear cualquiera
+      allow create: if request.auth != null;
+      
+      // Solo el dueño del badge o admin/host puede actualizar/eliminar
+      allow update, delete: if request.auth != null && (
+        isOwner(resource.data.userId) || isAdminOrHost()
+      );
+    }
+
+    // === COLECCIÓN PARTICIPANT_INFO ===
+    match /participant_info/{participantId} {
+      // Lectura pública para estadísticas
+      allow read: if true;
+      
+      // Cualquier usuario autenticado puede escribir (para estadísticas de participación)
+      allow create, update: if isAuthenticated();
+      
+      // Solo admins/hosts pueden eliminar
+      allow delete: if isAdminOrHost();
+    }
+
+    // === COLECCIÓN PROFILE_PHOTOS (NUEVA) ===
+    // Para manejar metadatos de fotos de perfil y referencias a Storage
+    match /profile_photos/{userId} {
+      // Lectura pública para mostrar fotos de perfil
+      allow read: if true;
+      
+      // Solo el propietario puede crear/actualizar su foto de perfil
+      // Los admins también pueden gestionar cualquier foto
+      allow create, update: if isOwner(userId) || isAdminOrHost();
+      
+      // Solo el propietario o admin puede eliminar
+      allow delete: if isOwner(userId) || isAdminOrHost();
+    }
+
+    // === REGLA CATCH-ALL PARA SEGURIDAD ===
+    // Por seguridad, denegar acceso a cualquier otra colección no especificada
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

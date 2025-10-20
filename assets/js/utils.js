@@ -84,4 +84,111 @@ export function showSection(sectionId) {
     }
 }
 
+/**
+ * Obtiene la zona horaria del usuario
+ * @returns {string} - Zona horaria del usuario (ej: "America/Bogota")
+ */
+export function getUserTimeZone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+/**
+ * Convierte una fecha y hora local a UTC para guardar en Firestore
+ * @param {string} dateStr - Fecha en formato YYYY-MM-DD
+ * @param {string} timeStr - Hora en formato HH:MM
+ * @param {string} timeZone - Zona horaria (opcional, usa la del usuario por defecto)
+ * @returns {Date} - Fecha en UTC
+ */
+export function convertLocalToUTC(dateStr, timeStr, timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    // Crear fecha en la zona horaria específica
+    const localDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    
+    // Obtener el offset de la zona horaria
+    const tempDate = new Date(localDateTime.toLocaleString("en-US", { timeZone: userTimeZone }));
+    const tempUTC = new Date(localDateTime.toLocaleString("en-US", { timeZone: "UTC" }));
+    const offset = tempUTC.getTime() - tempDate.getTime();
+    
+    // Aplicar el offset para obtener UTC correcto
+    return new Date(localDateTime.getTime() + offset);
+}
+
+/**
+ * Convierte una fecha UTC a la zona horaria local del usuario
+ * @param {Date|any} utcDate - Fecha en UTC (puede ser Timestamp de Firebase)
+ * @param {string} timeZone - Zona horaria (opcional, usa la del usuario por defecto)
+ * @returns {Date} - Fecha en la zona horaria local
+ */
+export function convertUTCToLocal(utcDate, timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    // Convertir Timestamp de Firebase a Date si es necesario
+    let date = utcDate;
+    if (utcDate && typeof utcDate.toDate === 'function') {
+        date = utcDate.toDate();
+    } else if (typeof utcDate === 'string') {
+        date = new Date(utcDate);
+    }
+    
+    // Crear nueva fecha en la zona horaria local
+    return new Date(date.toLocaleString("en-US", { timeZone: userTimeZone }));
+}
+
+/**
+ * Formatea una fecha para mostrar en la zona horaria local
+ * @param {Date|any} utcDate - Fecha en UTC
+ * @param {Object} options - Opciones de formato
+ * @returns {string} - Fecha formateada
+ */
+export function formatDateTimeInLocalZone(utcDate, options = {}) {
+    const userTimeZone = getUserTimeZone();
+    
+    // Convertir Timestamp de Firebase a Date si es necesario
+    let date = utcDate;
+    if (utcDate && typeof utcDate.toDate === 'function') {
+        date = utcDate.toDate();
+    } else if (typeof utcDate === 'string') {
+        date = new Date(utcDate);
+    }
+    
+    const defaultOptions = {
+        timeZone: userTimeZone,
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    };
+    
+    const formatOptions = { ...defaultOptions, ...options };
+    
+    return date.toLocaleString('es-ES', formatOptions);
+}
+
+/**
+ * Obtiene el nombre de la zona horaria en español
+ * @param {string} timeZone - Zona horaria (opcional, usa la del usuario por defecto)
+ * @returns {string} - Nombre de la zona horaria
+ */
+export function getTimeZoneName(timeZone = null) {
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    const timeZoneNames = {
+        'America/Bogota': 'COT (Colombia)',
+        'America/Mexico_City': 'CST (México)',
+        'America/Argentina/Buenos_Aires': 'ART (Argentina)',
+        'America/Santiago': 'CLT (Chile)',
+        'America/Lima': 'PET (Perú)',
+        'America/Caracas': 'VET (Venezuela)',
+        'Europe/Madrid': 'CET (España)',
+        'America/New_York': 'EST (Estados Unidos - Este)',
+        'America/Los_Angeles': 'PST (Estados Unidos - Oeste)',
+        'Europe/London': 'GMT (Reino Unido)'
+    };
+    
+    return timeZoneNames[userTimeZone] || userTimeZone;
+}
+
 // Otras funciones de utilidad que puedan ser necesarias

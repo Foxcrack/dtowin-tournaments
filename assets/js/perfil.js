@@ -253,12 +253,14 @@ async function updateProfileInfo(userData) {
         profileUsername.textContent = userData.nombre || 'Usuario';
     }
     
-    // Actualizar foto de perfil
+    // Actualizar foto de perfil - Priorizar Firestore sobre Auth
     const profileAvatar = document.getElementById('profileAvatar');
-    if (profileAvatar && userData.photoURL) {
-        profileAvatar.src = userData.photoURL;
+    if (profileAvatar) {
+        // Usar photoURL de Firestore (Base64) si existe, sino usar la de Auth, sino imagen por defecto
+        const profileImageSrc = userData.photoURL || userData.photoData || user.photoURL || 'dtowin.png';
+        profileAvatar.src = profileImageSrc;
         profileAvatar.alt = userData.nombre || 'Usuario';
-        console.log("Foto de perfil actualizada:", userData.photoURL);
+        console.log("Foto de perfil actualizada desde:", userData.photoURL ? 'Firestore (photoURL)' : (userData.photoData ? 'Firestore (photoData)' : (user.photoURL ? 'Auth' : 'default')));
     } else {
         console.log("No se encontró foto de perfil o elemento para actualizarla");
     }
@@ -864,7 +866,10 @@ async function loadCurrentProfileData() {
         }
         
         if (currentProfilePhoto) {
-            currentProfilePhoto.src = userData.photoURL || 'dtowin.png';
+            // Priorizar la foto de Firestore (photoURL o photoData) sobre Auth
+            const profileImageSrc = userData.photoURL || userData.photoData || 'dtowin.png';
+            currentProfilePhoto.src = profileImageSrc;
+            console.log("Foto de perfil del modal cargada desde:", userData.photoURL ? 'photoURL' : (userData.photoData ? 'photoData' : 'default'));
         }
         
         // Guardar bannerId actual si existe
@@ -956,12 +961,12 @@ async function loadAvailableBanners() {
     }
 }
 
-// Manejar cambio de foto de perfil - Versión actualizada
-function handleProfilePhotoChange(event) {
+// Manejar cambio de foto de perfil - Versión actualizada con Base64 y compresión
+async function handleProfilePhotoChange(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    console.log("Archivo de foto seleccionado:", file.name);
+    console.log("Archivo de foto seleccionado:", file.name, "Tamaño:", file.size, "bytes");
     
     // Verificar que sea imagen
     if (!file.type.startsWith('image/')) {
@@ -970,29 +975,102 @@ function handleProfilePhotoChange(event) {
         return;
     }
     
-    // Verificar tamaño (max 2MB)
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    // Verificar tamaño (max 10MB - aumentamos el límite ya que vamos a comprimir)
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
     if (file.size > MAX_SIZE) {
-        mostrarNotificacion("La imagen es demasiado grande. Máximo 2MB", "warning");
+        mostrarNotificacion("La imagen es demasiado grande. Máximo 10MB", "warning");
+        event.target.value = '';
+        return;
     }
     
     // Guardar referencia al archivo
     newProfilePhoto = file;
     console.log("newProfilePhoto:", newProfilePhoto);
     
-    // Mostrar vista previa
+    // Mostrar vista previa comprimida
     const photoPreview = document.getElementById('photoPreview');
     const photoPreviewContainer = document.getElementById('photoPreviewContainer');
     
     if (photoPreview && photoPreviewContainer) {
-        photoPreviewContainer.classList.remove('hidden');
+        try {
+            // Comprimir imagen para vista previa (calidad más baja)
+            const compressedPreview = await compressImage(file, 400, 300, 0.6);
+            photoPreview.src = compressedPreview;
+            photoPreviewContainer.classList.remove('hidden');
+            console.log("Vista previa comprimida generada");
+        } catch (error) {
+            console.error("Error al generar vista previa comprimida:", error);
+            // Fallback a método original
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreview.src = e.target.result;
+                photoPreviewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+// Función para leer archivo como Base64 (adaptada de admin-panel-banners.js)
+function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+// Función para comprimir imagen automáticamente
+function compressImage(file, maxWidth = 800, maxHeight = 600, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            // Calcular nuevas dimensiones manteniendo proporción
+            let { width, height } = img;
+            
+            // Reducir tamaño si es muy grande
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+            }
+            
+            // Configurar canvas
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Dibujar imagen redimensionada
+            ctx.fillStyle = '#FFFFFF'; // Fondo blanco
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convertir a Base64 con calidad comprimida
+            const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+            
+            console.log(`Imagen comprimida: ${width}x${height}, calidad: ${quality}`);
+            console.log(`Tamaño original: ${file.size} bytes, tamaño comprimido: ${compressedBase64.length} caracteres`);
+            
+            resolve(compressedBase64);
+        };
+        
+        img.onerror = function() {
+            reject(new Error('Error al cargar la imagen para compresión'));
+        };
+        
+        // Cargar imagen
         const reader = new FileReader();
         reader.onload = function(e) {
-            photoPreview.src = e.target.result;
-            photoPreviewContainer.classList.remove('hidden');
+            img.src = e.target.result;
+        };
+        reader.onerror = function() {
+            reject(new Error('Error al leer el archivo'));
         };
         reader.readAsDataURL(file);
-    }
+    });
 }
 
 // La función handleProfileFormSubmit tradicional está eliminada deliberadamente
@@ -1154,31 +1232,36 @@ document.addEventListener("DOMContentLoaded", function() {
                             saveProfileChanges.disabled = true;
                         }
                         
-                        // Subir archivo
-                        const fileRef = firebase.storage().ref().child(`profile_photos/${user.uid}/${Date.now()}-${newProfilePhoto.name}`);
-                        await fileRef.put(newProfilePhoto);
+                        console.log("Procesando foto de perfil con compresión automática...");
                         
-                        // Obtener la URL después de la subida
-                        const photoURL = await fileRef.getDownloadURL();
-                        console.log("photoURL: ", photoURL);
+                        // Comprimir imagen automáticamente (800x600, calidad 0.8)
+                        const compressedImage = await compressImage(newProfilePhoto, 800, 600, 0.8);
+                        console.log("Imagen comprimida, tamaño final:", compressedImage.length, "caracteres");
                         
-                        // Actualizar foto en Auth
-                        console.log("Actualizando foto en Auth");
+                        // NO actualizar Firebase Auth con Base64 (es demasiado largo)
+                        // En su lugar, solo actualizar Firestore y usar null en Auth
+                        console.log("Saltando actualización de Auth (Base64 demasiado largo para Firebase Auth)");
+                        
+                        // Actualizar solo el displayName en Auth si es necesario
                         await firebase.auth().currentUser.updateProfile({
-                            photoURL: photoURL,
+                            displayName: username
                         });
 
-                        // Imprimir la photoURL justo antes de actualizar Firestore
-                        console.log("photoURL antes de Firestore update:", photoURL);
+                        // Imprimir la imagen comprimida justo antes de actualizar Firestore
+                        console.log("compressedImage antes de Firestore update:", compressedImage.substring(0, 100) + "...");
 
-                        // Actualizar foto en Firestore
+                        // Actualizar foto en Firestore usando imagen comprimida (Firestore no tiene límite de tamaño)
                         if (!userDocs.empty) {
                             await userDocs.docs[0].ref.update({
-                                photoURL: photoURL,
+                                photoURL: compressedImage, // Guardar imagen comprimida en Firestore
+                                photoData: compressedImage, // Campo adicional para compatibilidad
+                                hasCustomPhoto: true, // Flag para indicar que tiene foto personalizada
+                                photoCompressed: true, // Flag para indicar que la foto está comprimida
                                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
-                        } else {                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
-                            
+                            console.log("Foto comprimida actualizada en Firestore");
+                        } else {
+                            console.warn("No se encontró perfil del usuario en Firestore, no se actualizó foto");
                         }
                     }
                     
