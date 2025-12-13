@@ -469,7 +469,11 @@ async function renderTorneosPorEstado(torneosPorEstado, containers) {
                                             Check-in disponible solo para inscritos
                                         </button>`
                         )
-                        : ""
+                        : (estado === "En Progreso" || estado === "Finalizado") && torneo.bracketsLink
+                            ? `<a href="${torneo.bracketsLink}" target="_blank" rel="noopener noreferrer" class="inline-block bg-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-purple-700 transition text-center">
+                                    <i class="fas fa-bracket-square mr-2"></i>Ver Brackets
+                                </a>`
+                            : ""
                 }
                         </div>
                     </div>

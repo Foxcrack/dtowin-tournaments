@@ -501,7 +501,10 @@ function renderTorneosTable(torneos) {
         html += `
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${torneo.nombre || 'Sin nombre'}</div>
+                    <div class="text-sm font-medium text-gray-900">
+                        ${torneo.nombre || 'Sin nombre'}
+                        ${torneo.bracketsLink ? `<span class="inline-block ml-2 text-green-600 text-xs" title="Tiene brackets"><i class="fas fa-check-circle"></i> Brackets</span>` : ''}
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-500">${fechaFormateada}</div>
@@ -526,9 +529,9 @@ function renderTorneosTable(torneos) {
                     <button class="text-red-600 hover:text-red-900 mr-3 delete-tournament-btn" data-id="${torneo.id}">
                         <i class="fas fa-trash"></i>
                     </button>
-                    ${torneo.estado === 'En Progreso' ? `
-                        <a href="bracket.html?id=${torneo.id}" target="_blank" class="text-yellow-600 hover:text-yellow-900" title="Ver bracket">
-                            <i class="fas fa-trophy"></i>
+                    ${torneo.estado === 'En Progreso' && torneo.bracketsLink ? `
+                        <a href="${torneo.bracketsLink}" target="_blank" class="text-green-600 hover:text-green-900 ml-2" title="Ver brackets">
+                            <i class="fas fa-bracket-square"></i>
                         </a>
                     ` : ''}
                 </td>
@@ -746,6 +749,9 @@ function fillFormWithTournamentData(tournamentData) {
     // Estado
     document.getElementById('estadoTorneo').value = tournamentData.estado || 'Próximamente';
     
+    // Brackets Link
+    document.getElementById('bracketsLink').value = tournamentData.bracketsLink || '';
+    
     // Puntos por posición
     if (tournamentData.puntosPosicion) {
         document.getElementById('puntos1').value = tournamentData.puntosPosicion[1] || '';
@@ -886,6 +892,7 @@ async function handleTournamentFormSubmit(e) {
                 3: parseInt(document.getElementById('puntos3').value) || 0
             },
             visible: document.getElementById('torneoVisible').checked,
+            bracketsLink: document.getElementById('bracketsLink').value.trim() || '',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             // Guardamos la zona horaria del creador para referencia
             timeZoneCreador: getUserTimeZone()

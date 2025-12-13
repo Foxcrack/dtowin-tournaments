@@ -1,0 +1,147 @@
+/* Admin Resultados Styles */
+
+.filtro-estado-btn {
+    transition: all 0.3s ease;
+}
+
+.filtro-estado-btn.active-filter {
+    box-shadow: 0 0 0 3px rgba(0, 66, 255, 0.2), inset 0 0 0 2px currentColor;
+    background: linear-gradient(135deg, rgba(0, 66, 255, 0.05), rgba(0, 66, 255, 0.02));
+    font-weight: 600;
+}
+
+.emparejamiento-item {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #0042ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.emparejamiento-info {
+    flex: 1;
+}
+
+.emparejamiento-resultado {
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.emparejamiento-resultado.ganó {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.emparejamiento-resultado.perdió {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.emparejamiento-resultado.empate {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.participante-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.participante-card:hover {
+    border-color: #0042ff;
+    box-shadow: 0 4px 12px rgba(0, 66, 255, 0.1);
+}
+
+.participante-card.seleccionado {
+    border-color: #0042ff;
+    background: linear-gradient(135deg, #f5f7ff 0%, #f0f4ff 100%);
+}
+
+.puntos-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #0042ff 0%, #0f27a0 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.posicion-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.posicion-1 {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.posicion-2 {
+    background-color: #c0c0c0;
+    color: #000;
+}
+
+.posicion-3 {
+    background-color: #cd7f32;
+    color: #fff;
+}
+
+.posicion-no_clasificado {
+    background-color: #e5e7eb;
+    color: #666;
+}
+
+.posicion-descalificado {
+    background-color: #ff3000;
+    color: #fff;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Animaciones para modal */
+.modal-enter {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mejoras de responsive */
+@media (max-width: 768px) {
+    .emparejamiento-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .participante-card {
+        padding: 12px;
+    }
+}

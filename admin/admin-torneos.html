@@ -6,6 +6,7 @@
     <title>Gestión de Torneos - Dtowin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/png" href="../assets/img/dtowin.png">
     <style>
         .gradient-background {
             background: linear-gradient(135deg, #0042ff, #ff3000);
@@ -281,6 +282,17 @@
                                     </div>
                                     <p class="text-xs text-gray-500 mt-2">Haz clic en cada campo para seleccionar una badge. Los campos no son obligatorios.</p>
                                 </div>
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bracketsLink">
+                                    <i class="fas fa-sitemap mr-2 text-green-500"></i>Link de Brackets
+                                </label>
+                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bracketsLink" type="url" placeholder="https://ejemplo.com/brackets">
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    El botón de brackets se mostrará a los jugadores solo cuando el torneo esté "En Progreso" o "Finalizado" y tenga un link válido.
+                                </p>
                             </div>
                             
                             <div class="md:col-span-2">
