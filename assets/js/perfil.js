@@ -161,14 +161,14 @@ function showLoginRequired() {
     if (profileContainer) {
         profileContainer.innerHTML = `
             <div class="text-center py-8">
-                <div class="bg-blue-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-user-lock text-blue-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Inicia sesión para ver tu perfil</h3>
-                    <p class="text-gray-600 mb-4">Para ver tu perfil personal, necesitas iniciar sesión en tu cuenta.</p>
+                <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto border border-gray-700">
+                    <i class="fas fa-user-lock text-blue-400 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">Inicia sesión para ver tu perfil</h3>
+                    <p class="text-gray-400 mb-4">Para ver tu perfil personal, necesitas iniciar sesión en tu cuenta.</p>
                     <button id="loginPromptBtn" class="dtowin-primary text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition">
                         Iniciar Sesión
                     </button>
-                    <p class="text-sm text-gray-500 mt-4">¿No tienes cuenta? <button id="registerPromptBtn" class="text-blue-500 hover:underline">Regístrate</button></p>
+                    <p class="text-sm text-gray-500 mt-4">¿No tienes cuenta? <button id="registerPromptBtn" class="text-blue-400 hover:underline">Regístrate</button></p>
                 </div>
             </div>
         `;
@@ -210,10 +210,10 @@ function showProfileNotFound() {
     if (profileContainer) {
         profileContainer.innerHTML = `
             <div class="text-center py-8">
-                <div class="bg-yellow-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-user-slash text-yellow-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Perfil no encontrado</h3>
-                    <p class="text-gray-600 mb-4">Lo sentimos, no pudimos encontrar el perfil que estás buscando.</p>
+                <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto border border-gray-700">
+                    <i class="fas fa-user-slash text-yellow-400 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">Perfil no encontrado</h3>
+                    <p class="text-gray-400 mb-4">Lo sentimos, no pudimos encontrar el perfil que estás buscando.</p>
                     <a href="index.html" class="dtowin-blue text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition inline-block">
                         Volver al inicio
                     </a>
@@ -230,10 +230,10 @@ function showProfileError() {
     if (profileContainer) {
         profileContainer.innerHTML = `
             <div class="text-center py-8">
-                <div class="bg-red-50 rounded-lg p-6 max-w-md mx-auto">
-                    <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Error al cargar perfil</h3>
-                    <p class="text-gray-600 mb-4">Ocurrió un error al intentar cargar el perfil. Por favor, intenta de nuevo más tarde.</p>
+                <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto border border-gray-700">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">Error al cargar perfil</h3>
+                    <p class="text-gray-400 mb-4">Ocurrió un error al intentar cargar el perfil. Por favor, intenta de nuevo más tarde.</p>
                     <button onclick="window.location.reload()" class="dtowin-blue text-white px-5 py-2 rounded-lg font-semibold hover:opacity-90 transition">
                         Reintentar
                     </button>
@@ -373,7 +373,7 @@ function preserveGradientInNavbarAndFooter() {
 }
 
 // Actualizar estadísticas del perfil
-function updateProfileStats(userData) {
+async function updateProfileStats(userData) {
     // Puntos totales
     const profilePoints = document.getElementById('profilePoints');
     if (profilePoints) {
@@ -395,11 +395,40 @@ function updateProfileStats(userData) {
     // Posición en el ranking
     const profileRanking = document.getElementById('profileRanking');
     if (profileRanking) {
-        if (userData.ranking) {
-            profileRanking.textContent = `#${userData.ranking}`;
-        } else {
-            // Si no tiene ranking definido, poner "Sin clasificar"
-            profileRanking.textContent = "Sin clasificar";
+        try {
+            // Si el usuario no tiene puntos, mostrar "unranked"
+            if (!userData.puntos || userData.puntos === 0) {
+                profileRanking.textContent = "unranked";
+                return;
+            }
+            
+            // Obtener todos los usuarios de la base de datos
+            const usuariosRef = firebase.firestore().collection("usuarios");
+            const querySnapshot = await usuariosRef.get();
+            
+            // Crear array de usuarios con sus puntos
+            const usuarios = [];
+            querySnapshot.forEach(doc => {
+                usuarios.push({
+                    uid: doc.data().uid,
+                    puntos: doc.data().puntos || 0
+                });
+            });
+            
+            // Ordenar por puntos de mayor a menor
+            usuarios.sort((a, b) => b.puntos - a.puntos);
+            
+            // Encontrar la posición del usuario actual
+            const posicion = usuarios.findIndex(u => u.uid === userData.uid) + 1;
+            
+            if (posicion > 0) {
+                profileRanking.textContent = `#${posicion}`;
+            } else {
+                profileRanking.textContent = "unranked";
+            }
+        } catch (error) {
+            console.error("Error al calcular ranking:", error);
+            profileRanking.textContent = "unranked";
         }
     }
 }
@@ -413,7 +442,7 @@ async function loadUserBadges(userData) {
     badgesContainer.innerHTML = `
         <div class="text-center p-4">
             <div class="spinner w-6 h-6 border-t-2 border-b-2 border-blue-500 rounded-full mx-auto mb-2"></div>
-            <p class="text-sm text-gray-500">Cargando badges...</p>
+            <p class="text-sm text-gray-400">Cargando badges...</p>
         </div>
     `;
     
@@ -422,7 +451,7 @@ async function loadUserBadges(userData) {
         if (!userData.badges || Object.keys(userData.badges).length === 0) {
             badgesContainer.innerHTML = `
                 <div class="text-center p-4">
-                    <p class="text-gray-500">Este usuario no tiene badges todavía</p>
+                    <p class="text-gray-400">Este usuario no tiene badges todavía</p>
                 </div>
             `;
             return;
@@ -457,10 +486,10 @@ async function loadUserBadges(userData) {
                     }
                     
                     html += `
-                        <div class="bg-white p-3 rounded-lg shadow text-center">
+                        <div class="bg-gray-800 p-3 rounded-lg shadow text-center border border-gray-700">
                             ${badgeImage}
-                            <h4 class="font-semibold text-gray-800">${badgeData.nombre || 'Badge'}</h4>
-                            <p class="text-xs text-gray-500">${badgeData.descripcion || ''}</p>
+                            <h4 class="font-semibold text-white">${badgeData.nombre || 'Badge'}</h4>
+                            <p class="text-xs text-gray-400">${badgeData.descripcion || ''}</p>
                         </div>
                     `;
                 }
@@ -476,7 +505,7 @@ async function loadUserBadges(userData) {
         console.error("Error al cargar badges:", error);
         badgesContainer.innerHTML = `
             <div class="text-center p-4">
-                <p class="text-red-500">Error al cargar badges. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>
+                <p class="text-red-400">Error al cargar badges. <button class="text-blue-400 underline" onclick="window.location.reload()">Reintentar</button></p>
             </div>
         `;
     }
@@ -491,7 +520,7 @@ async function loadUserTournaments(userData) {
     tournamentsContainer.innerHTML = `
         <div class="text-center p-4">
             <div class="spinner w-6 h-6 border-t-2 border-b-2 border-blue-500 rounded-full mx-auto mb-2"></div>
-            <p class="text-sm text-gray-500">Cargando historial de torneos...</p>
+            <p class="text-sm text-gray-400">Cargando historial de torneos...</p>
         </div>
     `;
     
@@ -500,7 +529,7 @@ async function loadUserTournaments(userData) {
         if (!userData.torneos || userData.torneos.length === 0) {
             tournamentsContainer.innerHTML = `
                 <div class="text-center p-4">
-                    <p class="text-gray-500">Este usuario no ha participado en torneos todavía</p>
+                    <p class="text-gray-400">Este usuario no ha participado en torneos todavía</p>
                 </div>
             `;
             return;
@@ -549,16 +578,16 @@ async function loadUserTournaments(userData) {
             let estadoClass;
             switch (torneo.estado) {
                 case 'Finalizado':
-                    estadoClass = 'bg-gray-100 text-gray-800';
+                    estadoClass = 'bg-gray-700 text-gray-200';
                     break;
                 case 'En Progreso':
-                    estadoClass = 'bg-yellow-100 text-yellow-800';
+                    estadoClass = 'bg-yellow-700 text-yellow-100';
                     break;
                 case 'Abierto':
-                    estadoClass = 'bg-green-100 text-green-800';
+                    estadoClass = 'bg-green-700 text-green-100';
                     break;
                 default:
-                    estadoClass = 'bg-blue-100 text-blue-800';
+                    estadoClass = 'bg-blue-700 text-blue-100';
             }
             
             // Determinar posición del usuario (si existe)
@@ -576,7 +605,7 @@ async function loadUserTournaments(userData) {
                 } else if (posicion === 3) {
                     posicionClass = 'bg-red-500 text-white';
                 } else {
-                    posicionClass = 'bg-gray-200 text-gray-800';
+                    posicionClass = 'bg-gray-700 text-gray-200';
                 }
                 
                 posicionHTML = `
@@ -590,14 +619,14 @@ async function loadUserTournaments(userData) {
             }
             
             html += `
-                <div class="bg-white rounded-lg shadow p-4">
+                <div class="bg-gray-800 rounded-lg shadow p-4 border border-gray-700">
                     <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h4>
+                        <h4 class="font-bold text-white">${torneo.nombre || 'Torneo sin nombre'}</h4>
                         <span class="px-2 py-1 rounded text-xs ${estadoClass}">
                             ${torneo.estado || 'Desconocido'}
                         </span>
                     </div>
-                    <div class="text-sm text-gray-600 mb-3">
+                    <div class="text-sm text-gray-400 mb-3">
                         <i class="far fa-calendar-alt mr-1"></i> ${fechaFormateada}
                     </div>
                     ${posicionHTML}
@@ -612,7 +641,7 @@ async function loadUserTournaments(userData) {
         console.error("Error al cargar historial de torneos:", error);
         tournamentsContainer.innerHTML = `
             <div class="text-center p-4">
-                <p class="text-red-500">Error al cargar historial de torneos. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>
+                <p class="text-red-400">Error al cargar historial de torneos. <button class="text-blue-400 underline" onclick="window.location.reload()">Reintentar</button></p>
             </div>
         `;
     }

@@ -7,6 +7,12 @@
     to { transform: rotate(360deg); }
 }
 
+/* Dark mode body */
+body {
+    background: #0f0f0f;
+    color: #e0e0e0;
+}
+
 /* Fondo de gradiente personalizado */
 .gradient-background {
     background: linear-gradient(135deg, #0042ff, #ff3000);
@@ -43,25 +49,27 @@
     color: white;
 }
 
-/* Fila clickeable visualmente */
+/* Fila clickeable visualmente - Dark mode */
 .leaderboard-row {
-transition: background-color 0.2s ease, transform 0.1s ease;
-cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    cursor: pointer;
+    background-color: #1a1a1a;
+    color: #ffffff;
 }
 .leaderboard-row:hover {
-background-color: #f3f4f6;
-transform: scale(1.005);
+    background-color: #242424;
+    transform: scale(1.005);
 }
 
 /* Estilos por posición */
 .leaderboard-gold {
-background-color: #ff6b6b; /* Oro */
+    background-color: #ff6b6b; /* Oro */
 }
 .leaderboard-silver {
-background-color: #b774ff; /* Plata */
+    background-color: #b774ff; /* Plata */
 }
 .leaderboard-bronze {
-background-color: #7184ff; /* Bronce */
+    background-color: #7184ff; /* Bronce */
 }
 
 /* Animación fade-in con desplazamiento */
@@ -81,4 +89,15 @@ background-color: #7184ff; /* Bronce */
     animation: fadeInUp 0.4s ease both;
 }
 
-/* Unifica colores, fuentes y decoraciones con el resto del sitio */
+/* Dark mode text overrides */
+section {
+    background: #0f0f0f !important;
+}
+
+section h2 {
+    color: #ffffff !important;
+}
+
+#fullLeaderboardBody {
+    background: #1a1a1a;
+}

@@ -14,10 +14,57 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f7f8fa;
+  background: #0f0f0f;
   color: #222;
   /* Prevent horizontal overflow */
   overflow-x: hidden;
+}
+
+/* Dark mode for tournaments section */
+section:nth-of-type(3) {
+  background: #1a1a1a !important;
+  color: #e0e0e0;
+}
+
+section:nth-of-type(3) h2 {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+section:nth-of-type(3) h3 {
+  color: #e0e0e0;
+}
+
+section:nth-of-type(3) .grid > div {
+  background: #2a2a2a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #404040;
+}
+
+section:nth-of-type(3) .card,
+section:nth-of-type(3) [class*="tournament"] {
+  background: #333333;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+section:nth-of-type(3) .card:hover,
+section:nth-of-type(3) [class*="tournament"]:hover {
+  background: #3a3a3a;
+  border-color: #555555;
+}
+
+section:nth-of-type(3) button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+section:nth-of-type(3) button:hover {
+  background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 /* Header */
@@ -64,6 +111,111 @@ section.text-center img {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+/* Dark mode tournament cards */
+section:nth-of-type(3) .border-l-4 {
+  border-color: #2563eb;
+  background: #2a2a2a;
+  color: #e0e0e0;
+}
+
+section:nth-of-type(3) .bg-white {
+  background: #1f1f1f !important;
+  color: #e0e0e0;
+}
+
+section:nth-of-type(3) .text-gray-700 {
+  color: #a0a0a0 !important;
+}
+
+section:nth-of-type(3) .text-gray-600 {
+  color: #b0b0b0 !important;
+}
+
+section:nth-of-type(3) .text-gray-500 {
+  color: #707070 !important;
+}
+
+section:nth-of-type(3) .text-gray-400 {
+  color: #606060 !important;
+}
+
+section:nth-of-type(3) .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+section:nth-of-type(3) .hover\:underline:hover {
+  color: #93c5fd !important;
+}
+
+/* Loader animation in dark mode */
+section:nth-of-type(3) .loader {
+  border: 3px solid #404040;
+  border-top: 3px solid #2563eb;
+}
+
+/* Dark mode for leaderboard section */
+section:nth-of-type(4) {
+  background: #0f0f0f;
+  color: #e0e0e0;
+}
+
+section:nth-of-type(4) h2 {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+section:nth-of-type(4) #leaderboard {
+  background: #1a1a1a !important;
+  border-color: #404040;
+}
+
+section:nth-of-type(4) #leaderboard div {
+  color: #ffffff !important;
+}
+
+section:nth-of-type(4) #leaderboard * {
+  color: #ffffff !important;
+}
+
+section:nth-of-type(4) .text-gray-500 {
+  color: #e0e0e0 !important;
+}
+
+section:nth-of-type(4) .text-gray-800 {
+  color: #ffffff !important;
+}
+
+section:nth-of-type(4) table {
+  width: 100%;
+}
+
+section:nth-of-type(4) table tbody tr {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+
+section:nth-of-type(4) table tbody tr td {
+  color: #ffffff !important;
+}
+
+section:nth-of-type(4) table tbody tr:hover {
+  background: #242424;
+}
+
+section:nth-of-type(4) table thead {
+  background: #252525;
+}
+
+section:nth-of-type(4) table thead th {
+  color: #ffffff !important;
+}
+
+/* Remove white line between sections */
+section:nth-of-type(4) {
+  margin-top: 0;
+  padding-top: 3rem;
 }
 
 /* Media Queries for Mobile */

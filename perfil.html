@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="icon" type="image/png" href="assets/img/dtowin.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/perfil.css">
     <style>
         .badge {
             display: inline-block;
@@ -50,7 +51,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-950 min-h-screen">
     <!-- Navbar -->
     <nav class="gradient-background text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
@@ -145,31 +146,31 @@
 
     <!-- Login Modal -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <div class="bg-gray-900 rounded-xl max-w-md w-full p-6 relative border border-gray-700">
+            <button id="closeLoginModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-300">
                 <i class="fas fa-times"></i>
             </button>
             <div class="text-center mb-6">
                 <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
-                <h3 class="text-2xl font-bold text-gray-800">Iniciar Sesión</h3>
-                <p class="text-gray-600">Bienvenido de vuelta</p>
+                <h3 class="text-2xl font-bold text-white">Iniciar Sesión</h3>
+                <p class="text-gray-400">Bienvenido de vuelta</p>
                 <!-- Mensaje de error -->
                 <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
             <form id="loginForm">
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginEmail">
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="loginEmail">
                         Correo electrónico
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="loginPassword">
                         Contraseña
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="loginPassword" type="password" placeholder="******************">
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white mb-3 leading-tight focus:outline-none focus:border-blue-500" id="loginPassword" type="password" placeholder="******************">
                     <a class="inline-block align-baseline font-bold text-sm text-orange-500 hover:text-orange-700" href="#">
                         ¿Olvidaste tu contraseña?
                     </a>
@@ -180,15 +181,15 @@
                         Iniciar Sesión
                     </button>
                     <div class="text-center mt-4">
-                        <p class="text-gray-600 text-sm">o</p>
+                        <p class="text-gray-500 text-sm">o</p>
                     </div>
-                    <button type="button" id="googleLoginBtn" class="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                    <button type="button" id="googleLoginBtn" class="w-full bg-gray-800 border border-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center hover:bg-gray-700">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
                 </div>
                 
-                <p class="text-center text-gray-500 text-xs">
+                <p class="text-center text-gray-400 text-xs">
                     ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
                 </p>
             </form>
@@ -197,37 +198,37 @@
 
     <!-- Registro Modal -->
     <div id="registroModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <div class="bg-gray-900 rounded-xl max-w-md w-full p-6 relative border border-gray-700">
+            <button id="closeRegisterModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-300">
                 <i class="fas fa-times"></i>
             </button>
             <div class="text-center mb-6">
                 <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
-                <h3 class="text-2xl font-bold text-gray-800">Crear una cuenta</h3>
-                <p class="text-gray-600">Únete a la comunidad de torneos Dtowin</p>
+                <h3 class="text-2xl font-bold text-white">Crear una cuenta</h3>
+                <p class="text-gray-400">Únete a la comunidad de torneos Dtowin</p>
                 <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
             <form id="registroForm">
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="username">
                         Nombre de usuario
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" type="text" placeholder="Tu nombre de usuario">
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="username" type="text" placeholder="Tu nombre de usuario">
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="email">
                         Correo electrónico (Gmail)
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" type="email" placeholder="tucorreo@gmail.com">
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="email" type="email" placeholder="tucorreo@gmail.com">
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="password">
                         Contraseña
                     </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" type="password" placeholder="******************">
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white mb-3 leading-tight focus:outline-none focus:border-blue-500" id="password" type="password" placeholder="******************">
                 </div>
                 
                 <div class="mb-6">
@@ -235,15 +236,15 @@
                         Registrarse
                     </button>
                     <div class="text-center mt-4">
-                        <p class="text-gray-600 text-sm">o</p>
+                        <p class="text-gray-500 text-sm">o</p>
                     </div>
-                    <button type="button" class="google-register-btn w-full bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center">
+                    <button type="button" class="google-register-btn w-full bg-gray-800 border border-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center hover:bg-gray-700">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
                         Continuar con Google
                     </button>
                 </div>
                 
-                <p class="text-center text-gray-500 text-xs">
+                <p class="text-center text-gray-400 text-xs">
                     Al registrarte aceptas nuestros términos y condiciones
                 </p>
             </form>
@@ -252,7 +253,7 @@
 
     <!-- Plantillas para contenido dinámico -->
     <template id="profileTemplate">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto">
+        <div class="bg-gray-900 rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto border border-gray-700">
             <!-- Encabezado del perfil -->
             <div class="gradient-background text-white p-8">
                 <div class="flex flex-col md:flex-row items-center">
@@ -264,32 +265,32 @@
             </div>
             
             <!-- Estadísticas del usuario -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-gray-700">
                 <div class="text-center">
-                    <p class="text-gray-500 text-sm">Puntos</p>
-                    <p id="profilePoints" class="text-2xl font-bold text-gray-800">0</p>
+                    <p class="text-gray-400 text-sm">Puntos</p>
+                    <p id="profilePoints" class="text-2xl font-bold text-white">0</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-gray-500 text-sm">Torneos</p>
-                    <p id="profileTournaments" class="text-2xl font-bold text-gray-800">0</p>
+                    <p class="text-gray-400 text-sm">Torneos</p>
+                    <p id="profileTournaments" class="text-2xl font-bold text-white">0</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-gray-500 text-sm">Victorias</p>
-                    <p id="profileWins" class="text-2xl font-bold text-gray-800">0</p>
+                    <p class="text-gray-400 text-sm">Victorias</p>
+                    <p id="profileWins" class="text-2xl font-bold text-white">0</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-gray-500 text-sm">Ranking</p>
-                    <p id="profileRanking" class="text-2xl font-bold text-gray-800">#0</p>
+                    <p class="text-gray-400 text-sm">Ranking</p>
+                    <p id="profileRanking" class="text-2xl font-bold text-white">#0</p>
                 </div>
             </div>
             
             <!-- Opciones de perfil (solo visibles para el propio perfil) -->
-            <div id="profileOptions" class="p-6 border-b hidden">
+            <div id="profileOptions" class="p-6 border-b border-gray-700 hidden">
                 <div class="flex justify-end space-x-4">
-                    <button id="editProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                    <button id="editProfileBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                         <i class="fas fa-edit mr-2"></i>Editar Perfil
                     </button>
-                    <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                    <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
                         <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
                     </button>
                 </div>
@@ -297,15 +298,15 @@
             
             <!-- Pestañas de contenido -->
             <div class="p-6">
-                <div class="border-b border-gray-200">
+                <div class="border-b border-gray-700">
                     <ul class="flex flex-wrap -mb-px">
                         <li class="mr-2">
-                            <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-600 border-b-2 border-blue-600 rounded-t-lg active">
+                            <a href="#badges" class="inline-block py-2 px-4 text-sm font-medium text-center text-blue-400 border-b-2 border-blue-400 rounded-t-lg active">
                                 <i class="fas fa-certificate mr-2"></i>Badges
                             </a>
                         </li>
                         <li class="mr-2">
-                            <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-500 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">
+                            <a href="#tournaments" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-400 border-b-2 border-transparent rounded-t-lg hover:text-gray-300 hover:border-gray-600">
                                 <i class="fas fa-trophy mr-2"></i>Torneos
                             </a>
                         </li>
@@ -316,7 +317,7 @@
                 <div class="py-4">
                     <!-- Badges del usuario -->
                     <div id="badges" class="tab-content">
-                        <h3 class="text-xl font-semibold mb-4">Mis Badges</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Mis Badges</h3>
                         <div id="userBadges">
                             <div class="flex justify-center">
                                 <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
@@ -326,7 +327,7 @@
                     
                     <!-- Historial de torneos -->
                     <div id="tournaments" class="tab-content hidden">
-                        <h3 class="text-xl font-semibold mb-4">Historial de Torneos</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-white">Historial de Torneos</h3>
                         <div id="userTournaments">
                             <div class="flex justify-center">
                                 <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
@@ -340,52 +341,52 @@
 
     <!-- Modal de edición de perfil - Versión corregida -->
     <div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg max-w-md w-full p-6 relative">
-            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <div class="bg-gray-900 rounded-lg max-w-md w-full p-6 relative border border-gray-700">
+            <button id="closeEditProfileModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-300">
                 <i class="fas fa-times"></i>
             </button>
             
-            <h3 class="text-2xl font-bold text-gray-800 text-center mb-2">Editar Perfil</h3>
-            <p class="text-gray-600 text-center mb-4">Personaliza tu perfil</p>
+            <h3 class="text-2xl font-bold text-white text-center mb-2">Editar Perfil</h3>
+            <p class="text-gray-400 text-center mb-4">Personaliza tu perfil</p>
             <p id="editProfileErrorMsg" class="text-red-500 mt-2 text-sm text-center hidden"></p>
             
             <form id="editProfileForm">
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="editUsername">Nombre de usuario</label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                    <label class="block text-gray-200 text-sm font-bold mb-2" for="editUsername">Nombre de usuario</label>
+                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" 
                         id="editUsername" 
                         type="text" 
                         placeholder="Tu nombre de usuario">
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Foto de perfil</label>
+                    <label class="block text-gray-200 text-sm font-bold mb-2">Foto de perfil</label>
                     <div class="flex items-center mb-2">
                         <img id="currentProfilePhoto" src="dtowin.png" alt="Foto actual" class="w-16 h-16 rounded-full object-cover mr-4">
-                        <label for="profilePhotoInput" class="bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600 cursor-pointer">
+                        <label for="profilePhotoInput" class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 cursor-pointer">
                             <i class="fas fa-upload mr-2"></i>Cambiar foto
                         </label>
                         <input id="profilePhotoInput" type="file" accept="image/*" class="hidden">
                     </div>
                     <div id="photoPreviewContainer" class="hidden mt-2">
-                        <p class="text-sm text-gray-700 mb-1">Vista previa:</p>
+                        <p class="text-sm text-gray-400 mb-1">Vista previa:</p>
                         <img id="photoPreview" src="" alt="Vista previa" class="w-16 h-16 rounded-full object-cover">
                     </div>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Banner de perfil</label>
-                    <p class="text-sm text-gray-600 mb-2">Selecciona uno de los banners disponibles:</p>
-                    <div id="bannerSelector" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
+                    <label class="block text-gray-200 text-sm font-bold mb-2">Banner de perfil</label>
+                    <p class="text-sm text-gray-400 mb-2">Selecciona uno de los banners disponibles:</p>
+                    <div id="bannerSelector" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-700 rounded bg-gray-800">
                         <div class="flex justify-center items-center">
                             <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-                            <p class="text-gray-500 text-sm">Cargando banners...</p>
+                            <p class="text-gray-400 text-sm">Cargando banners...</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="flex justify-between mt-6">
-                    <button type="button" id="cancelEditProfile" class="bg-gray-300 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-400 transition">
+                    <button type="button" id="cancelEditProfile" class="bg-gray-700 text-gray-200 px-4 py-2 rounded font-semibold hover:bg-gray-600 transition">
                         Cancelar
                     </button>
                     <button type="submit" id="saveProfileChanges" class="dtowin-primary text-white px-4 py-2 rounded font-semibold hover:opacity-90 transition">

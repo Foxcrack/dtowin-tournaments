@@ -1,0 +1,124 @@
+/* Dark Mode Styles for Profile Page */
+
+body {
+    background-color: #0f0f0f;
+    color: #ffffff;
+}
+
+section {
+    background-color: #0f0f0f;
+}
+
+/* Spinner animation */
+.spinner {
+    border-color: #2a2a2a;
+}
+
+/* Tab content styling */
+.tab-content {
+    color: #e0e0e0;
+}
+
+/* Override any remaining light gray text */
+.text-gray-500 {
+    color: #a0a0a0 !important;
+}
+
+.text-gray-600 {
+    color: #999999 !important;
+}
+
+.text-gray-700 {
+    color: #888888 !important;
+}
+
+.text-gray-800 {
+    color: #ffffff !important;
+}
+
+/* Modal styling overrides */
+#editProfileModal .bg-white {
+    background-color: #1a1a1a !important;
+}
+
+#editProfileModal .text-gray-800 {
+    color: #ffffff !important;
+}
+
+#editProfileModal .text-gray-700 {
+    color: #e0e0e0 !important;
+}
+
+/* Input fields in modals */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-color: #404040;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+    background-color: #2a2a2a;
+    color: #ffffff;
+}
+
+/* Button styling */
+button {
+    transition: all 0.2s ease;
+}
+
+.dtowin-primary {
+    background: linear-gradient(135deg, #ff6b1a 0%, #ff8c42 100%);
+}
+
+.dtowin-primary:hover {
+    background: linear-gradient(135deg, #ff5500 0%, #ff7a2b 100%);
+}
+
+/* Profile container borders */
+.border-gray-200 {
+    border-color: #333333 !important;
+}
+
+.border-b {
+    border-bottom-color: #333333 !important;
+}
+
+/* Link styling */
+a {
+    color: #60a5fa;
+}
+
+a:hover {
+    color: #93c5fd;
+}
+
+/* Ensure proper contrast for all text */
+.text-white {
+    color: #ffffff !important;
+}
+
+.text-gray-300,
+.text-gray-400 {
+    color: #a0a0a0 !important;
+}
+
+/* Profile template elements */
+#profileContainer {
+    color: #ffffff;
+}
+
+.tab-content h3 {
+    color: #ffffff;
+}
+
+.tab-content p {
+    color: #a0a0a0;
+}

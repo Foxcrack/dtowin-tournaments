@@ -1336,14 +1336,14 @@ async function loadLeaderboard() {
     if (!leaderboardContainer) return;
 
     try {
-        leaderboardContainer.innerHTML = '<div class="text-center text-gray-500 p-4">Cargando leaderboard...</div>';
+        leaderboardContainer.innerHTML = '<div class="text-center text-gray-300 p-4">Cargando leaderboard...</div>';
 
         const usuariosRef = collection(db, "usuarios");
         const q = query(usuariosRef, orderBy("puntos", "desc"), limit(10));
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-            leaderboardContainer.innerHTML = '<div class="text-center text-gray-500 p-4">No hay datos de leaderboard disponibles</div>';
+            leaderboardContainer.innerHTML = '<div class="text-center text-gray-300 p-4">No hay datos de leaderboard disponibles</div>';
             return;
         }
 
@@ -1369,19 +1369,19 @@ async function loadLeaderboard() {
             }
 
             return `
-                <a href="perfil.html?uid=${encodeURIComponent(uid)}" class="block hover:bg-blue-50 rounded-lg transition group">
-                    <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow mb-2 group-hover:shadow-lg">
+                <a href="perfil.html?uid=${encodeURIComponent(uid)}" class="block hover:bg-gray-800 rounded-lg transition group">
+                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow mb-2 group-hover:shadow-lg border border-gray-700">
                         <div class="flex items-center gap-3">
-                            <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-500' : 'text-gray-500'}">${medal} #${position}</span>
+                            <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${medal} #${position}</span>
                             <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
                             <div>
-                                <p class="font-semibold text-gray-800 group-hover:text-blue-700">${nombre}</p>
-                                <p class="text-sm text-gray-500">${torneos} torneos</p>
+                                <p class="font-semibold text-white group-hover:text-blue-300">${nombre}</p>
+                                <p class="text-sm text-gray-400">${torneos} torneos</p>
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="font-bold text-blue-600">${usuario.puntos || 0} pts</p>
-                            <p class="text-xs text-gray-500">${badges} badges</p>
+                            <p class="font-bold text-blue-400">${usuario.puntos || 0} pts</p>
+                            <p class="text-xs text-gray-400">${badges} badges</p>
                         </div>
                     </div>
                 </a>
@@ -1392,7 +1392,7 @@ async function loadLeaderboard() {
 
     } catch (error) {
         console.error('Error cargando leaderboard:', error);
-        leaderboardContainer.innerHTML = '<div class="text-center text-red-500 p-4">Error al cargar el leaderboard</div>';
+        leaderboardContainer.innerHTML = '<div class="text-center text-red-400 p-4">Error al cargar el leaderboard</div>';
     }
 }
 

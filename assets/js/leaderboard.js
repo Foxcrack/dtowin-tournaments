@@ -123,10 +123,10 @@ function renderLeaderboard(users) {
   
       return `
         <div class="grid grid-cols-12 py-3 px-4 leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
-          <div class="col-span-1 text-center font-bold">#${i + 1}</div>
-          <div class="col-span-6 font-medium text-gray-800 truncate">${medalla} ${user.nombre}</div>
-          <div class="col-span-2 text-center text-gray-600">${user.torneos}</div>
-          <div class="col-span-3 text-center text-blue-600 font-semibold">${user.puntos}</div>
+          <div class="col-span-1 text-center font-bold text-white">#${i + 1}</div>
+          <div class="col-span-6 font-medium text-white truncate">${medalla} ${user.nombre}</div>
+          <div class="col-span-2 text-center text-gray-400">${user.torneos}</div>
+          <div class="col-span-3 text-center text-blue-400 font-semibold">${user.puntos}</div>
         </div>
       `;
     }).join("");
