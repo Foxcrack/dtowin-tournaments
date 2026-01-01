@@ -366,9 +366,56 @@ function renderTorneosTable(torneos) {
     let html = '';
     
     torneos.forEach(torneo => {
-        // Formatear fecha
-        const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
-        const fechaFormateada = fecha.toLocaleDateString('es-ES');
+        // Formatear fecha - manejar tanto Timestamp como Date
+        let fechaFormateada = 'Fecha no disponible';
+        const fechaField = torneo.fechaHora || torneo.fecha;
+        if (fechaField) {
+            let fecha;
+            // Si es un string con formato "20 de diciembre de 2025 a las 3:00:00 p.m. UTC-5"
+            if (typeof fechaField === 'string') {
+                // Extraer la fecha en formato "20 de diciembre de 2025"
+                const match = fechaField.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d+)/);
+                if (match) {
+                    const dia = match[1];
+                    const mesNombre = match[2];
+                    const año = match[3];
+                    
+                    const meses = {
+                        'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+                        'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+                        'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+                    };
+                    
+                    const mes = meses[mesNombre.toLowerCase()];
+                    if (mes) {
+                        fecha = new Date(`${año}-${mes}-${dia.padStart(2, '0')}`);
+                    }
+                } else {
+                    // Intentar parsear como fecha normal
+                    fecha = new Date(fechaField);
+                }
+            }
+            // Si es un Timestamp de Firestore (tiene .seconds)
+            else if (fechaField.seconds) {
+                fecha = new Date(fechaField.seconds * 1000);
+            } 
+            // Si es un objeto serializado de Firestore (tiene _seconds)
+            else if (fechaField._seconds) {
+                fecha = new Date(fechaField._seconds * 1000);
+            }
+            // Si es un string de fecha
+            else if (typeof fechaField === 'string') {
+                fecha = new Date(fechaField);
+            }
+            // Si es un Date de JavaScript
+            else if (fechaField instanceof Date) {
+                fecha = fechaField;
+            }
+            
+            if (fecha && !isNaN(fecha.getTime())) {
+                fechaFormateada = fecha.toLocaleDateString('es-ES');
+            }
+        }
         
         // Calcular inscritos
         const inscritos = torneo.participants ? torneo.participants.length : 0;
@@ -598,9 +645,28 @@ function fillFormWithTournamentData(tournamentData) {
     
     // Fecha (formato YYYY-MM-DD)
     if (tournamentData.fecha) {
-        const date = new Date(tournamentData.fecha.seconds * 1000);
-        const formattedDate = date.toISOString().split('T')[0];
-        document.getElementById('fechaTorneo').value = formattedDate;
+        let date;
+        // Si es un Timestamp de Firestore (tiene .seconds)
+        if (tournamentData.fecha.seconds) {
+            date = new Date(tournamentData.fecha.seconds * 1000);
+        }
+        // Si es un objeto serializado de Firestore (tiene _seconds)
+        else if (tournamentData.fecha._seconds) {
+            date = new Date(tournamentData.fecha._seconds * 1000);
+        }
+        // Si es un string de fecha
+        else if (typeof tournamentData.fecha === 'string') {
+            date = new Date(tournamentData.fecha);
+        }
+        // Si es un Date de JavaScript
+        else if (tournamentData.fecha instanceof Date) {
+            date = tournamentData.fecha;
+        }
+        
+        if (date && !isNaN(date.getTime())) {
+            const formattedDate = date.toISOString().split('T')[0];
+            document.getElementById('fechaTorneo').value = formattedDate;
+        }
     }
     
     // Hora
@@ -728,11 +794,20 @@ async function handleTournamentFormSubmit(e) {
             submitButton.innerHTML = '<div class="spinner inline-block w-5 h-5 border-t-2 border-b-2 border-white rounded-full mr-2"></div> Procesando...';
         }
         
+        // Obtener la fecha del input y convertirla a Timestamp de Firestore
+        const fechaInput = document.getElementById('fechaTorneo').value;
+        let fechaTimestamp = null;
+        if (fechaInput) {
+            const fechaDate = new Date(fechaInput);
+            // Convertir a Timestamp de Firestore
+            fechaTimestamp = firebase.firestore.Timestamp.fromDate(fechaDate);
+        }
+        
         // Recopilar datos del formulario
         const tournamentData = {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
-            fecha: document.getElementById('fechaTorneo').value ? new Date(document.getElementById('fechaTorneo').value) : new Date(),
+            fecha: fechaTimestamp,
             hora: document.getElementById('horaTorneo').value,
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,

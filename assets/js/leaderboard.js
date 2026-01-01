@@ -1,7 +1,7 @@
 // Importar Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -75,19 +75,21 @@ onAuthStateChanged(auth, async (user) => {
 
   // Cargar usuarios desde Firestore
   const usuariosRef = collection(db, "usuarios");
-  const snapshot = await getDocs(usuariosRef);
+  const q = query(usuariosRef, orderBy("puntos", "desc"));
+  const snapshot = await getDocs(q);
 
   const users = [];
-  snapshot.forEach(doc => {
-    const data = doc.data();
+  
+  for (const userDoc of snapshot.docs) {
+    const data = userDoc.data();
+    
     users.push({
-      uid: data.uid,
+      uid: data.uid || userDoc.id,
       nombre: data.nombre || "Jugador",
       puntos: data.puntos || 0,
-      torneos: Array.isArray(data.torneos) ? data.torneos.length : 0,
       creado: data.createdAt?.seconds || 0
     });
-  });
+  }
 
   // Ordenar por puntos y luego por antigüedad
   users.sort((a, b) => {
@@ -124,8 +126,7 @@ function renderLeaderboard(users) {
       return `
         <div class="grid grid-cols-12 py-3 px-4 leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
           <div class="col-span-1 text-center font-bold text-white">#${i + 1}</div>
-          <div class="col-span-6 font-medium text-white truncate">${medalla} ${user.nombre}</div>
-          <div class="col-span-2 text-center text-gray-400">${user.torneos}</div>
+          <div class="col-span-8 font-medium text-white truncate">${medalla} ${user.nombre}</div>
           <div class="col-span-3 text-center text-blue-400 font-semibold">${user.puntos}</div>
         </div>
       `;

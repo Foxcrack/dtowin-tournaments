@@ -1338,8 +1338,9 @@ async function loadLeaderboard() {
     try {
         leaderboardContainer.innerHTML = '<div class="text-center text-gray-300 p-4">Cargando leaderboard...</div>';
 
+        // Obtener todos los usuarios
         const usuariosRef = collection(db, "usuarios");
-        const q = query(usuariosRef, orderBy("puntos", "desc"), limit(10));
+        const q = query(usuariosRef, orderBy("puntos", "desc"));
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
@@ -1347,19 +1348,16 @@ async function loadLeaderboard() {
             return;
         }
 
-        const leaderboardHTML = snapshot.docs.map((doc, index) => {
-            const usuario = doc.data();
-            const uid = usuario.uid || doc.id;
+        // Tomar solo los top 10
+        const topUsuarios = snapshot.docs.slice(0, 10).map(doc => ({
+            ...doc.data(),
+            uid: doc.data().uid || doc.id
+        }));
+
+        const leaderboardHTML = topUsuarios.map((usuario, index) => {
             const position = index + 1;
             const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
             const nombre = usuario.nombre || usuario.displayName || usuario.email;
-
-            let torneos = 0;
-            if (Array.isArray(usuario.torneos)) {
-                torneos = usuario.torneos.length;
-            } else if (typeof usuario.torneos === "number") {
-                torneos = usuario.torneos;
-            }
 
             let badges = 0;
             if (usuario.badges && typeof usuario.badges === "object" && !Array.isArray(usuario.badges)) {
@@ -1369,14 +1367,13 @@ async function loadLeaderboard() {
             }
 
             return `
-                <a href="perfil.html?uid=${encodeURIComponent(uid)}" class="block hover:bg-gray-800 rounded-lg transition group">
+                <a href="perfil.html?uid=${encodeURIComponent(usuario.uid)}" class="block hover:bg-gray-800 rounded-lg transition group">
                     <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow mb-2 group-hover:shadow-lg border border-gray-700">
                         <div class="flex items-center gap-3">
                             <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${medal} #${position}</span>
                             <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <p class="font-semibold text-white group-hover:text-blue-300">${nombre}</p>
-                                <p class="text-sm text-gray-400">${torneos} torneos</p>
                             </div>
                         </div>
                         <div class="text-right">

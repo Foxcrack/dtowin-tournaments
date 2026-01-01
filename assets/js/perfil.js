@@ -380,10 +380,60 @@ async function updateProfileStats(userData) {
         profilePoints.textContent = userData.puntos || 0;
     }
     
-    // Torneos jugados
+    // Torneos jugados (buscar dinámicamente en la base de datos)
     const profileTournaments = document.getElementById('profileTournaments');
     if (profileTournaments) {
-        profileTournaments.textContent = userData.torneos ? userData.torneos.length : 0;
+        try {
+            let torneosJugados = 0;
+            
+            // Buscar TODOS los torneos en la base de datos
+            const torneosRef = firebase.firestore().collection("torneos");
+            const torneosSnapshot = await torneosRef.get();
+            
+            console.log(`Buscando torneos para el usuario ${userData.uid}...`);
+            
+            // Para cada torneo, verificar si el usuario tiene inscripción con asistenciaConfirmada: true
+            const verificaciones = torneosSnapshot.docs.map(async (torneoDoc) => {
+                try {
+                    const torneoId = torneoDoc.id;
+                    // Buscar la inscripción del usuario en este torneo
+                    const inscripcionRef = firebase.firestore()
+                        .collection("torneos")
+                        .doc(torneoId)
+                        .collection("inscripciones")
+                        .doc(userData.uid);
+                    
+                    const inscripcionDoc = await inscripcionRef.get();
+                    
+                    if (inscripcionDoc.exists) {
+                        const inscripcionData = inscripcionDoc.data();
+                        console.log(`Usuario ${userData.uid} en torneo ${torneoId}:`, {
+                            asistenciaConfirmada: inscripcionData.asistenciaConfirmada,
+                            estado: inscripcionData.estado
+                        });
+                        
+                        // Solo contar si tiene check-in confirmado
+                        if (inscripcionData.asistenciaConfirmada === true && inscripcionData.estado === "inscrito") {
+                            return 1; // Cuenta como torneo jugado
+                        }
+                    }
+                    return 0;
+                } catch (error) {
+                    console.error(`Error al verificar torneo:`, error);
+                    return 0;
+                }
+            });
+            
+            const resultados = await Promise.all(verificaciones);
+            torneosJugados = resultados.reduce((sum, val) => sum + val, 0);
+            console.log(`Total de torneos jugados para ${userData.uid}: ${torneosJugados}`);
+            profileTournaments.textContent = torneosJugados;
+            
+        } catch (error) {
+            console.error("Error al contar torneos jugados:", error);
+            // Fallback: intentar contar del array torneos si existe
+            profileTournaments.textContent = userData.torneos ? userData.torneos.length : 0;
+        }
     }
     
     // Victorias
@@ -525,8 +575,55 @@ async function loadUserTournaments(userData) {
     `;
     
     try {
-        // Si el usuario no ha participado en torneos, mostrar mensaje
-        if (!userData.torneos || userData.torneos.length === 0) {
+        console.log(`Buscando torneos para el usuario ${userData.uid}...`);
+        
+        // Buscar TODOS los torneos en la base de datos
+        const torneosRef = firebase.firestore().collection("torneos");
+        const torneosSnapshot = await torneosRef.get();
+        
+        const torneosConInscripcion = [];
+        
+        // Para cada torneo, verificar si el usuario tiene inscripción con asistenciaConfirmada: true
+        for (const torneoDoc of torneosSnapshot.docs) {
+            try {
+                const torneoId = torneoDoc.id;
+                const torneoData = torneoDoc.data();
+                
+                // Buscar la inscripción del usuario en este torneo
+                const inscripcionRef = firebase.firestore()
+                    .collection("torneos")
+                    .doc(torneoId)
+                    .collection("inscripciones")
+                    .doc(userData.uid);
+                
+                const inscripcionDoc = await inscripcionRef.get();
+                
+                // Si el usuario tiene inscripción con asistenciaConfirmada: true, agregar a la lista
+                if (inscripcionDoc.exists) {
+                    const inscripcionData = inscripcionDoc.data();
+                    
+                    console.log(`Verificando torneo ${torneoId}:`, {
+                        asistenciaConfirmada: inscripcionData.asistenciaConfirmada,
+                        estado: inscripcionData.estado
+                    });
+                    
+                    if (inscripcionData.asistenciaConfirmada === true && inscripcionData.estado === "inscrito") {
+                        torneosConInscripcion.push({
+                            id: torneoId,
+                            ...torneoData,
+                            resultados: inscripcionData // Guardar los datos de la inscripción
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`Error al verificar torneo:`, error);
+            }
+        }
+        
+        console.log(`Total de torneos encontrados: ${torneosConInscripcion.length}`);
+        
+        // Si el usuario no ha jugado torneos, mostrar mensaje
+        if (torneosConInscripcion.length === 0) {
             tournamentsContainer.innerHTML = `
                 <div class="text-center p-4">
                     <p class="text-gray-400">Este usuario no ha participado en torneos todavía</p>
@@ -535,28 +632,8 @@ async function loadUserTournaments(userData) {
             return;
         }
         
-        // Obtener datos de cada torneo
-        const torneoIds = userData.torneos;
-        const torneosData = [];
-        
-        for (const torneoId of torneoIds) {
-            try {
-                const torneoRef = firebase.firestore().collection("torneos").doc(torneoId);
-                const torneoSnap = await torneoRef.get();
-                
-                if (torneoSnap.exists) {
-                    torneosData.push({
-                        id: torneoId,
-                        ...torneoSnap.data()
-                    });
-                }
-            } catch (error) {
-                console.error(`Error al cargar torneo ${torneoId}:`, error);
-            }
-        }
-        
         // Ordenar por fecha (más reciente primero)
-        torneosData.sort((a, b) => {
+        torneosConInscripcion.sort((a, b) => {
             const dateA = a.fecha ? new Date(a.fecha.seconds * 1000) : new Date(0);
             const dateB = b.fecha ? new Date(b.fecha.seconds * 1000) : new Date(0);
             return dateB - dateA; // Orden descendente
@@ -565,14 +642,17 @@ async function loadUserTournaments(userData) {
         // Generar HTML
         let html = '<div class="space-y-4">';
         
-        torneosData.forEach(torneo => {
+        torneosConInscripcion.forEach(torneo => {
             // Formatear fecha
-            const fecha = torneo.fecha ? new Date(torneo.fecha.seconds * 1000) : new Date();
-            const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
+            let fechaFormateada = 'Fecha no disponible';
+            if (torneo.fecha && torneo.fecha.seconds) {
+                const fecha = new Date(torneo.fecha.seconds * 1000);
+                fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
             
             // Determinar clase de estado
             let estadoClass;
@@ -590,11 +670,11 @@ async function loadUserTournaments(userData) {
                     estadoClass = 'bg-blue-700 text-blue-100';
             }
             
-            // Determinar posición del usuario (si existe)
+            // Determinar posición del usuario (desde los datos de inscripción)
             let posicionHTML = '';
-            if (torneo.resultados && torneo.resultados[userData.uid]) {
-                const posicion = torneo.resultados[userData.uid].posicion;
-                const puntos = torneo.resultados[userData.uid].puntos || 0;
+            if (torneo.resultados && torneo.resultados.posicion) {
+                const posicion = torneo.resultados.posicion;
+                const puntos = torneo.resultados.puntos || 0;
                 
                 // Clase para posiciones destacadas
                 let posicionClass = '';
@@ -630,6 +710,17 @@ async function loadUserTournaments(userData) {
                         <i class="far fa-calendar-alt mr-1"></i> ${fechaFormateada}
                     </div>
                     ${posicionHTML}
+                    <div class="mt-4 flex gap-2">
+                        ${torneo.bracketsLink ? `
+                            <a href="${torneo.bracketsLink}" target="_blank" class="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-semibold transition">
+                                <i class="fas fa-bracket mr-1"></i>Ver Bracket
+                            </a>
+                        ` : `
+                            <button class="flex-1 text-center bg-gray-600 text-gray-300 py-2 px-3 rounded-lg text-sm font-semibold cursor-not-allowed" disabled>
+                                <i class="fas fa-bracket mr-1"></i>Sin Bracket
+                            </button>
+                        `}
+                    </div>
                 </div>
             `;
         });

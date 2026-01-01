@@ -12,7 +12,8 @@ import {
     where,
     orderBy,
     limit,
-    serverTimestamp
+    serverTimestamp,
+    arrayUnion
 } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // Referencia al contenedor de torneos
@@ -92,20 +93,18 @@ async function awardTournamentsPlayed(torneoId) {
 
         console.log(`Registrando torneo para ${snapshot.size} participantes.`);
         const updatePromises = snapshot.docs.map(async (inscritoDoc) => {
-            const participante = inscritoDoc.data();
-            const userRef = doc(db, "usuarios", participante.userId);
-            const userDoc = await getDoc(userRef);
+            // El ID del documento en inscripciones es el userId
+            const userId = inscritoDoc.id;
+            const userRef = doc(db, "usuarios", userId);
 
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                const userTorneos = Array.isArray(userData.torneos) ? userData.torneos : [];
-                if (!userTorneos.includes(torneoId)) {
-                    userTorneos.push(torneoId);
-                }
-                
+            try {
+                // Usar arrayUnion para agregar el torneo de forma segura (evita duplicados automáticamente)
                 await updateDoc(userRef, {
-                    torneos: userTorneos
+                    torneos: arrayUnion(torneoId)
                 });
+                console.log(`Torneo ${torneoId} agregado al usuario ${userId}`);
+            } catch (error) {
+                console.error(`Error al actualizar usuario ${userId}:`, error);
             }
         });
 
@@ -123,8 +122,8 @@ async function updateTorneoEstado(torneoId, newEstado) {
         await updateDoc(torneoRef, { estado: newEstado });
         console.log(`Estado del torneo ${torneoId} actualizado a ${newEstado}`);
 
-        // Si el estado cambia a "En Progreso" o "Finalizado", procesamos a los participantes
-        if (newEstado === 'En Progreso' || newEstado === 'Finalizado') {
+        // Solo procesar participantes cuando el torneo se finaliza
+        if (newEstado === 'Finalizado') {
             await awardTournamentsPlayed(torneoId);
         }
 
@@ -359,10 +358,37 @@ async function deleteTorneo(torneoId) {
         const torneoData = torneoSnap.data();
         const nombreTorneo = torneoData.nombre || "Torneo sin nombre";
 
-        // Eliminar el torneo
+        // Paso 1: Eliminar el torneo de la colección torneos
+        console.log(`Eliminando torneo ${torneoId}...`);
         await deleteDoc(torneoRef);
+        console.log(`Torneo ${torneoId} eliminado de la colección torneos`);
 
-        alert(`El torneo "${nombreTorneo}" ha sido eliminado correctamente`);
+        // Paso 2: Eliminar el torneoId del array torneos de todos los usuarios que lo tengan
+        console.log(`Eliminando referencias del torneo ${torneoId} de los usuarios...`);
+        const usuariosRef = collection(db, "usuarios");
+        const usuariosSnapshot = await getDocs(usuariosRef);
+
+        const eliminarPromises = usuariosSnapshot.docs.map(async (usuarioDoc) => {
+            const usuarioData = usuarioDoc.data();
+            const userRef = doc(db, "usuarios", usuarioDoc.id);
+            
+            if (usuarioData.torneos && Array.isArray(usuarioData.torneos)) {
+                const torneosActualizados = usuarioData.torneos.filter(id => id !== torneoId);
+                
+                // Si hay cambios, actualizar
+                if (torneosActualizados.length !== usuarioData.torneos.length) {
+                    await updateDoc(userRef, {
+                        torneos: torneosActualizados
+                    });
+                    console.log(`Torneo eliminado del array de ${usuarioDoc.id}`);
+                }
+            }
+        });
+
+        await Promise.all(eliminarPromises);
+        console.log("Referencias del torneo eliminadas de todos los usuarios");
+
+        alert(`El torneo "${nombreTorneo}" ha sido eliminado correctamente de la base de datos`);
 
         // Recargar la lista de torneos
         await loadTorneos();
