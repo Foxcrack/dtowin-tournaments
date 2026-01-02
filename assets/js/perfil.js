@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Verificar que Firebase está cargado antes de comenzar
     if (typeof firebase !== 'undefined') {
         console.log("Firebase ya está disponible, inicializando...");
+        setupAuthForms();
         initializeProfile();
     } else {
         console.log("Firebase no disponible todavía, configurando intervalo de verificación");
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof firebase !== 'undefined') {
                 console.log("Firebase disponible, inicializando...");
                 clearInterval(checkFirebase);
+                setupAuthForms();
                 initializeProfile();
             }
         }, 100);
@@ -41,17 +43,173 @@ function initializeProfile() {
     // Inicializar el modal de edición
     initEditProfileModal();
     
+    // Configurar eventos de modales de login/registro
+    setupAuthModals();
+    
+    // Configurar menú móvil
+    setupMobileMenu();
+    
     // Verificar el estado de autenticación y cargar el perfil
     firebase.auth().onAuthStateChanged(user => {
         console.log("Estado de autenticación cambiado:", user ? "Autenticado" : "No autenticado");
-        if (user) {
-            console.log("Usuario autenticado:", user.uid);
-            renderProfileTemplate();
-            loadProfile();
-        } else {
-            console.log("No hay usuario autenticado");
-            showLoginRequired();
+        // Actualizar UI del navbar basado en autenticación
+        updateAuthUI(user);
+        // Siempre renderizar el template y cargar el perfil
+        // loadProfile() ya maneja los casos donde no hay autenticación pero hay uid en URL
+        renderProfileTemplate();
+        loadProfile();
+    });
+}
+
+// Actualizar UI de autenticación en el navbar
+async function updateAuthUI(user) {
+    const loginBtn = document.getElementById('loginBtn');
+    if (!loginBtn) return;
+    
+    // Remover event listeners previos
+    loginBtn.onclick = null;
+    
+    if (user) {
+        // Usuario autenticado - mostrar perfil y logout
+        const userName = user.displayName || user.email.split('@')[0] || 'Usuario';
+        loginBtn.innerHTML = `
+            <div class="flex items-center gap-2 cursor-pointer" id="userProfile">
+                <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="Perfil" class="w-8 h-8 rounded-full object-cover border-2 border-white">
+                <span class="font-semibold">${userName}</span>
+                <i class="fas fa-chevron-down text-sm"></i>
+            </div>
+        `;
+        
+        // Agregar event listener al botón para manejar clicks en el dropdown
+        loginBtn.addEventListener('click', handleUserProfileClick);
+        removeUserDropdownProfile();
+    } else {
+        // Usuario no autenticado - mostrar botón login
+        loginBtn.innerHTML = 'Iniciar Sesión';
+        loginBtn.onclick = () => {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.classList.remove('hidden');
+                loginModal.classList.add('flex');
+            }
+        };
+        removeUserDropdownProfile();
+    }
+}
+
+// Handler para el click en el perfil del usuario
+function handleUserProfileClick(e) {
+    e.stopPropagation();
+    let dropdownMenu = document.getElementById('userDropdownMenuProfile');
+    
+    if (dropdownMenu) {
+        // Toggle existente
+        dropdownMenu.classList.toggle('hidden');
+        return;
+    }
+    
+    // Crear nuevo dropdown
+    dropdownMenu = document.createElement('div');
+    dropdownMenu.id = 'userDropdownMenuProfile';
+    dropdownMenu.className = 'absolute top-16 right-4 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-40 min-w-max';
+    dropdownMenu.innerHTML = `
+        <a href="perfil.html" class="block px-4 py-2 text-white hover:bg-gray-700 rounded-t-lg">
+            <i class="fas fa-user mr-2"></i>Mi Perfil
+        </a>
+        <button id="logoutBtnDropdown" class="w-full text-left px-4 py-2 text-white hover:bg-gray-700 rounded-b-lg">
+            <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+        </button>
+    `;
+    
+    const userProfile = document.getElementById('userProfile');
+    userProfile.parentElement.style.position = 'relative';
+    userProfile.parentElement.appendChild(dropdownMenu);
+    
+    // Evento logout
+    document.getElementById('logoutBtnDropdown').addEventListener('click', async () => {
+        try {
+            await firebase.auth().signOut();
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+            alert("Error al cerrar sesión");
         }
+    });
+    
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', (e) => {
+        if (!userProfile.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.classList.add('hidden');
+        }
+    });
+}
+
+// Crear dropdown para usuario autenticado (perfil page)
+function createUserDropdownProfile() {
+    removeUserDropdownProfile();
+}
+
+// Remover dropdown de usuario (perfil page)
+function removeUserDropdownProfile() {
+    const dropdownMenu = document.getElementById('userDropdownMenuProfile');
+    if (dropdownMenu) {
+        dropdownMenu.remove();
+    }
+}
+
+// Configurar menú móvil
+function setupMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileLoginBtn = document.getElementById('mobileLoginBtn');
+    
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+    
+    if (mobileLoginBtn) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                // Usuario autenticado - cambiar botón a logout
+                mobileLoginBtn.textContent = 'Cerrar Sesión';
+                mobileLoginBtn.onclick = async () => {
+                    try {
+                        await firebase.auth().signOut();
+                        mobileMenu.classList.add('hidden');
+                        window.location.href = 'index.html';
+                    } catch (error) {
+                        console.error("Error al cerrar sesión:", error);
+                        alert("Error al cerrar sesión");
+                    }
+                };
+            } else {
+                // Usuario no autenticado - mostrar login
+                mobileLoginBtn.textContent = 'Iniciar Sesión';
+                mobileLoginBtn.onclick = () => {
+                    const loginModal = document.getElementById('loginModal');
+                    if (loginModal) {
+                        loginModal.classList.remove('hidden');
+                        loginModal.classList.add('flex');
+                        mobileMenu.classList.add('hidden');
+                    }
+                };
+            }
+        });
+    }
+}
+
+// Configurar eventos de los modales de login/registro (solo Google)
+function setupAuthModals() {
+    // Cerrar modal de login
+    document.getElementById('closeLoginModal')?.addEventListener('click', () => {
+        document.getElementById('loginModal')?.classList.add('hidden');
+    });
+    
+    // Cerrar modal de registro
+    document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
+        document.getElementById('registroModal')?.classList.add('hidden');
     });
 }
 
@@ -1251,6 +1409,79 @@ function mostrarNotificacion(mensaje, tipo = "info") {
             notification.remove();
         }, 500);
     }, 3000);
+}
+
+// Configurar formularios de login y registro (solo Google)
+function setupAuthForms() {
+    // Google login button
+    document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const result = await firebase.auth().signInWithPopup(provider);
+            
+            // Crear o actualizar perfil
+            const userDocs = await firebase.firestore()
+                .collection('usuarios')
+                .where('uid', '==', result.user.uid)
+                .limit(1)
+                .get();
+            
+            if (userDocs.empty) {
+                await firebase.firestore().collection('usuarios').add({
+                    uid: result.user.uid,
+                    nombre: result.user.displayName || 'Usuario',
+                    email: result.user.email,
+                    photoURL: result.user.photoURL,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    puntos: 0,
+                    victorias: 0,
+                    torneos: []
+                });
+            }
+            
+            document.getElementById('loginModal')?.classList.add('hidden');
+            mostrarNotificacion('Sesión iniciada correctamente', 'success');
+        } catch (error) {
+            mostrarNotificacion('Error al iniciar sesión con Google: ' + error.message, 'error');
+        }
+    });
+    
+    // Google register button
+    document.querySelectorAll('.google-register-btn')?.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await firebase.auth().signInWithPopup(provider);
+                
+                // Crear o actualizar perfil
+                const userDocs = await firebase.firestore()
+                    .collection('usuarios')
+                    .where('uid', '==', result.user.uid)
+                    .limit(1)
+                    .get();
+                
+                if (userDocs.empty) {
+                    await firebase.firestore().collection('usuarios').add({
+                        uid: result.user.uid,
+                        nombre: result.user.displayName || 'Usuario',
+                        email: result.user.email,
+                        photoURL: result.user.photoURL,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        puntos: 0,
+                        victorias: 0,
+                        torneos: []
+                    });
+                }
+                
+                document.getElementById('registroModal')?.classList.add('hidden');
+                mostrarNotificacion('Cuenta creada correctamente', 'success');
+            } catch (error) {
+                mostrarNotificacion('Error al registrar con Google: ' + error.message, 'error');
+            }
+        });
+    });
 }
 
 // Exponer funciones a nivel global

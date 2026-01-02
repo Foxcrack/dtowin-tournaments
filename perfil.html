@@ -89,6 +89,7 @@
                 <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
                 <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
                 <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
+                <button id="mobileLoginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition w-full">Iniciar Sesión</button>
             </div>
         </div>
     </nav>
@@ -163,45 +164,15 @@
                 <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="w-16 h-16 rounded-full mx-auto mb-2">
                 <h3 class="text-2xl font-bold text-white">Iniciar Sesión</h3>
                 <p class="text-gray-400">Bienvenido de vuelta</p>
-                <!-- Mensaje de error -->
                 <p id="loginErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
-            <form id="loginForm">
-                <div class="mb-4">
-                    <label class="block text-gray-200 text-sm font-bold mb-2" for="loginEmail">
-                        Correo electrónico
-                    </label>
-                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="loginEmail" type="email" placeholder="tucorreo@gmail.com">
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-gray-200 text-sm font-bold mb-2" for="loginPassword">
-                        Contraseña
-                    </label>
-                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white mb-3 leading-tight focus:outline-none focus:border-blue-500" id="loginPassword" type="password" placeholder="******************">
-                    <a class="inline-block align-baseline font-bold text-sm text-orange-500 hover:text-orange-700" href="#">
-                        ¿Olvidaste tu contraseña?
-                    </a>
-                </div>
-                
-                <div class="mb-6">
-                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                        Iniciar Sesión
-                    </button>
-                    <div class="text-center mt-4">
-                        <p class="text-gray-500 text-sm">o</p>
-                    </div>
-                    <button type="button" id="googleLoginBtn" class="w-full bg-gray-800 border border-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center hover:bg-gray-700">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
-                        Continuar con Google
-                    </button>
-                </div>
-                
-                <p class="text-center text-gray-400 text-xs">
-                    ¿No tienes cuenta? <button id="showRegisterLink" class="text-orange-500 hover:text-orange-700">Regístrate</button>
-                </p>
-            </form>
+            <div class="mb-6">
+                <button type="button" id="googleLoginBtn" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                    Continuar con Google
+                </button>
+            </div>
         </div>
     </div>
 
@@ -218,45 +189,12 @@
                 <p id="registerErrorMsg" class="text-red-500 mt-2 text-sm"></p>
             </div>
             
-            <form id="registroForm">
-                <div class="mb-4">
-                    <label class="block text-gray-200 text-sm font-bold mb-2" for="username">
-                        Nombre de usuario
-                    </label>
-                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="username" type="text" placeholder="Tu nombre de usuario">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-200 text-sm font-bold mb-2" for="email">
-                        Correo electrónico (Gmail)
-                    </label>
-                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:border-blue-500" id="email" type="email" placeholder="tucorreo@gmail.com">
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-gray-200 text-sm font-bold mb-2" for="password">
-                        Contraseña
-                    </label>
-                    <input class="shadow appearance-none bg-gray-800 border border-gray-600 rounded w-full py-2 px-3 text-white mb-3 leading-tight focus:outline-none focus:border-blue-500" id="password" type="password" placeholder="******************">
-                </div>
-                
-                <div class="mb-6">
-                    <button type="submit" class="w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition">
-                        Registrarse
-                    </button>
-                    <div class="text-center mt-4">
-                        <p class="text-gray-500 text-sm">o</p>
-                    </div>
-                    <button type="button" class="google-register-btn w-full bg-gray-800 border border-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4 flex items-center justify-center hover:bg-gray-700">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
-                        Continuar con Google
-                    </button>
-                </div>
-                
-                <p class="text-center text-gray-400 text-xs">
-                    Al registrarte aceptas nuestros términos y condiciones
-                </p>
-            </form>
+            <div class="mb-6">
+                <button type="button" class="google-register-btn w-full dtowin-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:opacity-90 transition flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-5 h-5 mr-2">
+                    Continuar con Google
+                </button>
+            </div>
         </div>
     </div>
 
