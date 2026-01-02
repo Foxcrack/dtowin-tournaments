@@ -87,7 +87,8 @@ onAuthStateChanged(auth, async (user) => {
       uid: data.uid || userDoc.id,
       nombre: data.nombre || "Jugador",
       puntos: data.puntos || 0,
-      creado: data.createdAt?.seconds || 0
+      creado: data.createdAt?.seconds || 0,
+      bannerId: data.bannerId || null
     });
   }
 
@@ -105,7 +106,25 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // Renderizar el leaderboard
-function renderLeaderboard(users) {
+async function renderLeaderboard(users) {
+    // Primero cargar los banners de los usuarios que los tengan
+    const bannerMap = new Map();
+    
+    for (const user of users) {
+        if (user.bannerId) {
+            try {
+                const bannerDoc = await firebase.firestore().collection("banners").doc(user.bannerId).get();
+                if (bannerDoc.exists) {
+                    const bannerData = bannerDoc.data();
+                    bannerMap.set(user.uid, bannerData.imageUrl || bannerData.imageData);
+                }
+            } catch (error) {
+                console.warn(`Error cargando banner para ${user.nombre}:`, error);
+            }
+        }
+    }
+    
+    // Renderizar con los banners cargados
     fullLeaderboardBody.innerHTML = users.map((user, i) => {
       let clasePosicion = "";
       let medalla = "";
@@ -122,12 +141,21 @@ function renderLeaderboard(users) {
       }
   
       const delay = i * 50; // cada fila se retrasa 50ms más que la anterior
-  
+      const bannerImage = bannerMap.get(user.uid);
+
       return `
-        <div class="grid grid-cols-12 py-3 px-4 leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
-          <div class="col-span-1 text-center font-bold text-white">#${i + 1}</div>
-          <div class="col-span-8 font-medium text-white truncate">${medalla} ${user.nombre}</div>
-          <div class="col-span-3 text-center text-blue-400 font-semibold">${user.puntos}</div>
+        <div class="leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
+          ${bannerImage ? `
+            <div class="leaderboard-banner-diagonal" style="background-image: url('${bannerImage}');"></div>
+          ` : ''}
+          <div class="leaderboard-left">
+            <div class="leaderboard-position">#${i + 1}</div>
+            <div class="leaderboard-medal">${medalla}</div>
+            <div class="leaderboard-name">${user.nombre}</div>
+          </div>
+          <div class="leaderboard-right">
+            <div class="leaderboard-points">${user.puntos} pts</div>
+          </div>
         </div>
       `;
     }).join("");

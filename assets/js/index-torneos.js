@@ -1354,10 +1354,27 @@ async function loadLeaderboard() {
             uid: doc.data().uid || doc.id
         }));
 
+        // Cargar banners para los usuarios que los tengan
+        const bannerMap = new Map();
+        for (const usuario of topUsuarios) {
+            if (usuario.bannerId) {
+                try {
+                    const bannerDoc = await getDoc(doc(db, "banners", usuario.bannerId));
+                    if (bannerDoc.exists()) {
+                        const bannerData = bannerDoc.data();
+                        bannerMap.set(usuario.uid, bannerData.imageUrl || bannerData.imageData);
+                    }
+                } catch (error) {
+                    console.warn(`Error cargando banner para ${usuario.nombre}:`, error);
+                }
+            }
+        }
+
         const leaderboardHTML = topUsuarios.map((usuario, index) => {
             const position = index + 1;
             const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
             const nombre = usuario.nombre || usuario.displayName || usuario.email;
+            const bannerImage = bannerMap.get(usuario.uid);
 
             let badges = 0;
             if (usuario.badges && typeof usuario.badges === "object" && !Array.isArray(usuario.badges)) {
@@ -1368,15 +1385,16 @@ async function loadLeaderboard() {
 
             return `
                 <a href="perfil.html?uid=${encodeURIComponent(usuario.uid)}" class="block hover:bg-gray-800 rounded-lg transition group">
-                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow mb-2 group-hover:shadow-lg border border-gray-700">
-                        <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow mb-2 group-hover:shadow-lg border border-gray-700 relative overflow-hidden">
+                        ${bannerImage ? `<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 200px; opacity: 0.4; background: url('${bannerImage}') center/cover no-repeat; clip-path: polygon(0% 0%, 100% 0%, 70% 100%, 0% 100%); transition: opacity 0.3s ease;"></div>` : ''}
+                        <div class="flex items-center gap-3 relative z-10">
                             <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${medal} #${position}</span>
                             <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <p class="font-semibold text-white group-hover:text-blue-300">${nombre}</p>
                             </div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right relative z-10">
                             <p class="font-bold text-blue-400">${usuario.puntos || 0} pts</p>
                             <p class="text-xs text-gray-400">${badges} badges</p>
                         </div>

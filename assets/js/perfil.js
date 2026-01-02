@@ -269,10 +269,15 @@ async function updateProfileInfo(userData) {
     preserveGradientInNavbarAndFooter();
     
     // Identificar el encabezado del perfil que debe tener el banner
-    const profileHeader = document.querySelector('.bg-white.rounded-xl.shadow-lg .gradient-background');
+    // Buscar el primer .gradient-background dentro del profileContainer que no sea navbar/footer
+    const profileContainer = document.getElementById('profileContainer');
+    let profileHeader = null;
+    if (profileContainer) {
+        profileHeader = profileContainer.querySelector('.gradient-background');
+    }
     
     if (profileHeader) {
-        console.log("Encontrado el encabezado del perfil para aplicar/restaurar banner");
+        console.log("Encontrado el encabezado del perfil para aplicar/restaurar banner", profileHeader);
         
         // Guardar las clases originales si no se ha hecho ya
         if (!profileHeader.dataset.originalClasses) {
@@ -1022,8 +1027,8 @@ async function loadAvailableBanners() {
         
         // Opción de "Sin banner" - Siempre disponible
         html += `
-            <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${!selectedBannerId ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="">
-                <div class="h-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
+            <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${!selectedBannerId ? 'selected border-orange-500' : 'border-gray-600'}" data-banner-id="">
+                <div class="h-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs rounded">
                     Sin banner
                 </div>
             </div>
@@ -1047,8 +1052,8 @@ async function loadAvailableBanners() {
                     const imageSource = banner.imageUrl || banner.imageData || '';
                     
                     html += `
-                        <div class="banner-option cursor-pointer border rounded p-1 hover:bg-gray-100 ${isSelected ? 'border-blue-500 bg-blue-50' : ''}" data-banner-id="${doc.id}">
-                            <img src="${imageSource}" alt="${banner.nombre || 'Banner'}" class="h-12 w-full object-cover">
+                        <div class="banner-option cursor-pointer border rounded p-1 ${isSelected ? 'selected border-orange-500' : 'border-gray-600'}" data-banner-id="${doc.id}">
+                            <img src="${imageSource}" alt="${banner.nombre || 'Banner'}" class="h-12 w-full object-cover rounded">
                         </div>
                     `;
                 }
@@ -1061,17 +1066,23 @@ async function loadAvailableBanners() {
         // Agregar eventos de selección
         document.querySelectorAll('.banner-option').forEach(option => {
             option.addEventListener('click', function() {
+                console.log("Click en banner, data-banner-id:", this.dataset.bannerId);
+                
                 // Quitar selección actual
                 document.querySelectorAll('.banner-option').forEach(opt => {
-                    opt.classList.remove('border-blue-500', 'bg-blue-50');
+                    opt.classList.remove('selected', 'border-orange-500');
+                    opt.classList.add('border-gray-600');
                 });
                 
                 // Marcar como seleccionado
-                this.classList.add('border-blue-500', 'bg-blue-50');
+                this.classList.add('selected', 'border-orange-500');
+                this.classList.remove('border-gray-600');
                 
                 // Guardar ID de banner seleccionado
                 selectedBannerId = this.dataset.bannerId || "";
+                window.selectedBannerId = selectedBannerId; // También asignar a window para mayor compatibilidad
                 console.log("Banner seleccionado:", selectedBannerId);
+                console.log("window.selectedBannerId actualizado a:", window.selectedBannerId);
             });
         });
         
@@ -1198,12 +1209,6 @@ function compressImage(file, maxWidth = 800, maxHeight = 600, quality = 0.7) {
 
 // Función para mostrar notificaciones
 function mostrarNotificacion(mensaje, tipo = "info") {
-    // Verificar si la función ya existe globalmente
-    if (typeof window.mostrarNotificacion === 'function') {
-        window.mostrarNotificacion(mensaje, tipo);
-        return;
-    }
-    
     // Verificar si ya existe una notificación
     const existingNotification = document.querySelector('.notification');
     if (existingNotification) {
@@ -1274,7 +1279,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 // Obtener valores del formulario
                 const username = document.getElementById('editUsername').value.trim();
-                const bannerID = window.selectedBannerId; // Usar variable global
+                const bannerID = window.selectedBannerId || selectedBannerId; // Usar variable global
+                
+                console.log("=== ACTUALIZANDO PERFIL ===");
+                console.log("Usuario:", username);
+                console.log("BannerID (window.selectedBannerId):", window.selectedBannerId);
+                console.log("BannerID (selectedBannerId):", selectedBannerId);
+                console.log("BannerID (final):", bannerID);
+                console.log("Tiene foto nueva:", !!newProfilePhoto);
                 
                 // Validación simple
                 if (newProfilePhoto && !newProfilePhoto.type.startsWith('image/')) {
@@ -1319,16 +1331,24 @@ document.addEventListener("DOMContentLoaded", function() {
                     };
                     
                     // 5. Manejar banner
-                    if (bannerID === "") {
+                    console.log("Procesando banner: bannerID=", bannerID);
+                    if (bannerID === "" || bannerID === null || bannerID === undefined) {
+                        console.log("Banner vacío/nulo - estableciendo bannerId a null");
                         updateData.bannerId = null;
                     } else if (bannerID) {
+                        console.log("Banner seleccionado - estableciendo bannerId a:", bannerID);
                         updateData.bannerId = bannerID;
                     }
                     
+                    console.log("Datos a actualizar:", updateData);
+                    
                     // 6. Actualizar o crear documento
                     if (!userDocs.empty) {
+                        console.log("Actualizando documento existente del usuario");
                         await userDocs.docs[0].ref.update(updateData);
+                        console.log("Documento actualizado correctamente");
                     } else {
+                        console.log("Creando nuevo documento del usuario");
                         await firebase.firestore().collection("usuarios").add({
                             ...updateData,
                             uid: user.uid,
@@ -1339,6 +1359,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             victorias: 0,
                             torneos: []
                         });
+                        console.log("Documento creado correctamente");
                     }
                     
                     // 7. Manejar foto si existe
@@ -1392,12 +1413,24 @@ document.addEventListener("DOMContentLoaded", function() {
                         modal.classList.remove('flex');
                     }
                     
-                    // 9. Mostrar mensaje de éxito y recargar
+                    // 9. Mostrar mensaje de éxito
+                    console.log("=== ACTUALIZACIÓN COMPLETADA CON ÉXITO ===");
                     mostrarNotificacion("Perfil actualizado correctamente", "success");
                     
-                    // 10. Forzar recarga completa (no usar reload que podría usar caché)
+                    // Resetear variables globales
+                    selectedBannerId = null;
+                    newProfilePhoto = null;
+                    
+                    // 10. Forzar recarga completa después de un pequeño delay (no usar reload que podría usar caché)
+                    console.log("Recargando página en 1.5 segundos...");
                     setTimeout(() => {
-                        window.location.href = window.location.pathname + "?t=" + Date.now();
+                        try {
+                            window.location.href = window.location.pathname + "?t=" + Date.now();
+                        } catch (reloadError) {
+                            console.error("Error al recargar:", reloadError);
+                            // Fallback: recargar sin parametros
+                            window.location.reload(true);
+                        }
                     }, 1500);
                     
                 } catch (error) {
@@ -1411,7 +1444,10 @@ document.addEventListener("DOMContentLoaded", function() {
                     newProfilePhoto = null;
                     
                     console.error("Error al actualizar perfil:", error);
-                    window.alert("Error: " + error.message);
+                    console.error("Stack:", error.stack);
+                    
+                    // Mostrar notificación en lugar de alert
+                    mostrarNotificacion("Error al actualizar: " + error.message, "error");
                     
                     // Restaurar botón
                     if (button) {

@@ -2,6 +2,7 @@
 .spinner {
     animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -22,12 +23,15 @@ body {
 .dtowin-primary {
     background-color: #ff6b1a;
 }
+
 .dtowin-blue {
     background-color: #0042ff;
 }
+
 .dtowin-red {
     background-color: #ff3000;
 }
+
 .dtowin-cream {
     background-color: #fff3e6;
 }
@@ -51,36 +55,67 @@ body {
 
 /* Fila clickeable visualmente - Dark mode */
 .leaderboard-row {
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
     cursor: pointer;
     background-color: #1a1a1a;
     color: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #333333;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
+
 .leaderboard-row:hover {
     background-color: #242424;
-    transform: scale(1.005);
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Estilos por posición */
 .leaderboard-gold {
-    background-color: #ff6b6b; /* Oro */
+    background: linear-gradient(135deg, #ff9900 0%, #ff6b1a 100%);
+    border-color: #ffb84d;
+    box-shadow: 0 0 20px rgba(255, 107, 26, 0.3);
 }
+
+.leaderboard-gold:hover {
+    box-shadow: 0 0 30px rgba(255, 107, 26, 0.5);
+}
+
 .leaderboard-silver {
-    background-color: #b774ff; /* Plata */
+    background: linear-gradient(135deg, #b774ff 0%, #9d5eff 100%);
+    border-color: #d4a5ff;
+    box-shadow: 0 0 20px rgba(157, 94, 255, 0.3);
 }
+
+.leaderboard-silver:hover {
+    box-shadow: 0 0 30px rgba(157, 94, 255, 0.5);
+}
+
 .leaderboard-bronze {
-    background-color: #7184ff; /* Bronce */
+    background: linear-gradient(135deg, #7184ff 0%, #5563e8 100%);
+    border-color: #9db3ff;
+    box-shadow: 0 0 20px rgba(85, 99, 232, 0.3);
+}
+
+.leaderboard-bronze:hover {
+    box-shadow: 0 0 30px rgba(85, 99, 232, 0.5);
 }
 
 /* Animación fade-in con desplazamiento */
 @keyframes fadeInUp {
     0% {
-    opacity: 0;
-    transform: translateY(20px);
+        opacity: 0;
+        transform: translateY(20px);
     }
     100% {
-    opacity: 1;
-    transform: translateY(0);
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -99,5 +134,82 @@ section h2 {
 }
 
 #fullLeaderboardBody {
-    background: #1a1a1a;
+    background: transparent;
+    padding: 16px 0;
+}
+
+/* Estilos para el banner diagonal en el leaderboard */
+.leaderboard-banner-diagonal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 180px;
+    opacity: 0.35;
+    background-size: cover;
+    background-position: center;
+    clip-path: polygon(0% 0%, 100% 0%, 70% 100%, 0% 100%);
+    transition: opacity 0.3s ease;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 12px;
+}
+
+.leaderboard-row:hover .leaderboard-banner-diagonal {
+    opacity: 0.5;
+}
+
+/* Contenedor izquierdo (posición, medal, nombre) */
+.leaderboard-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    z-index: 10;
+    position: relative;
+}
+
+.leaderboard-position {
+    font-weight: bold;
+    font-size: 18px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.leaderboard-medal {
+    font-size: 24px;
+    min-width: 30px;
+}
+
+.leaderboard-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Contenedor derecho (puntos) */
+.leaderboard-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    position: relative;
+    margin-left: 16px;
+}
+
+.leaderboard-points {
+    font-weight: bold;
+    font-size: 18px;
+    color: #60a5fa;
+    min-width: 60px;
+    text-align: right;
+}
+
+.leaderboard-badges {
+    font-size: 12px;
+    color: #9ca3af;
+    min-width: 80px;
+    text-align: right;
 }
