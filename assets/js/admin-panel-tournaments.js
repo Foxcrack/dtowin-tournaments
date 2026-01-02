@@ -796,11 +796,20 @@ async function handleTournamentFormSubmit(e) {
         
         // Obtener la fecha del input y convertirla a Timestamp de Firestore
         const fechaInput = document.getElementById('fechaTorneo').value;
+        const horaInput = document.getElementById('horaTorneo').value;
+        
         let fechaTimestamp = null;
         if (fechaInput) {
-            const fechaDate = new Date(fechaInput);
+            // Crear la fecha a partir del input de fecha (formato YYYY-MM-DD)
+            // Construir un string ISO que represente la medianoche en la zona local
+            const fechaDate = new Date(fechaInput + 'T00:00:00');
+            
+            // Ajustar por la zona horaria local para que Firestore guarde la fecha correcta
+            const offset = fechaDate.getTimezoneOffset() * 60000; // convertir a milisegundos
+            const fechaAjustada = new Date(fechaDate.getTime() - offset);
+            
             // Convertir a Timestamp de Firestore
-            fechaTimestamp = firebase.firestore.Timestamp.fromDate(fechaDate);
+            fechaTimestamp = firebase.firestore.Timestamp.fromDate(fechaAjustada);
         }
         
         // Recopilar datos del formulario
@@ -808,7 +817,7 @@ async function handleTournamentFormSubmit(e) {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
             fecha: fechaTimestamp,
-            hora: document.getElementById('horaTorneo').value,
+            hora: horaInput, // Guardar solo como string HH:MM
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,
             puntosPosicion: {

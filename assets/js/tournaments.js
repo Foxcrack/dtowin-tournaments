@@ -704,43 +704,51 @@ function fillFormWithTournamentData(tournamentData) {
     document.getElementById('descripcionTorneo').value = tournamentData.descripcion || '';
     
     // Manejar fecha y hora
-    if (tournamentData.fechaHora) {
-        // Nuevo formato: fechaHora en UTC, convertir a zona local del admin
-        console.log("Usando fechaHora:", tournamentData.fechaHora);
+    if (tournamentData.fecha) {
+        // Formato: fecha (Timestamp) y hora (string) separadas
+        console.log("Cargando fecha y hora separadas - fecha:", tournamentData.fecha, "hora:", tournamentData.hora);
+        
+        let fechaLocal;
+        if (tournamentData.fecha.toDate) {
+            // Es un Timestamp de Firebase
+            fechaLocal = tournamentData.fecha.toDate();
+        } else if (tournamentData.fecha.seconds) {
+            // Es un objeto con segundos (Timestamp serializado)
+            fechaLocal = new Date(tournamentData.fecha.seconds * 1000);
+        } else {
+            // Es una fecha normal
+            fechaLocal = new Date(tournamentData.fecha);
+        }
+        
+        // Formatear para los inputs de fecha
+        const year = fechaLocal.getFullYear();
+        const month = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaLocal.getDate()).padStart(2, '0');
+        
+        document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
+        document.getElementById('horaTorneo').value = tournamentData.hora || '';
+        
+        console.log("Fecha y hora cargadas:", `${year}-${month}-${day} ${tournamentData.hora}`);
+        
+    } else if (tournamentData.fechaHora) {
+        // Formato antiguo (compatibilidad hacia atrás)
+        console.log("Usando fechaHora antigua:", tournamentData.fechaHora);
         
         let fechaLocal;
         if (tournamentData.fechaHora.toDate) {
-            // Es un Timestamp de Firebase
             fechaLocal = tournamentData.fechaHora.toDate();
         } else {
-            // Es una fecha normal
             fechaLocal = new Date(tournamentData.fechaHora);
         }
         
-        // Convertir a zona horaria local del admin
-        const adminTimeZone = getUserTimeZone();
-        const fechaEnZonaAdmin = new Date(fechaLocal.toLocaleString("en-US", { timeZone: adminTimeZone }));
-        
-        // Formatear para los inputs
-        const year = fechaEnZonaAdmin.getFullYear();
-        const month = String(fechaEnZonaAdmin.getMonth() + 1).padStart(2, '0');
-        const day = String(fechaEnZonaAdmin.getDate()).padStart(2, '0');
-        const hours = String(fechaEnZonaAdmin.getHours()).padStart(2, '0');
-        const minutes = String(fechaEnZonaAdmin.getMinutes()).padStart(2, '0');
+        const year = fechaLocal.getFullYear();
+        const month = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaLocal.getDate()).padStart(2, '0');
+        const hours = String(fechaLocal.getHours()).padStart(2, '0');
+        const minutes = String(fechaLocal.getMinutes()).padStart(2, '0');
         
         document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
         document.getElementById('horaTorneo').value = `${hours}:${minutes}`;
-        
-        console.log("Fecha local para el admin:", `${year}-${month}-${day} ${hours}:${minutes}`);
-        
-    } else if (tournamentData.fecha) {
-        // Formato anterior: fecha y hora separadas (compatibilidad hacia atrás)
-        console.log("Usando formato anterior - fecha:", tournamentData.fecha, "hora:", tournamentData.hora);
-        
-        const date = new Date(tournamentData.fecha.seconds * 1000);
-        const formattedDate = date.toISOString().split('T')[0];
-        document.getElementById('fechaTorneo').value = formattedDate;
-        document.getElementById('horaTorneo').value = tournamentData.hora || '';
     }
     
     // Capacidad
@@ -872,18 +880,27 @@ async function handleTournamentFormSubmit(e) {
         const fechaInput = document.getElementById('fechaTorneo').value;
         const horaInput = document.getElementById('horaTorneo').value;
         
-        // Convertir fecha y hora local a UTC
-        let fechaHoraUTC;
-        if (fechaInput && horaInput) {
-            fechaHoraUTC = convertLocalToUTC(fechaInput, horaInput);
+        // Crear fecha local sin conversión a UTC
+        let fechaTimestamp;
+        if (fechaInput) {
+            // Crear la fecha como medianoche en zona local
+            const [año, mes, dia] = fechaInput.split('-');
+            const fechaDate = new Date(año, mes - 1, dia);
+            
+            // Ajustar por timezone offset para que Firestore guarde la fecha correcta
+            const offset = fechaDate.getTimezoneOffset() * 60000;
+            const fechaAjustada = new Date(fechaDate.getTime() - offset);
+            
+            fechaTimestamp = firebase.firestore.Timestamp.fromDate(fechaAjustada);
         } else {
-            fechaHoraUTC = new Date(); // Fecha actual si no se especifica
+            fechaTimestamp = firebase.firestore.Timestamp.now();
         }
         
         const tournamentData = {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
-            fechaHora: fechaHoraUTC, // Guardamos fecha y hora juntas en UTC
+            fecha: fechaTimestamp,
+            hora: horaInput, // Guardar solo la hora como string HH:MM
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,
             puntosPosicion: {
