@@ -209,6 +209,10 @@ function setupRealTimeTournaments() {
         // Configurar listeners de inscripciones para cada torneo
         torneos.forEach(torneo => {
             setupInscripcionesListener(torneo.id);
+            // Configurar listener para el estado del usuario actual en torneos de Check-in
+            if (torneo.estado === "Check In" && currentUser) {
+                setupUserAttendanceListener(torneo.id, currentUser.uid);
+            }
         });
 
         // Renderizar torneos
@@ -249,6 +253,60 @@ function setupInscripcionesListener(torneoId) {
     });
 
     inscripcionesListeners.set(torneoId, unsubscribe);
+}
+
+// Configurar listener en tiempo real para el estado de asistencia del usuario actual
+function setupUserAttendanceListener(torneoId, userId) {
+    const userInscriptionRef = doc(db, "torneos", torneoId, "inscripciones", userId);
+    
+    const unsubscribe = onSnapshot(userInscriptionRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const inscriptionData = snapshot.data();
+            const asistenciaConfirmada = inscriptionData.asistenciaConfirmada || false;
+            
+            console.log(`📝 Estado de asistencia del usuario en ${torneoId}: ${asistenciaConfirmada}`);
+            
+            // Actualizar botones en tiempo real
+            updateCheckInButtonsUI(torneoId, asistenciaConfirmada);
+        }
+    }, (error) => {
+        console.warn(`Advertencia en listener de asistencia para torneo ${torneoId}:`, error);
+    });
+    
+    inscripcionesListeners.set(`${torneoId}-attendance-${userId}`, unsubscribe);
+}
+
+// Actualizar UI de botones de check-in en tiempo real
+function updateCheckInButtonsUI(torneoId, asistenciaConfirmada) {
+    const container = document.getElementById("torneos-checkin");
+    if (!container) return;
+    
+    // Buscar los botones del torneo específico
+    const allCheckInBtns = container.querySelectorAll('.check-in-btn');
+    const allCancelBtns = container.querySelectorAll('.cancel-checkin-btn');
+    
+    let found = false;
+    
+    // Buscar botones por data-torneo-id
+    allCheckInBtns.forEach(btn => {
+        if (btn.getAttribute('data-torneo-id') === torneoId) {
+            btn.style.display = asistenciaConfirmada ? 'none' : 'block';
+            found = true;
+        }
+    });
+    
+    allCancelBtns.forEach(btn => {
+        if (btn.getAttribute('data-torneo-id') === torneoId) {
+            btn.style.display = asistenciaConfirmada ? 'block' : 'none';
+            found = true;
+        }
+    });
+    
+    if (found) {
+        console.log(`✓ Botón de ${torneoId} actualizado: ${asistenciaConfirmada ? 'Cancelar' : 'Hacer'} Check-in`);
+    } else {
+        console.log(`⚠ Botones no encontrados para ${torneoId}, esperando re-render...`);
+    }
 }
 
 // Actualizar contador de inscripciones en la UI
@@ -456,16 +514,20 @@ async function renderTorneosPorEstado(torneosPorEstado, containers) {
                                     </button>`
                     )
                     : estado === "Check In"
-                        ? (currentUser && isInscrito && !torneo.asistenciaConfirmada
-                            ? `<button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition"
-                                        data-torneo-id="${torneo.id}">
-                                        <i class="fas fa-check-circle mr-2"></i>Hacer Check-in
-                                        </button>`
-                            : currentUser && isInscrito && torneo.asistenciaConfirmada
-                                ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
-                                            <i class="fas fa-check-double mr-2"></i>Check-in Confirmado
-                                        </button>`
-                                : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                        ? (currentUser && isInscrito
+                            ? `<div class="flex flex-col gap-2">
+                                <button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition ${torneo.asistenciaConfirmada ? 'hidden' : ''}"
+                                            data-torneo-id="${torneo.id}"
+                                            style="display: ${torneo.asistenciaConfirmada ? 'none' : 'block'}">
+                                            <i class="fas fa-check-circle mr-2"></i>Hacer Check-in
+                                        </button>
+                                <button class="cancel-checkin-btn bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition ${!torneo.asistenciaConfirmada ? 'hidden' : ''}"
+                                            data-torneo-id="${torneo.id}"
+                                            style="display: ${torneo.asistenciaConfirmada ? 'block' : 'none'}">
+                                            <i class="fas fa-times-circle mr-2"></i>Cancelar Check-in
+                                        </button>
+                            </div>`
+                            : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
                                             Check-in disponible solo para inscritos
                                         </button>`
                         )
@@ -590,13 +652,21 @@ async function confirmAttendance(torneoId) {
     const userRef = doc(db, "usuarios", currentUser.uid);
 
     try {
-        // --- Paso 1: Actualizar la asistencia del usuario en la subcolección ---
+        // --- Paso 1: Obtener el gameUsername del usuario ---
+        const inscriptionSnapshot = await getDoc(userInscriptionRef);
+        if (!inscriptionSnapshot.exists()) {
+            showNotification("No se encontró tu inscripción", "error");
+            return;
+        }
+        const gameUsername = inscriptionSnapshot.data().gameUsername;
+        
+        // --- Paso 2: Actualizar la asistencia del usuario en la subcolección ---
         await updateDoc(userInscriptionRef, {
             asistenciaConfirmada: true,
             updatedAt: new Date()
         });
         
-        // --- Paso 2: Obtener el nombre del torneo ---
+        // --- Paso 3: Obtener el nombre del torneo ---
         const torneoDocRef = doc(db, "torneos", torneoId);
         const torneoDoc = await getDoc(torneoDocRef);
         let nombreTorneo = "Torneo Desconocido";
@@ -605,7 +675,7 @@ async function confirmAttendance(torneoId) {
             nombreTorneo = torneoDoc.data().nombre;
         }
 
-        // --- Paso 3: Actualizar el perfil del usuario ---
+        // --- Paso 4: Actualizar el perfil del usuario ---
         const userDoc = await getDoc(userRef);
         
         if (userDoc.exists()) {
@@ -630,12 +700,215 @@ async function confirmAttendance(torneoId) {
             });
         }
         
+        // --- Paso 5: Agregar participante a Challonge ---
+        if (gameUsername) {
+            await addParticipantToChallonge(torneoId, gameUsername);
+        }
+        
         showNotification("Asistencia confirmada. ¡Bienvenido al torneo!", "success");
         // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
         console.error("Error al confirmar asistencia:", error);
         showNotification(`Error al confirmar asistencia: ${error.message}`, "error");
+    }
+}
+
+// Cancelar check-in (revertir asistencia)
+async function cancelAttendance(torneoId) {
+    if (!currentUser) {
+        showNotification("Debes iniciar sesión para cancelar tu check-in.", "error");
+        return;
+    }
+
+    const userInscriptionRef = doc(db, "torneos", torneoId, "inscripciones", currentUser.uid);
+    const userRef = doc(db, "usuarios", currentUser.uid);
+
+    try {
+        // --- Paso 1: Obtener el gameUsername del usuario ---
+        const inscriptionSnapshot = await getDoc(userInscriptionRef);
+        if (!inscriptionSnapshot.exists()) {
+            showNotification("No se encontró tu inscripción", "error");
+            return;
+        }
+        const gameUsername = inscriptionSnapshot.data().gameUsername;
+        
+        // --- Paso 2: Revertir la asistencia del usuario en la subcolección ---
+        await updateDoc(userInscriptionRef, {
+            asistenciaConfirmada: false,
+            updatedAt: new Date()
+        });
+        
+        // --- Paso 3: Obtener el nombre del torneo ---
+        const torneoDocRef = doc(db, "torneos", torneoId);
+        const torneoDoc = await getDoc(torneoDocRef);
+        let nombreTorneo = "Torneo Desconocido";
+
+        if (torneoDoc.exists()) {
+            nombreTorneo = torneoDoc.data().nombre;
+        }
+
+        // --- Paso 4: Actualizar el perfil del usuario (remover el torneo del array) ---
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Si existe el array de torneos, remover este torneo
+            if (Array.isArray(userData.torneos)) {
+                await updateDoc(userRef, {
+                    torneos: userData.torneos.filter(t => t !== nombreTorneo)
+                });
+            }
+        }
+        
+        // --- Paso 5: Remover participante de Challonge ---
+        if (gameUsername) {
+            await removeParticipantFromChallonge(torneoId, gameUsername);
+        }
+        
+        showNotification("Check-in cancelado. ¡Esperamos verte en el próximo torneo!", "info");
+        // Los torneos se actualizarán automáticamente por el listener en tiempo real
+
+    } catch (error) {
+        console.error("Error al cancelar check-in:", error);
+        showNotification(`Error al cancelar check-in: ${error.message}`, "error");
+    }
+}
+
+// Agregar participante a Challonge
+async function addParticipantToChallonge(torneoId, gameUsername) {
+    try {
+        // Obtener datos del torneo
+        const torneoDocRef = doc(db, "torneos", torneoId);
+        const torneoDoc = await getDoc(torneoDocRef);
+        
+        if (!torneoDoc.exists()) {
+            return;
+        }
+        
+        const torneoData = torneoDoc.data();
+        
+        // Verificar que esté vinculado con Challonge
+        if (!torneoData.challonge || !torneoData.challonge.slug || !torneoData.challonge.apiKey) {
+            return;
+        }
+        
+        const { slug, apiKey } = torneoData.challonge;
+        
+        console.log(`📤 Intentando agregar a Challonge:`, { slug, gameUsername });
+        
+        const url = `https://api.challonge.com/v1/tournaments/${slug}/participants.json`;
+        
+        const params = new URLSearchParams({
+            'api_key': apiKey,
+            'participant[name]': gameUsername
+        });
+        
+        // Fire and forget (sin esperar respuesta)
+        fetch(url, {
+            method: 'POST',
+            body: params,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        }).then(response => {
+            if (response.ok) {
+                console.log('✓ Participante agregado a Challonge:', gameUsername);
+            }
+        }).catch(error => {
+            console.log('📌 Nota: Sincronización con Challonge en progreso...');
+        });
+        
+    } catch (error) {
+        console.log('⚠ Error preparando sincronización Challonge:', error.message);
+    }
+}
+
+// Remover participante de Challonge
+async function removeParticipantFromChallonge(torneoId, gameUsername) {
+    try {
+        // Obtener datos del torneo
+        const torneoDocRef = doc(db, "torneos", torneoId);
+        const torneoDoc = await getDoc(torneoDocRef);
+        
+        if (!torneoDoc.exists()) {
+            console.log("❌ Torneo no encontrado en Firestore");
+            return;
+        }
+        
+        const torneoData = torneoDoc.data();
+        
+        // Verificar que esté vinculado con Challonge
+        if (!torneoData.challonge || !torneoData.challonge.slug || !torneoData.challonge.apiKey) {
+            console.log("❌ Torneo no vinculado con Challonge");
+            return;
+        }
+        
+        const { slug, apiKey } = torneoData.challonge;
+        
+        console.log(`📤 Intentando remover de Challonge:`, { slug, gameUsername });
+        
+        // Paso 1: Obtener lista de participantes
+        const participantsUrl = `https://api.challonge.com/v1/tournaments/${slug}/participants.json?api_key=${apiKey}`;
+        
+        console.log(`🔍 Obteniendo participantes de: ${slug}`);
+        
+        // Usar proxy local para CORS
+        const proxyUrl = `http://localhost:3000?url=${encodeURIComponent(participantsUrl)}`;
+        
+        try {
+            const participantsResponse = await fetch(proxyUrl);
+            
+            if (!participantsResponse.ok) {
+                console.log(`❌ Error obteniendo participantes: ${participantsResponse.status}`);
+                return;
+            }
+            
+            const participants = await participantsResponse.json();
+            console.log(`📋 Total de participantes encontrados: ${participants.length}`);
+            console.log(`📋 Buscando participante con nombre: "${gameUsername}"`);
+            
+            // Buscar el participante por nombre (case-insensitive)
+            const participant = participants.find(p => {
+                const pName = p.participant.name.toLowerCase();
+                const searchName = gameUsername.toLowerCase();
+                console.log(`  - Comparando: "${pName}" === "${searchName}"? ${pName === searchName}`);
+                return pName === searchName;
+            });
+            
+            if (!participant) {
+                console.log(`⚠️ Participante "${gameUsername}" no encontrado en Challonge`);
+                console.log(`Participantes disponibles:`, participants.map(p => p.participant.name));
+                return;
+            }
+            
+            console.log(`✓ Participante encontrado:`, participant.participant);
+            
+            // Paso 2: Remover participante
+            const participantId = participant.participant.id;
+            const deleteUrl = `https://api.challonge.com/v1/tournaments/${slug}/participants/${participantId}.json?api_key=${apiKey}`;
+            
+            console.log(`🗑️ Removiendo participante ID: ${participantId}`);
+            
+            const proxyDeleteUrl = `http://localhost:3000?url=${encodeURIComponent(deleteUrl)}`;
+            
+            const deleteResponse = await fetch(proxyDeleteUrl, { method: 'DELETE' });
+            
+            if (deleteResponse.ok) {
+                console.log('✓ Participante removido exitosamente de Challonge:', gameUsername);
+            } else {
+                console.log(`❌ Error al remover: ${deleteResponse.status} ${deleteResponse.statusText}`);
+                const responseText = await deleteResponse.text();
+                console.log(`Respuesta: ${responseText}`);
+            }
+        } catch (proxyError) {
+            console.log('⚠️ Error de conexión con proxy local. ¿Está corriendo "node cors-proxy.js"?');
+            console.log('Detalle:', proxyError.message);
+        }
+        
+    } catch (error) {
+        console.log('❌ Error en removeParticipantFromChallonge:', error.message);
     }
 }
 
@@ -1033,16 +1306,20 @@ async function loadTournaments() {
                                         </button>`
                         )
                         : estado === "Check In"
-                            ? (currentUser && isInscrito && !torneo.asistenciaConfirmada
-                                ? `<button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition"
-                                            data-torneo-id="${torneo.id}">
+                            ? (currentUser && isInscrito
+                                ? `<div class="flex flex-col gap-2">
+                                <button class="check-in-btn bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition ${torneo.asistenciaConfirmada ? 'hidden' : ''}"
+                                            data-torneo-id="${torneo.id}"
+                                            style="display: ${torneo.asistenciaConfirmada ? 'none' : 'block'}">
                                             <i class="fas fa-check-circle mr-2"></i>Hacer Check-in
-                                            </button>`
-                                : currentUser && isInscrito && torneo.asistenciaConfirmada
-                                    ? `<button class="bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
-                                                <i class="fas fa-check-double mr-2"></i>Check-in Confirmado
-                                            </button>`
-                                    : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
+                                            </button>
+                                <button class="cancel-checkin-btn bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition ${!torneo.asistenciaConfirmada ? 'hidden' : ''}"
+                                            data-torneo-id="${torneo.id}"
+                                            style="display: ${torneo.asistenciaConfirmada ? 'block' : 'none'}">
+                                            <i class="fas fa-times-circle mr-2"></i>Cancelar Check-in
+                                            </button>
+                            </div>`
+                                : `<button class="login-required-btn bg-gray-400 text-white py-2 px-4 rounded-lg font-semibold cursor-not-allowed">
                                                 Check-in disponible solo para inscritos
                                             </button>`
                             )
@@ -1311,6 +1588,15 @@ function setupTournamentButtons() {
         btn.addEventListener('click', (e) => {
             const torneoId = e.currentTarget.dataset.torneoId;
             confirmAttendance(torneoId);
+        });
+    });
+
+    document.querySelectorAll('.cancel-checkin-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const torneoId = e.currentTarget.dataset.torneoId;
+            if (confirm('¿Estás seguro de que deseas cancelar tu check-in? Tendrás que hacer check-in de nuevo para confirmar tu asistencia.')) {
+                cancelAttendance(torneoId);
+            }
         });
     });
 

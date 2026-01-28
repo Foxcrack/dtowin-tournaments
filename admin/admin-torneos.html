@@ -285,6 +285,54 @@
                             </div>
                             
                             <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">
+                                    <i class="fas fa-link mr-2 text-purple-500"></i>Vinculación con Challonge
+                                </label>
+                                <div class="border rounded-lg p-4 bg-white">
+                                    <p class="text-sm text-gray-600 mb-4">Vincula este torneo con Challonge para auto-registrar participantes.</p>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-gray-700 text-sm font-bold mb-2" for="challongeUrl">
+                                                URL del Torneo en Challonge
+                                            </label>
+                                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                                id="challongeUrl" 
+                                                type="url" 
+                                                placeholder="https://challonge.com/es/a5xuji6s"
+                                                pattern="https?://(www\.)?challonge\.com/.*">
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Copia la URL completa de tu torneo en Challonge
+                                            </p>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-gray-700 text-sm font-bold mb-2" for="challongeUsername">
+                                                Username en Challonge
+                                            </label>
+                                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                                id="challongeUsername" 
+                                                type="text" 
+                                                placeholder="tu_usuario_challonge">
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Tu nombre de usuario en Challonge (aparecerá como organizador)
+                                            </p>
+                                        </div>
+                                        
+                                        <div id="challongeStatus" class="p-3 rounded bg-gray-50 border text-sm text-gray-600">
+                                            <span id="challongeStatusText">Sin vincular</span>
+                                        </div>
+                                        
+                                        <button type="button" id="linkChallongeBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-semibold transition">
+                                            <i class="fas fa-link mr-2"></i>Vincular con Challonge
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="md:col-span-2">
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="bracketsLink">
                                     <i class="fas fa-sitemap mr-2 text-green-500"></i>Link de Brackets
                                 </label>

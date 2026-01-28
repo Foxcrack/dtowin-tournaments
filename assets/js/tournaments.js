@@ -54,6 +54,7 @@ function convertLocalToUTC(dateStr, timeStr, timeZone = null) {
 // Variables para elementos DOM (se inicializarán cuando el DOM esté listo)
 let torneosTable, createTournamentForm, tournamentFormSection, headerCreateTournamentBtn;
 let cancelButton, submitButton, formTitle;
+let challongeUrl, challongeUsername, linkChallongeBtn, challongeStatus;
 
 // Modal de selección de badges
 const badgeSelectModal = document.getElementById('badgeSelectModal');
@@ -80,6 +81,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     cancelButton = document.getElementById('cancelButton');
     submitButton = document.getElementById('submitButton');
     formTitle = document.getElementById('formTitle');
+    challongeUrl = document.getElementById('challongeUrl');
+    challongeUsername = document.getElementById('challongeUsername');
+    linkChallongeBtn = document.getElementById('linkChallongeBtn');
+    challongeStatus = document.getElementById('challongeStatus');
     
     console.log("Elementos encontrados:", {
         torneosTable: !!torneosTable,
@@ -88,7 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerCreateTournamentBtn: !!headerCreateTournamentBtn,
         cancelButton: !!cancelButton,
         submitButton: !!submitButton,
-        formTitle: !!formTitle
+        formTitle: !!formTitle,
+        linkChallongeBtn: !!linkChallongeBtn
     });
     
     // Verificar que Firebase esté disponible
@@ -217,6 +223,11 @@ function setupEventListeners() {
     // Formulario de creación/edición
     if (createTournamentForm) {
         createTournamentForm.addEventListener('submit', handleTournamentFormSubmit);
+    }
+    
+    // Botón de vinculación con Challonge
+    if (linkChallongeBtn) {
+        linkChallongeBtn.addEventListener('click', handleLinkChallonge);
     }
     
     // Modal de badges
@@ -695,6 +706,39 @@ function showTournamentForm(isEditing, tournamentData = null) {
     tournamentFormSection.scrollIntoView({ behavior: 'smooth' });
 }
 
+// Actualizar el estado de Challonge en la UI
+function updateChallongeStatus(isLinked, challongeData = null) {
+    const statusDiv = document.getElementById('challongeStatus');
+    if (!statusDiv) return;
+    
+    if (isLinked && challongeData) {
+        statusDiv.className = 'p-3 rounded bg-green-50 border border-green-200 text-sm text-green-700';
+        statusDiv.innerHTML = `
+            <i class="fas fa-check-circle mr-2"></i>
+            <strong>Vinculado:</strong> ${challongeData.slug || 'Sin slug'}
+            <br>
+            <small>Username: ${challongeData.username || 'N/A'}</small>
+        `;
+        // Actualizar estado del botón
+        if (linkChallongeBtn) {
+            linkChallongeBtn.disabled = true;
+            linkChallongeBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>✓ Vinculado';
+            linkChallongeBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+            linkChallongeBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+        }
+    } else {
+        statusDiv.className = 'p-3 rounded bg-gray-50 border border-gray-200 text-sm text-gray-600';
+        statusDiv.innerHTML = '<i class="fas fa-unlink mr-2"></i>Sin vincular';
+        // Restablecer estado del botón
+        if (linkChallongeBtn) {
+            linkChallongeBtn.disabled = false;
+            linkChallongeBtn.innerHTML = '<i class="fas fa-link mr-2"></i>Vincular con Challonge';
+            linkChallongeBtn.classList.remove('bg-green-600', 'cursor-not-allowed');
+            linkChallongeBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+        }
+    }
+}
+
 // Llenar formulario con datos de un torneo
 function fillFormWithTournamentData(tournamentData) {
     console.log("Llenando formulario con datos:", tournamentData);
@@ -704,51 +748,43 @@ function fillFormWithTournamentData(tournamentData) {
     document.getElementById('descripcionTorneo').value = tournamentData.descripcion || '';
     
     // Manejar fecha y hora
-    if (tournamentData.fecha) {
-        // Formato: fecha (Timestamp) y hora (string) separadas
-        console.log("Cargando fecha y hora separadas - fecha:", tournamentData.fecha, "hora:", tournamentData.hora);
-        
-        let fechaLocal;
-        if (tournamentData.fecha.toDate) {
-            // Es un Timestamp de Firebase
-            fechaLocal = tournamentData.fecha.toDate();
-        } else if (tournamentData.fecha.seconds) {
-            // Es un objeto con segundos (Timestamp serializado)
-            fechaLocal = new Date(tournamentData.fecha.seconds * 1000);
-        } else {
-            // Es una fecha normal
-            fechaLocal = new Date(tournamentData.fecha);
-        }
-        
-        // Formatear para los inputs de fecha
-        const year = fechaLocal.getFullYear();
-        const month = String(fechaLocal.getMonth() + 1).padStart(2, '0');
-        const day = String(fechaLocal.getDate()).padStart(2, '0');
-        
-        document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
-        document.getElementById('horaTorneo').value = tournamentData.hora || '';
-        
-        console.log("Fecha y hora cargadas:", `${year}-${month}-${day} ${tournamentData.hora}`);
-        
-    } else if (tournamentData.fechaHora) {
-        // Formato antiguo (compatibilidad hacia atrás)
-        console.log("Usando fechaHora antigua:", tournamentData.fechaHora);
+    if (tournamentData.fechaHora) {
+        // Nuevo formato: fechaHora en UTC, convertir a zona local del admin
+        console.log("Usando fechaHora:", tournamentData.fechaHora);
         
         let fechaLocal;
         if (tournamentData.fechaHora.toDate) {
+            // Es un Timestamp de Firebase
             fechaLocal = tournamentData.fechaHora.toDate();
         } else {
+            // Es una fecha normal
             fechaLocal = new Date(tournamentData.fechaHora);
         }
         
-        const year = fechaLocal.getFullYear();
-        const month = String(fechaLocal.getMonth() + 1).padStart(2, '0');
-        const day = String(fechaLocal.getDate()).padStart(2, '0');
-        const hours = String(fechaLocal.getHours()).padStart(2, '0');
-        const minutes = String(fechaLocal.getMinutes()).padStart(2, '0');
+        // Convertir a zona horaria local del admin
+        const adminTimeZone = getUserTimeZone();
+        const fechaEnZonaAdmin = new Date(fechaLocal.toLocaleString("en-US", { timeZone: adminTimeZone }));
+        
+        // Formatear para los inputs
+        const year = fechaEnZonaAdmin.getFullYear();
+        const month = String(fechaEnZonaAdmin.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaEnZonaAdmin.getDate()).padStart(2, '0');
+        const hours = String(fechaEnZonaAdmin.getHours()).padStart(2, '0');
+        const minutes = String(fechaEnZonaAdmin.getMinutes()).padStart(2, '0');
         
         document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
         document.getElementById('horaTorneo').value = `${hours}:${minutes}`;
+        
+        console.log("Fecha local para el admin:", `${year}-${month}-${day} ${hours}:${minutes}`);
+        
+    } else if (tournamentData.fecha) {
+        // Formato anterior: fecha y hora separadas (compatibilidad hacia atrás)
+        console.log("Usando formato anterior - fecha:", tournamentData.fecha, "hora:", tournamentData.hora);
+        
+        const date = new Date(tournamentData.fecha.seconds * 1000);
+        const formattedDate = date.toISOString().split('T')[0];
+        document.getElementById('fechaTorneo').value = formattedDate;
+        document.getElementById('horaTorneo').value = tournamentData.hora || '';
     }
     
     // Capacidad
@@ -759,6 +795,17 @@ function fillFormWithTournamentData(tournamentData) {
     
     // Brackets Link
     document.getElementById('bracketsLink').value = tournamentData.bracketsLink || '';
+    
+    // Datos de Challonge
+    if (tournamentData.challonge) {
+        document.getElementById('challongeUrl').value = tournamentData.challonge.url || '';
+        document.getElementById('challongeUsername').value = tournamentData.challonge.username || '';
+        updateChallongeStatus(true, tournamentData.challonge);
+    } else {
+        document.getElementById('challongeUrl').value = '';
+        document.getElementById('challongeUsername').value = '';
+        updateChallongeStatus(false);
+    }
     
     // Puntos por posición
     if (tournamentData.puntosPosicion) {
@@ -865,6 +912,71 @@ function hideTournamentForm() {
     });
 }
 
+// Manejar vinculación con Challonge (sin formulario)
+async function handleLinkChallonge(e) {
+    e.preventDefault();
+    
+    if (!currentTournamentId) {
+        alert('Por favor, primero guarda el torneo antes de vincular con Challonge');
+        return;
+    }
+    
+    const url = challongeUrl?.value?.trim();
+    const username = challongeUsername?.value?.trim();
+    
+    if (!url || !username) {
+        alert('Por favor completa la URL y nombre de usuario de Challonge');
+        return;
+    }
+    
+    // Validar formato de URL
+    const urlMatch = url.match(/challonge\.com\/(?:es\/)?([a-zA-Z0-9_-]+)/);
+    if (!urlMatch) {
+        alert('URL de Challonge inválida. Debe ser similar a: https://challonge.com/es/a5xuji6s');
+        return;
+    }
+    
+    const slug = urlMatch[1];
+    
+    try {
+        // Cambiar estado del botón
+        linkChallongeBtn.disabled = true;
+        linkChallongeBtn.innerHTML = '<div class="spinner inline-block w-4 h-4 border-t-2 border-b-2 border-white rounded-full mr-2"></div> Vinculando...';
+        
+        // Guardar datos en Firestore
+        const torneoRef = db.collection('torneos').doc(currentTournamentId);
+        
+        await torneoRef.update({
+            'challonge.url': url,
+            'challonge.slug': slug,
+            'challonge.username': username,
+            'challonge.apiKey': 'c6782be4d1c6b70d5eaeef76180a8f724ea743674e805da2',
+            'challonge.linkedAt': firebase.firestore.FieldValue.serverTimestamp(),
+            'challonge.status': 'pending_validation',
+            'linkedToChallonge': true
+        });
+        
+        // Actualizar interfaz
+        if (challongeStatus) {
+            challongeStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i><strong>Vinculado:</strong> ' + slug;
+            challongeStatus.className = 'p-3 rounded bg-green-50 border border-green-200 text-sm text-green-700';
+        }
+        
+        linkChallongeBtn.disabled = true;
+        linkChallongeBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>✓ Vinculado';
+        linkChallongeBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+        linkChallongeBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+        
+        console.log('✓ Torneo vinculado exitosamente con Challonge:', slug);
+        
+    } catch (error) {
+        console.error('Error al vincular con Challonge:', error);
+        alert('Error al vincular con Challonge: ' + error.message);
+        linkChallongeBtn.disabled = false;
+        linkChallongeBtn.innerHTML = '<i class="fas fa-link mr-2"></i>Vincular con Challonge';
+    }
+}
+
 // Manejar envío del formulario de torneo
 async function handleTournamentFormSubmit(e) {
     e.preventDefault();
@@ -880,27 +992,18 @@ async function handleTournamentFormSubmit(e) {
         const fechaInput = document.getElementById('fechaTorneo').value;
         const horaInput = document.getElementById('horaTorneo').value;
         
-        // Crear fecha local sin conversión a UTC
-        let fechaTimestamp;
-        if (fechaInput) {
-            // Crear la fecha como medianoche en zona local
-            const [año, mes, dia] = fechaInput.split('-');
-            const fechaDate = new Date(año, mes - 1, dia);
-            
-            // Ajustar por timezone offset para que Firestore guarde la fecha correcta
-            const offset = fechaDate.getTimezoneOffset() * 60000;
-            const fechaAjustada = new Date(fechaDate.getTime() - offset);
-            
-            fechaTimestamp = firebase.firestore.Timestamp.fromDate(fechaAjustada);
+        // Convertir fecha y hora local a UTC
+        let fechaHoraUTC;
+        if (fechaInput && horaInput) {
+            fechaHoraUTC = convertLocalToUTC(fechaInput, horaInput);
         } else {
-            fechaTimestamp = firebase.firestore.Timestamp.now();
+            fechaHoraUTC = new Date(); // Fecha actual si no se especifica
         }
         
         const tournamentData = {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
-            fecha: fechaTimestamp,
-            hora: horaInput, // Guardar solo la hora como string HH:MM
+            fechaHora: fechaHoraUTC, // Guardamos fecha y hora juntas en UTC
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,
             puntosPosicion: {
@@ -914,6 +1017,35 @@ async function handleTournamentFormSubmit(e) {
             // Guardamos la zona horaria del creador para referencia
             timeZoneCreador: getUserTimeZone()
         };
+        
+        // Agregar datos de Challonge si están especificados
+        const challongeUrl = document.getElementById('challongeUrl').value.trim();
+        const challongeUsername = document.getElementById('challongeUsername').value.trim();
+        
+        if (challongeUrl && challongeUsername) {
+            // Validar y extraer slug del URL
+            const urlMatch = challongeUrl.match(/challonge\.com\/([^\/]+\/)?([\w-]+)/);
+            if (urlMatch) {
+                const slug = urlMatch[2]; // Captura el slug
+                tournamentData.challonge = {
+                    url: challongeUrl,
+                    slug: slug,
+                    username: challongeUsername,
+                    apiKey: 'c6782be4d1c6b70d5eaeef76180a8f724ea743674e805da2', // API Key
+                    linkedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'pending_validation'
+                };
+                tournamentData.linkedToChallonge = true;
+            } else {
+                throw new Error("URL de Challonge inválida. Verifica que sea una URL de Challonge válida");
+            }
+        } else {
+            // Si no hay datos de Challonge, asegurarse de limpiar la vinculación
+            if (isEditMode) {
+                tournamentData.linkedToChallonge = false;
+                tournamentData.challonge = null;
+            }
+        }
         
         // Validar campos obligatorios
         if (!tournamentData.nombre) {
