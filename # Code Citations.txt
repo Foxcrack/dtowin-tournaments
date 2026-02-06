@@ -1,0 +1,45 @@
+# Code Citations
+
+## License: unknown
+https://github.com/manya706/carebot-/blob/5d69789954b980fecdd3dd22d436cba0c28ef901/symptom.html
+
+```
+<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.
+```
+
+
+## License: unknown
+https://github.com/Mansha7/Grievance/blob/b5be1c31a5f9bea61f1af80c4a2649a000160d7a/User_signup.html
+
+```
+<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.
+```
+
+
+## License: unknown
+https://github.com/EdsonRgr/Gforca/blob/fee363cb29cdf9fd511d1d83f52bf1ddad66471e/crud.html
+
+```
+<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.
+```
+
+
+## License: unknown
+https://github.com/EdsonRgr/Gforca/blob/fee363cb29cdf9fd511d1d83f52bf1ddad66471e/login.html
+
+```
+<script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.
+```
+
