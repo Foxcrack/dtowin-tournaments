@@ -38,7 +38,7 @@ Haz clic en **"+ Add variable"** y agrega las siguientes tres variables:
 | Nombre | Valor |
 |--------|-------|
 | `DISCORD_CLIENT_ID` | `1493118118950604910` |
-| `DISCORD_CLIENT_SECRET` | `e-3vrbqMrjBQEroK13DkW0EoPBccMlD3` |
+| `DISCORD_CLIENT_SECRET` | `[YOUR_DISCORD_CLIENT_SECRET]` |
 | `DISCORD_REDIRECT_URI` | `https://foxcrack.github.io/dtowin-tournaments/discord-callback.html` |
 
 ### Paso 5: Guardar
@@ -57,7 +57,7 @@ Ya hemos creado `functions/.env` con tus credenciales. Verifica que contenga:
 
 ```bash
 DISCORD_CLIENT_ID=1493118118950604910
-DISCORD_CLIENT_SECRET=e-3vrbqMrjBQEroK13DkW0EoPBccMlD3
+DISCORD_CLIENT_SECRET=[YOUR_DISCORD_CLIENT_SECRET]
 DISCORD_REDIRECT_URI=https://foxcrack.github.io/dtowin-tournaments/discord-callback.html
 ```
 
@@ -95,7 +95,7 @@ Deberías ver algo como:
 {
   "discord": {
     "client_id": "1493118118950604910",
-    "client_secret": "e-3vrbqMrjBQEroK13DkW0EoPBccMlD3",
+    "client_secret": "[YOUR_DISCORD_CLIENT_SECRET]",
     "redirect_uri": "https://foxcrack.github.io/dtowin-tournaments/discord-callback.html"
   }
 }

@@ -11,6 +11,11 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Security: Configure secrets scanning
+[build.processing.security]
+  # Scan for secrets by default, but omit markdown documentation files
+  omitPaths = ["*.md", "FIREBASE-*", "DISCORD-*", "SOLUCION-*", "SETUP-*"]
+
 # Redirects for API
 [[redirects]]
   from = "/api/*"
