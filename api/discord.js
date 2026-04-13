@@ -1,32 +1,52 @@
-// Serverless function: /api/discord
+// Netlify Serverless Function: /api/discord
 // Intercambia código de Discord por información del usuario
 
-module.exports = async function handler(req, res) {
-  console.log(`[${new Date().toISOString()}] ${req.method} /api/discord`);
-
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method === 'GET') {
-    return res.status(200).json({ status: 'API Discord ready' });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+exports.handler = async (event, context) => {
   try {
-    const { code } = req.body;
+    // Parse body
+    let body = {};
+    if (event.body) {
+      body = JSON.parse(event.body);
+    }
+
+    const { code } = body;
+
+    // CORS
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Content-Type': 'application/json'
+    };
+
+    // Si es OPTIONS (preflight)
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 200, headers };
+    }
+
+    // Si es GET (test)
+    if (event.httpMethod === 'GET') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ status: 'API Discord ready' })
+      };
+    }
+
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        headers,
+        body: JSON.stringify({ error: 'Method not allowed' })
+      };
+    }
 
     if (!code) {
-      return res.status(400).json({ error: 'Code required' });
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Code required' })
+      };
     }
 
     const clientId = process.env.DISCORD_CLIENT_ID;
@@ -34,7 +54,11 @@ module.exports = async function handler(req, res) {
     const redirectUri = process.env.DISCORD_REDIRECT_URI;
 
     if (!clientId || !clientSecret || !redirectUri) {
-      return res.status(500).json({ error: 'Server config incomplete' });
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Server config incomplete' })
+      };
     }
 
     const params = new URLSearchParams({
@@ -52,7 +76,11 @@ module.exports = async function handler(req, res) {
     });
 
     if (!tokenResp.ok) {
-      return res.status(400).json({ error: 'Token exchange failed' });
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Token exchange failed' })
+      };
     }
 
     const tokenData = await tokenResp.json();
@@ -61,20 +89,32 @@ module.exports = async function handler(req, res) {
     });
 
     if (!userResp.ok) {
-      return res.status(400).json({ error: 'User fetch failed' });
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'User fetch failed' })
+      };
     }
 
     const user = await userResp.json();
-    return res.status(200).json({
-      success: true,
-      id: user.id,
-      username: user.username,
-      avatar: user.avatar,
-      discriminator: user.discriminator
-    });
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar,
+        discriminator: user.discriminator
+      })
+    };
 
   } catch (error) {
-    console.error('Error:', error.message);
-    return res.status(500).json({ error: error.message });
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: error.message })
+    };
   }
 };
