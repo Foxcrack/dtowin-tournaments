@@ -2,11 +2,6 @@
   "version": 2,
   "buildCommand": "echo 'Static build'",
   "outputDirectory": ".",
-  "functions": {
-    "api/**": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "env": {
     "DISCORD_CLIENT_ID": "@discord_client_id",
     "DISCORD_CLIENT_SECRET": "@discord_client_secret",
