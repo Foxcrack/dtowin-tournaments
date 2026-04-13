@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "api/(.*)",
+      "dest": "api/$1"
+    }
+  ],
+  "env": {
+    "DISCORD_CLIENT_ID": "@discord_client_id",
+    "DISCORD_CLIENT_SECRET": "@discord_client_secret",
+    "DISCORD_REDIRECT_URI": "@discord_redirect_uri",
+    "FIREBASE_PROJECT_ID": "@firebase_project_id",
+    "FIREBASE_CLIENT_EMAIL": "@firebase_client_email",
+    "FIREBASE_PRIVATE_KEY": "@firebase_private_key"
+  }
+}
