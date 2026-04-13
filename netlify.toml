@@ -1,0 +1,18 @@
+[build]
+  # No build command needed - serve static files as-is
+  command = ""
+  publish = "."
+
+# Configure Netlify Functions
+[functions]
+  directory = "api"
+
+# Environment variables
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirects for API
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
