@@ -2,7 +2,6 @@
   "name": "dtowin-tournaments-api",
   "version": "1.0.0",
   "description": "Discord OAuth Cloud Function for Dtowin Tournaments",
-  "type": "module",
   "engines": {
     "node": "18.x"
   },

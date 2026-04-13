@@ -1,7 +1,7 @@
 // api/exchangeDiscordCode.js - Cloud Function para Vercel
 // Maneja el intercambio de código de Discord por token y info de usuario
 
-import admin from 'firebase-admin';
+const admin = require('firebase-admin');
 
 // Inicializar Firebase Admin si no está ya inicializado
 if (!admin.apps.length) {
@@ -14,7 +14,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Habilitar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -115,4 +115,4 @@ export default async function handler(req, res) {
       error: 'Error interno del servidor: ' + error.message
     });
   }
-}
+};
