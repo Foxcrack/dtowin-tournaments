@@ -1,5 +1,12 @@
 {
+  "name": "dtowin-tournaments-api",
+  "version": "1.0.0",
+  "description": "Discord OAuth Cloud Function for Dtowin Tournaments",
+  "type": "module",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
-    "node-fetch": "^2.7.0"
+    "firebase-admin": "^12.0.0"
   }
 }

@@ -2,7 +2,6 @@
 // Maneja el intercambio de código de Discord por token y info de usuario
 
 import admin from 'firebase-admin';
-import fetch from 'node-fetch';
 
 // Inicializar Firebase Admin si no está ya inicializado
 if (!admin.apps.length) {
@@ -100,9 +99,6 @@ export default async function handler(req, res) {
 
     console.log(`Usuario de Discord verificado: ${discordUser.username}`);
 
-    // Paso 3: Guardar info en Firestore (opcional, el cliente también lo hace)
-    // Esto garantiza que los datos estén en Firestore aunque falle el lado del cliente
-
     return res.status(200).json({
       success: true,
       id: discordUser.id,
@@ -116,7 +112,7 @@ export default async function handler(req, res) {
     console.error('Error en exchangeDiscordCode:', error);
     return res.status(500).json({
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor: ' + error.message
     });
   }
 }
