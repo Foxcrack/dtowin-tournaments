@@ -789,9 +789,15 @@ function fillFormWithTournamentData(tournamentData) {
     
     // Capacidad
     document.getElementById('capacidadTorneo').value = tournamentData.capacidad || '';
+
+    // Juego/categoria
+    document.getElementById('juegoTorneo').value = tournamentData.juego || 'tetrio';
     
     // Estado
     document.getElementById('estadoTorneo').value = tournamentData.estado || 'Próximamente';
+
+    // Rank cap para TETR.IO
+    document.getElementById('rankCapTorneo').value = tournamentData.rankCap || '';
     
     // Brackets Link
     document.getElementById('bracketsLink').value = tournamentData.bracketsLink || '';
@@ -1003,6 +1009,8 @@ async function handleTournamentFormSubmit(e) {
         const tournamentData = {
             nombre: document.getElementById('nombreTorneo').value.trim(),
             descripcion: document.getElementById('descripcionTorneo').value.trim(),
+            juego: document.getElementById('juegoTorneo').value || 'tetrio',
+            rankCap: document.getElementById('rankCapTorneo').value || null,
             fechaHora: fechaHoraUTC, // Guardamos fecha y hora juntas en UTC
             capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
             estado: document.getElementById('estadoTorneo').value,

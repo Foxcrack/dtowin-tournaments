@@ -1,6 +1,6 @@
 // index-torneos.js - Versión refactorizada con subcolecciones
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 // Funciones de utilidad para zonas horarias (inline para evitar problemas de imports)
@@ -143,6 +143,194 @@ const provider = new GoogleAuthProvider();
 let currentUser = null;
 let torneosListener = null; // Para almacenar el listener activo
 let inscripcionesListeners = new Map(); // Para almacenar listeners de inscripciones por torneo
+
+const TETRIO_RANK_ORDER = ['z', 'd', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x'];
+const TETRIO_RANK_ICON_MAP = {
+    'z': 'z',
+    'd': 'd',
+    'd+': 'dp',
+    'c-': 'cm',
+    'c': 'c',
+    'c+': 'cp',
+    'b-': 'bm',
+    'b': 'b',
+    'b+': 'bp',
+    'a-': 'am',
+    'a': 'a',
+    'a+': 'ap',
+    's-': 'sm',
+    's': 's',
+    's+': 'sp',
+    'ss': 'ss',
+    'u': 'u',
+    'x': 'x'
+};
+const TETRIO_LOOKUP_ENDPOINTS = [
+    '/.netlify/functions/tetrio',
+    '/api/tetrio',
+    'https://dtowin-tournaments.netlify.app/.netlify/functions/tetrio'
+];
+
+function normalizeTetrioRank(rank) {
+    return String(rank || 'z').trim().toLowerCase();
+}
+
+function getTetrioRankIconUrl(rank) {
+    const normalizedRank = normalizeTetrioRank(rank);
+    const iconCode = TETRIO_RANK_ICON_MAP[normalizedRank] || 'z';
+    return `https://tetrio.team2xh.net/images/ranks/${iconCode}.png`;
+}
+
+function formatTetrioRank(rank) {
+    const normalizedRank = normalizeTetrioRank(rank);
+    return normalizedRank === 'z' ? 'Z' : normalizedRank.toUpperCase();
+}
+
+function compareTetrioRanks(userRank, rankCap) {
+    const userIndex = TETRIO_RANK_ORDER.indexOf(normalizeTetrioRank(userRank));
+    const capIndex = TETRIO_RANK_ORDER.indexOf(normalizeTetrioRank(rankCap));
+
+    if (userIndex === -1 || capIndex === -1) {
+        return 0;
+    }
+
+    return userIndex - capIndex;
+}
+
+function formatTetrioTr(tr) {
+    return typeof tr === 'number' && tr >= 0 ? tr.toFixed(2) : 'Sin TR';
+}
+
+function getTournamentGameLabel(gameId) {
+    if (gameId === 'tetrio') {
+        return 'Usuario de TETR.IO *';
+    }
+
+    return 'Nombre de Juego *';
+}
+
+async function getCurrentUserProfileData() {
+    if (!currentUser) {
+        return null;
+    }
+
+    const usersRef = collection(db, "usuarios");
+    const userQuery = query(usersRef, where("uid", "==", currentUser.uid), limit(1));
+    const userSnapshot = await getDocs(userQuery);
+
+    if (userSnapshot.empty) {
+        return null;
+    }
+
+    return {
+        id: userSnapshot.docs[0].id,
+        ref: userSnapshot.docs[0].ref,
+        data: userSnapshot.docs[0].data()
+    };
+}
+
+async function lookupTetrioAccountForRegistration(username) {
+    let lastError = null;
+
+    for (const endpoint of TETRIO_LOOKUP_ENDPOINTS) {
+        try {
+            const response = await fetch(`${endpoint}?username=${encodeURIComponent(username)}`);
+
+            if (response.status === 404) {
+                lastError = new Error('La función de TETR.IO no está desplegada todavía.');
+                continue;
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success || !data.account) {
+                throw new Error(data.error || 'No se pudo validar la cuenta de TETR.IO');
+            }
+
+            return data.account;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw lastError || new Error('No se pudo validar la cuenta de TETR.IO');
+}
+
+async function configureInscriptionModalForTournament(torneoId) {
+    const gameInput = document.getElementById('gameUsername');
+    const discordInput = document.getElementById('discordUsername');
+    const gameLabel = document.getElementById('gameUsernameLabel');
+    const gameHelp = document.getElementById('gameUsernameHelp');
+    const form = document.getElementById('inscriptionForm');
+
+    if (!gameInput || !discordInput || !gameLabel || !gameHelp || !form) {
+        return;
+    }
+
+    gameInput.value = '';
+    discordInput.value = '';
+    form.dataset.gameCategory = 'general';
+
+    try {
+        const torneoRef = doc(db, "torneos", torneoId);
+        const torneoSnap = await getDoc(torneoRef);
+        const torneoData = torneoSnap.exists() ? torneoSnap.data() : {};
+        const gameCategory = torneoData.juego || 'general';
+        form.dataset.gameCategory = gameCategory;
+        form.dataset.rankCap = torneoData.rankCap || '';
+
+        gameLabel.textContent = getTournamentGameLabel(gameCategory);
+        gameInput.placeholder = gameCategory === 'tetrio' ? 'Tu usuario de TETR.IO' : 'Tu nombre en el juego';
+        gameHelp.textContent = gameCategory === 'tetrio'
+            ? `Si ya vinculaste TETR.IO en tu perfil, se autocompletará. Si no, escribe tu usuario y lo guardaremos en tu cuenta.${torneoData.rankCap ? ` Rank cap: ${formatTetrioRank(torneoData.rankCap)}.` : ''}`
+            : 'Este será tu nombre visible en el torneo';
+
+        if (!currentUser) {
+            return;
+        }
+
+        const profile = await getCurrentUserProfileData();
+        const userData = profile?.data;
+
+        if (userData?.discord?.username) {
+            discordInput.value = userData.discord.username;
+        }
+
+        if (gameCategory === 'tetrio' && userData?.gameAccounts?.tetrio?.username) {
+            gameInput.value = userData.gameAccounts.tetrio.username;
+        }
+    } catch (error) {
+        console.error('Error configurando modal de inscripcion:', error);
+    }
+}
+
+async function persistTournamentGameAccount(gameCategory, gameUsername, accountData = null) {
+    if (!currentUser || !gameUsername || gameCategory !== 'tetrio') {
+        return;
+    }
+
+    const profile = await getCurrentUserProfileData();
+    if (!profile) {
+        return;
+    }
+
+    const existingAccount = profile.data?.gameAccounts?.tetrio || {};
+    const nextAccount = {
+        gameId: 'tetrio',
+        username: gameUsername,
+        rank: accountData?.rank ?? existingAccount.rank ?? null,
+        tr: typeof accountData?.tr === 'number' ? accountData.tr : (existingAccount.tr ?? null),
+        userId: accountData?.userId ?? existingAccount.userId ?? null,
+        avatarUrl: accountData?.avatarUrl ?? existingAccount.avatarUrl ?? null,
+        linkedFrom: existingAccount.linkedFrom || 'tournament_registration',
+        updatedAt: serverTimestamp()
+    };
+
+    await updateDoc(profile.ref, {
+        'gameAccounts.tetrio': nextAccount,
+        updatedAt: serverTimestamp()
+    });
+}
 
 // === FUNCIONES DE TIEMPO REAL ===
 
@@ -346,38 +534,9 @@ async function updateInscritosModal(torneoId, snapshot) {
     if (confirmadosElement) confirmadosElement.textContent = confirmados.length;
     if (pendientesElement) pendientesElement.textContent = noConfirmados.length;
 
-    // Actualizar listas
-    const confirmadosList = document.getElementById('confirmados-list');
-    const noConfirmadosList = document.getElementById('no-confirmados-list');
-
-    if (confirmadosList) {
-        confirmadosList.innerHTML = confirmados.length > 0 ? 
-            confirmados.map(inscrito => `
-                <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                    <i class="fas fa-check-circle text-green-500"></i>
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-800">${inscrito.gameUsername || inscrito.displayName || 'Usuario'}</p>
-                        <p class="text-sm text-gray-600">${inscrito.discordUsername || 'Discord no disponible'}</p>
-                    </div>
-                    <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Confirmado</span>
-                </div>
-            `).join('') : 
-            '<div class="text-center text-gray-500 p-4">No hay participantes confirmados</div>';
-    }
-
-    if (noConfirmadosList) {
-        noConfirmadosList.innerHTML = noConfirmados.length > 0 ? 
-            noConfirmados.map(inscrito => `
-                <div class="flex items-center gap-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
-                    <i class="fas fa-clock text-yellow-500"></i>
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-800">${inscrito.gameUsername || inscrito.displayName || 'Usuario'}</p>
-                        <p class="text-sm text-gray-600">${inscrito.discordUsername || 'Discord no disponible'}</p>
-                    </div>
-                    <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Pendiente</span>
-                </div>
-            `).join('') : 
-            '<div class="text-center text-gray-500 p-4">Todos los participantes han confirmado</div>';
+    const modal = document.getElementById('inscritosModal');
+    if (modal) {
+        populateInscritosModalTabs(modal, inscritos, confirmados, noConfirmados);
     }
 }
 
@@ -918,8 +1077,10 @@ async function handleInscription(e) {
 
     const form = e.target;
     const torneoId = form.dataset.torneoId;
+    const gameCategory = form.dataset.gameCategory || 'general';
+    const rankCap = form.dataset.rankCap || '';
     const gameUsername = document.getElementById('gameUsername').value.trim();
-    const discordUsername = document.getElementById('discordUsername').value.trim();
+    const discordInputValue = document.getElementById('discordUsername').value.trim();
 
     // Validaciones
     if (!gameUsername) {
@@ -927,14 +1088,50 @@ async function handleInscription(e) {
         return;
     }
 
-    if (!discordUsername) {
+    const profile = await getCurrentUserProfileData();
+    const resolvedDiscordUsername = discordInputValue || profile?.data?.discord?.username || '';
+
+    let tetrioAccount = null;
+    if (gameCategory === 'tetrio') {
+        const linkedTetrioAccount = profile?.data?.gameAccounts?.tetrio || null;
+
+        if (linkedTetrioAccount?.username && linkedTetrioAccount.username.toLowerCase() === gameUsername.toLowerCase()) {
+            tetrioAccount = linkedTetrioAccount;
+        } else {
+            try {
+                tetrioAccount = await lookupTetrioAccountForRegistration(gameUsername);
+            } catch (lookupError) {
+                if (rankCap) {
+                    showNotification(`No se pudo validar tu cuenta de TETR.IO para aplicar el rank cap: ${lookupError.message}`, 'error');
+                    return;
+                }
+                console.warn('No se pudo validar TETR.IO en este momento:', lookupError);
+            }
+        }
+    }
+
+    if (!resolvedDiscordUsername) {
         showNotification('El Discord es obligatorio', 'error');
         return;
     }
 
-    if (discordUsername.length < 2 || discordUsername.length > 50) {
+    if (resolvedDiscordUsername.length < 2 || resolvedDiscordUsername.length > 50) {
         showNotification('El nombre de Discord debe tener entre 2 y 50 caracteres', 'error');
         return;
+    }
+
+    if (gameCategory === 'tetrio' && rankCap) {
+        const detectedRank = tetrioAccount?.rank;
+
+        if (!detectedRank) {
+            showNotification('No se pudo verificar el rango de TETR.IO para este torneo.', 'error');
+            return;
+        }
+
+        if (compareTetrioRanks(detectedRank, rankCap) > 0) {
+            showNotification(`Tu rango de TETR.IO (${formatTetrioRank(detectedRank)}) supera el rank cap permitido (${formatTetrioRank(rankCap)}).`, 'error');
+            return;
+        }
     }
 
     try {
@@ -957,8 +1154,12 @@ async function handleInscription(e) {
             userEmail: currentUser.email,
             userName: currentUser.displayName || currentUser.email.split('@')[0],
             userPhoto: currentUser.photoURL || '',
+            juego: gameCategory,
             gameUsername: gameUsername,
-            discordUsername: discordUsername,
+            discordUsername: resolvedDiscordUsername,
+            gameRank: tetrioAccount?.rank || null,
+            gameRankIconUrl: tetrioAccount?.rank ? getTetrioRankIconUrl(tetrioAccount.rank) : null,
+            gameTr: typeof tetrioAccount?.tr === 'number' ? tetrioAccount.tr : null,
             torneoId: torneoId,
             fechaInscripcion: new Date(),
             estado: 'inscrito',
@@ -972,8 +1173,11 @@ async function handleInscription(e) {
         const inscripcionRef = doc(db, "torneos", torneoId, "inscripciones", currentUser.uid);
         await setDoc(inscripcionRef, inscripcionData);
 
+        await persistTournamentGameAccount(gameCategory, gameUsername, tetrioAccount);
+
         showNotification('¡Inscripción exitosa! Te has registrado en el torneo.', 'success');
         closeInscriptionModal();
+        await setupRealTimeTournaments();
         // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
@@ -1013,6 +1217,7 @@ async function handleUnsubscribe(torneoId, torneoNombre) {
         });
 
         showNotification('Te has desinscrito del torneo correctamente', 'success');
+        await setupRealTimeTournaments();
         // Los torneos se actualizarán automáticamente por el listener en tiempo real
 
     } catch (error) {
@@ -1528,6 +1733,7 @@ async function showInscritosModal(torneoId, torneoNombre) {
         `;
 
         document.body.appendChild(modal);
+        populateInscritosModalTabs(modal, inscritos, confirmados, noConfirmados);
 
         // Event listeners para las pestañas
         const tabBtns = modal.querySelectorAll('.tab-btn');
@@ -1559,7 +1765,7 @@ async function showInscritosModal(torneoId, torneoNombre) {
 }
 
 // Funciones auxiliares para modales
-function openInscriptionModal(torneoId, torneoNombre) {
+async function openInscriptionModal(torneoId, torneoNombre) {
     const modal = document.getElementById('inscriptionModal');
     if (!modal) {
         console.error('Modal de inscripción no encontrado');
@@ -1568,11 +1774,110 @@ function openInscriptionModal(torneoId, torneoNombre) {
 
     document.getElementById('modalTournamentName').textContent = torneoNombre;
     document.getElementById('inscriptionForm').dataset.torneoId = torneoId;
-
-    document.getElementById('gameUsername').value = '';
-    document.getElementById('discordUsername').value = '';
+    await configureInscriptionModalForTournament(torneoId);
 
     modal.classList.remove('hidden');
+}
+
+function renderTetrioBadge(inscrito) {
+    if (!inscrito.gameRank) {
+        return '';
+    }
+
+    return `
+        <div class="flex items-center gap-2 mt-1">
+            <img src="${inscrito.gameRankIconUrl || getTetrioRankIconUrl(inscrito.gameRank)}" alt="Rango ${formatTetrioRank(inscrito.gameRank)}" class="w-6 h-6 object-contain">
+            <span class="text-xs font-semibold text-gray-700">${formatTetrioRank(inscrito.gameRank)}</span>
+            <span class="text-xs text-blue-600">TR: ${formatTetrioTr(inscrito.gameTr)}</span>
+        </div>
+    `;
+}
+
+function renderInscritoRow(inscrito, index, variant = 'all') {
+    const variantClass = variant === 'confirmed'
+        ? 'bg-green-50 border-green-400'
+        : variant === 'pending'
+            ? 'bg-yellow-50 border-yellow-400'
+            : `${inscrito.asistenciaConfirmada ? 'bg-gray-50 border-green-400' : 'bg-gray-50 border-red-400'}`;
+    const statusBadge = variant === 'confirmed'
+        ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Confirmado</span>'
+        : variant === 'pending'
+            ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Pendiente</span>'
+            : `<span class="text-xs px-2 py-1 rounded ${inscrito.asistenciaConfirmada ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                    <i class="fas fa-${inscrito.asistenciaConfirmada ? 'check-circle' : 'clock'} mr-1"></i>
+                    ${inscrito.asistenciaConfirmada ? 'Confirmado' : 'Pendiente'}
+               </span>`;
+
+    return `
+        <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors border-l-4 ${variantClass}">
+            <div class="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full font-semibold text-sm">
+                ${index + 1}
+            </div>
+            <img src="${inscrito.userPhoto || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow">
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <p class="font-semibold text-gray-800">${inscrito.userName}</p>
+                    ${inscrito.userId === currentUser?.uid ? '<span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Tú</span>' : ''}
+                    ${statusBadge}
+                </div>
+                <p class="text-sm text-gray-600">
+                    <i class="fas fa-gamepad mr-1"></i>${inscrito.gameUsername || 'No especificado'}
+                </p>
+                ${inscrito.juego === 'tetrio' ? renderTetrioBadge(inscrito) : ''}
+                <p class="text-sm text-purple-600">
+                    <i class="fab fa-discord mr-1"></i>${inscrito.discordUsername || 'No especificado'}
+                </p>
+            </div>
+            <div class="text-right text-xs text-gray-500">
+                <div>Inscrito: ${new Date(inscrito.fechaInscripcion.seconds * 1000).toLocaleDateString()}</div>
+                ${inscrito.asistenciaConfirmada && inscrito.fechaConfirmacion ? `<div class="text-green-600">Confirmado: ${new Date(inscrito.fechaConfirmacion.seconds * 1000).toLocaleDateString()}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function populateInscritosModalTabs(root, inscritos, confirmados, noConfirmados) {
+    const todosTab = root.querySelector('#tab-todos');
+    const confirmadosTab = root.querySelector('#tab-confirmados');
+    const pendientesTab = root.querySelector('#tab-pendientes');
+
+    if (todosTab) {
+        todosTab.innerHTML = `
+            <div class="space-y-3">
+                ${inscritos.map((inscrito, index) => renderInscritoRow(inscrito, index, 'all')).join('')}
+            </div>
+        `;
+    }
+
+    if (confirmadosTab) {
+        confirmadosTab.innerHTML = confirmados.length === 0
+            ? `
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fas fa-check-circle text-3xl text-gray-300 mb-2"></i>
+                    <p>Aún no hay asistencias confirmadas</p>
+                </div>
+            `
+            : `
+                <div class="space-y-3">
+                    ${confirmados.map((inscrito, index) => renderInscritoRow(inscrito, index, 'confirmed')).join('')}
+                </div>
+            `;
+    }
+
+    if (pendientesTab) {
+        pendientesTab.innerHTML = noConfirmados.length === 0
+            ? `
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fas fa-check-circle text-3xl text-green-300 mb-2"></i>
+                    <p>¡Todos han confirmado su asistencia!</p>
+                </div>
+            `
+            : `
+                <div class="space-y-3">
+                    ${noConfirmados.map((inscrito, index) => renderInscritoRow(inscrito, index, 'pending')).join('')}
+                </div>
+            `;
+    }
 }
 
 function closeInscriptionModal() {

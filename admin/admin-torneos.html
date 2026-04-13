@@ -139,6 +139,16 @@
                                 </label>
                                 <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionTorneo" rows="2" placeholder="Descripción del torneo"></textarea>
                             </div>
+
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="juegoTorneo">
+                                    Categoría de juego
+                                </label>
+                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="juegoTorneo">
+                                    <option value="tetrio">TETR.IO</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Por ahora solo TETR.IO está habilitado.</p>
+                            </div>
                             
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="fechaTorneo">
@@ -180,6 +190,33 @@
                                     <option value="En Progreso">En Progreso</option>
                                     <option value="Finalizado">Finalizado</option>
                                 </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="rankCapTorneo">
+                                    Rank cap TETR.IO
+                                </label>
+                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="rankCapTorneo">
+                                    <option value="">Sin límite</option>
+                                    <option value="d">D</option>
+                                    <option value="d+">D+</option>
+                                    <option value="c-">C-</option>
+                                    <option value="c">C</option>
+                                    <option value="c+">C+</option>
+                                    <option value="b-">B-</option>
+                                    <option value="b">B</option>
+                                    <option value="b+">B+</option>
+                                    <option value="a-">A-</option>
+                                    <option value="a">A</option>
+                                    <option value="a+">A+</option>
+                                    <option value="s-">S-</option>
+                                    <option value="s">S</option>
+                                    <option value="s+">S+</option>
+                                    <option value="ss">SS</option>
+                                    <option value="u">U</option>
+                                    <option value="x">X</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Solo aplica cuando el juego del torneo es TETR.IO.</p>
                             </div>
                             
                             <div class="md:col-span-2">
