@@ -263,6 +263,11 @@
                                 <i class="fas fa-trophy mr-2"></i>Torneos
                             </a>
                         </li>
+                        <li class="mr-2">
+                            <a href="#accounts" class="inline-block py-2 px-4 text-sm font-medium text-center text-gray-400 border-b-2 border-transparent rounded-t-lg hover:text-gray-300 hover:border-gray-600">
+                                <i class="fas fa-gamepad mr-2"></i>Cuentas
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 
@@ -283,6 +288,47 @@
                         <h3 class="text-xl font-semibold mb-4 text-white">Historial de Torneos</h3>
                         <div id="userTournaments">
                             <div class="flex justify-center">
+                                <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="accounts" class="tab-content hidden">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                            <div>
+                                <h3 class="text-xl font-semibold text-white">Cuentas</h3>
+                                <p class="text-sm text-gray-400">Vincula tus perfiles de juego habilitados para mostrarlos en tu perfil.</p>
+                            </div>
+                            <button id="toggleAddAccountBtn" type="button" class="hidden bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition self-start">
+                                <i class="fas fa-plus mr-2"></i>Agregar cuenta
+                            </button>
+                        </div>
+
+                        <div id="addAccountPanel" class="hidden bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="gameAccountSelect" class="block text-sm font-bold text-gray-200 mb-2">Juego habilitado</label>
+                                    <select id="gameAccountSelect" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"></select>
+                                </div>
+                                <div>
+                                    <label for="gameAccountUsername" class="block text-sm font-bold text-gray-200 mb-2">Nombre de usuario</label>
+                                    <input id="gameAccountUsername" type="text" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500" placeholder="Escribe tu usuario del juego">
+                                </div>
+                            </div>
+                            <p id="gameAccountHelp" class="text-xs text-gray-400 mt-3">Por ahora puedes vincular tu cuenta de TETR.IO usando tu nombre de usuario público.</p>
+                            <p id="gameAccountError" class="hidden text-sm text-red-400 mt-2"></p>
+                            <div class="flex justify-end gap-3 mt-4">
+                                <button id="cancelAddAccountBtn" type="button" class="bg-gray-700 text-gray-200 px-4 py-2 rounded font-semibold hover:bg-gray-600 transition">
+                                    Cancelar
+                                </button>
+                                <button id="saveGameAccountBtn" type="button" class="bg-indigo-600 text-white px-4 py-2 rounded font-semibold hover:bg-indigo-700 transition">
+                                    Vincular cuenta
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="linkedAccountsList">
+                            <div class="flex justify-center py-4">
                                 <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                             </div>
                         </div>

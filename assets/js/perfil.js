@@ -5,6 +5,19 @@ let isLoadingProfile = false;
 let selectedBannerId = null;
 let newProfilePhoto = null;
 
+const GAME_ACCOUNT_CONFIG = {
+    apiUrl: 'https://dtowin-tournaments.netlify.app/.netlify/functions/tetrio',
+    enabledGames: [
+        {
+            id: 'tetrio',
+            name: 'TETR.IO',
+            iconUrl: 'https://tetr.io/res/favicon.ico',
+            usernamePlaceholder: 'Ej: osk',
+            helpText: 'Ingresa tu nombre de usuario publico de TETR.IO para validar la cuenta.'
+        }
+    ]
+};
+
 // Esperar a que Firebase esté disponible globalmente
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM cargado, esperando a que Firebase esté disponible");
@@ -296,6 +309,7 @@ async function loadProfile() {
         
         // Cargar historial de torneos
         loadUserTournaments(userData);
+        loadUserAccounts(userData, !requestedUid && !!currentUser);
         
         // Cargar información de Discord
         loadDiscordInfo(userData);
@@ -904,6 +918,371 @@ async function loadUserTournaments(userData) {
     }
 }
 
+function getEnabledGameConfig(gameId) {
+    return GAME_ACCOUNT_CONFIG.enabledGames.find((game) => game.id === gameId) || null;
+}
+
+function formatTetrioRank(rank) {
+    if (!rank || rank === 'z') {
+        return 'Sin clasificar';
+    }
+
+    return String(rank).toUpperCase();
+}
+
+function formatTetrioTr(tr) {
+    if (typeof tr !== 'number' || tr < 0) {
+        return 'Sin TR';
+    }
+
+    return tr.toFixed(2);
+}
+
+function renderGameAccountForm() {
+    const selectEl = document.getElementById('gameAccountSelect');
+    const usernameEl = document.getElementById('gameAccountUsername');
+    const helpEl = document.getElementById('gameAccountHelp');
+
+    if (!selectEl || !usernameEl || !helpEl) {
+        return;
+    }
+
+    selectEl.innerHTML = GAME_ACCOUNT_CONFIG.enabledGames.map((game) => {
+        return `<option value="${game.id}">${game.name}</option>`;
+    }).join('');
+
+    const selectedGame = getEnabledGameConfig(selectEl.value || GAME_ACCOUNT_CONFIG.enabledGames[0]?.id);
+    if (!selectedGame) {
+        return;
+    }
+
+    usernameEl.placeholder = selectedGame.usernamePlaceholder;
+    helpEl.textContent = selectedGame.helpText;
+}
+
+function renderLinkedAccountsList(userData, isOwnProfile) {
+    const accountsContainer = document.getElementById('linkedAccountsList');
+    const addButton = document.getElementById('toggleAddAccountBtn');
+
+    if (!accountsContainer) {
+        return;
+    }
+
+    if (addButton) {
+        addButton.classList.toggle('hidden', !isOwnProfile);
+    }
+
+    const gameAccounts = userData.gameAccounts || {};
+    const enabledAccounts = Object.entries(gameAccounts).filter(([gameId, account]) => {
+        return !!getEnabledGameConfig(gameId) && account && account.username;
+    });
+
+    if (enabledAccounts.length === 0) {
+        accountsContainer.innerHTML = `
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 text-center">
+                <p class="text-gray-300 font-medium mb-2">No hay cuentas vinculadas todavía</p>
+                <p class="text-sm text-gray-400">${isOwnProfile ? 'Usa el botón "Agregar cuenta" para vincular tu primer juego.' : 'Este usuario todavía no ha agregado cuentas de juego visibles.'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="space-y-4">';
+
+    enabledAccounts.forEach(([gameId, account]) => {
+        const gameConfig = getEnabledGameConfig(gameId);
+        if (!gameConfig) {
+            return;
+        }
+
+        const rankLabel = gameId === 'tetrio' ? formatTetrioRank(account.rank) : (account.rank || 'Sin clasificar');
+        const trLabel = gameId === 'tetrio' ? formatTetrioTr(account.tr) : (account.tr || 'Sin TR');
+        const updatedAt = account.updatedAt && account.updatedAt.toDate ? account.updatedAt.toDate() : null;
+        const updatedLabel = updatedAt ? `<p class="text-xs text-gray-500 mt-2">Actualizado: ${updatedAt.toLocaleDateString('es-ES')}</p>` : '';
+
+        html += `
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <img src="${gameConfig.iconUrl}" alt="${gameConfig.name}" class="w-12 h-12 rounded-xl bg-white p-1 object-contain">
+                        <div>
+                            <p class="text-xs uppercase tracking-wide text-gray-400">${gameConfig.name}</p>
+                            <p class="text-lg font-semibold text-white">${account.username}</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="px-3 py-1 rounded-full bg-indigo-900 text-indigo-200 text-xs font-semibold border border-indigo-700">Rango: ${rankLabel}</span>
+                                <span class="px-3 py-1 rounded-full bg-blue-900 text-blue-200 text-xs font-semibold border border-blue-700">TR: ${trLabel}</span>
+                            </div>
+                            ${updatedLabel}
+                        </div>
+                    </div>
+                    ${isOwnProfile ? `
+                        <div class="flex gap-2">
+                            <button type="button" class="refresh-game-account bg-gray-700 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-gray-600 transition" data-game-id="${gameId}">
+                                <i class="fas fa-rotate-right mr-2"></i>Actualizar
+                            </button>
+                            <button type="button" class="remove-game-account bg-red-600 text-white px-3 py-2 rounded text-sm font-semibold hover:bg-red-700 transition" data-game-id="${gameId}">
+                                <i class="fas fa-trash mr-2"></i>Quitar
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    accountsContainer.innerHTML = html;
+}
+
+function setupGameAccountActions() {
+    const toggleBtn = document.getElementById('toggleAddAccountBtn');
+    const cancelBtn = document.getElementById('cancelAddAccountBtn');
+    const saveBtn = document.getElementById('saveGameAccountBtn');
+    const selectEl = document.getElementById('gameAccountSelect');
+    const panelEl = document.getElementById('addAccountPanel');
+
+    if (toggleBtn) {
+        toggleBtn.onclick = () => {
+            if (panelEl) {
+                panelEl.classList.remove('hidden');
+            }
+            renderGameAccountForm();
+            clearGameAccountError();
+        };
+    }
+
+    if (cancelBtn) {
+        cancelBtn.onclick = hideAddAccountPanel;
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = handleSaveGameAccount;
+    }
+
+    if (selectEl) {
+        selectEl.onchange = renderGameAccountForm;
+    }
+
+    document.querySelectorAll('.refresh-game-account').forEach((button) => {
+        button.onclick = async () => {
+            await refreshStoredGameAccount(button.dataset.gameId);
+        };
+    });
+
+    document.querySelectorAll('.remove-game-account').forEach((button) => {
+        button.onclick = async () => {
+            await removeStoredGameAccount(button.dataset.gameId);
+        };
+    });
+}
+
+function clearGameAccountError() {
+    const errorEl = document.getElementById('gameAccountError');
+    if (!errorEl) {
+        return;
+    }
+
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+}
+
+function showGameAccountError(message) {
+    const errorEl = document.getElementById('gameAccountError');
+    if (!errorEl) {
+        return;
+    }
+
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+}
+
+function hideAddAccountPanel() {
+    const panelEl = document.getElementById('addAccountPanel');
+    const usernameEl = document.getElementById('gameAccountUsername');
+
+    if (panelEl) {
+        panelEl.classList.add('hidden');
+    }
+
+    if (usernameEl) {
+        usernameEl.value = '';
+    }
+
+    clearGameAccountError();
+}
+
+async function getCurrentUserProfileDoc() {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+
+    const querySnapshot = await firebase.firestore()
+        .collection("usuarios")
+        .where("uid", "==", currentUser.uid)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.empty) {
+        throw new Error('Perfil de usuario no encontrado');
+    }
+
+    return querySnapshot.docs[0];
+}
+
+async function lookupTetrioAccount(username) {
+    const endpointCandidates = [
+        '/.netlify/functions/tetrio',
+        '/api/tetrio',
+        GAME_ACCOUNT_CONFIG.apiUrl
+    ];
+
+    let lastError = null;
+
+    for (const endpoint of endpointCandidates) {
+        try {
+            const response = await fetch(`${endpoint}?username=${encodeURIComponent(username)}`);
+
+            if (response.status === 404) {
+                lastError = new Error('La funcion de Tetr.io aun no esta desplegada en Netlify.');
+                continue;
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success || !data.account) {
+                throw new Error(data.error || 'No se pudo validar la cuenta de TETR.IO');
+            }
+
+            return data.account;
+        } catch (error) {
+            lastError = error;
+        }
+    }
+
+    throw lastError || new Error('No se pudo validar la cuenta de TETR.IO');
+}
+
+async function saveGameAccountToFirestore(gameId, accountData) {
+    const userDoc = await getCurrentUserProfileDoc();
+
+    await userDoc.ref.update({
+        [`gameAccounts.${gameId}`]: {
+            ...accountData,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const refreshedDoc = await userDoc.ref.get();
+    return refreshedDoc.data();
+}
+
+async function handleSaveGameAccount() {
+    const selectEl = document.getElementById('gameAccountSelect');
+    const usernameEl = document.getElementById('gameAccountUsername');
+    const saveBtn = document.getElementById('saveGameAccountBtn');
+
+    if (!selectEl || !usernameEl || !saveBtn) {
+        return;
+    }
+
+    const gameId = selectEl.value;
+    const username = usernameEl.value.trim();
+
+    if (!gameId) {
+        showGameAccountError('Selecciona un juego habilitado.');
+        return;
+    }
+
+    if (!username) {
+        showGameAccountError('Escribe el nombre de usuario que quieres vincular.');
+        return;
+    }
+
+    clearGameAccountError();
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Validando...';
+
+    try {
+        let accountData = null;
+
+        if (gameId === 'tetrio') {
+            accountData = await lookupTetrioAccount(username);
+        } else {
+            throw new Error('Ese juego aun no esta soportado.');
+        }
+
+        const updatedUserData = await saveGameAccountToFirestore(gameId, accountData);
+        hideAddAccountPanel();
+        renderLinkedAccountsList(updatedUserData, true);
+        setupGameAccountActions();
+        mostrarNotificacion('Cuenta vinculada correctamente', 'success');
+    } catch (error) {
+        console.error('Error al vincular cuenta de juego:', error);
+        showGameAccountError(error.message || 'No se pudo vincular la cuenta.');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Vincular cuenta';
+    }
+}
+
+async function refreshStoredGameAccount(gameId) {
+    try {
+        const userDoc = await getCurrentUserProfileDoc();
+        const userData = userDoc.data();
+        const storedAccount = userData.gameAccounts?.[gameId];
+
+        if (!storedAccount || !storedAccount.username) {
+            throw new Error('No hay una cuenta guardada para actualizar.');
+        }
+
+        let refreshedAccount = null;
+
+        if (gameId === 'tetrio') {
+            refreshedAccount = await lookupTetrioAccount(storedAccount.username);
+        } else {
+            throw new Error('Ese juego aun no esta soportado.');
+        }
+
+        const updatedUserData = await saveGameAccountToFirestore(gameId, refreshedAccount);
+        renderLinkedAccountsList(updatedUserData, true);
+        setupGameAccountActions();
+        mostrarNotificacion('Cuenta actualizada correctamente', 'success');
+    } catch (error) {
+        console.error('Error al actualizar cuenta de juego:', error);
+        mostrarNotificacion(error.message || 'No se pudo actualizar la cuenta.', 'error');
+    }
+}
+
+async function removeStoredGameAccount(gameId) {
+    if (!confirm('¿Deseas quitar esta cuenta vinculada?')) {
+        return;
+    }
+
+    try {
+        const userDoc = await getCurrentUserProfileDoc();
+        await userDoc.ref.update({
+            [`gameAccounts.${gameId}`]: firebase.firestore.FieldValue.delete(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const refreshedDoc = await userDoc.ref.get();
+        renderLinkedAccountsList(refreshedDoc.data(), true);
+        setupGameAccountActions();
+        mostrarNotificacion('Cuenta eliminada correctamente', 'success');
+    } catch (error) {
+        console.error('Error al quitar cuenta de juego:', error);
+        mostrarNotificacion(error.message || 'No se pudo quitar la cuenta.', 'error');
+    }
+}
+
+function loadUserAccounts(userData, isOwnProfile) {
+    renderGameAccountForm();
+    renderLinkedAccountsList(userData, isOwnProfile);
+    setupGameAccountActions();
+}
+
 // Mostrar opciones adicionales para el propio perfil
 function showProfileOptions() {
     const profileOptionsContainer = document.getElementById('profileOptions');
@@ -1014,6 +1393,9 @@ function setupButtons() {
                 
                 // Cargar datos actuales
                 await loadCurrentProfileData();
+
+                // Cargar estado de Discord en el modal
+                await updateDiscordStatus();
                 
                 // Cargar banners disponibles
                 await loadAvailableBanners();
@@ -1745,7 +2127,7 @@ async function updateDiscordStatus() {
             // Cambiar botón a "Desvincular"
             const linkDiscordBtn = document.getElementById('linkDiscordBtn');
             if (linkDiscordBtn) {
-                linkDiscordBtn.textContent = 'Desvincular Discord';
+                linkDiscordBtn.innerHTML = '<i class="fab fa-discord mr-2"></i>Desvincular Discord';
                 linkDiscordBtn.className = 'bg-red-600 text-white px-4 py-2 rounded font-semibold hover:bg-red-700 transition w-full';
                 linkDiscordBtn.onclick = unlinkDiscord;
             }
@@ -1755,7 +2137,7 @@ async function updateDiscordStatus() {
             // Cambiar botón a "Vincular"
             const linkDiscordBtn = document.getElementById('linkDiscordBtn');
             if (linkDiscordBtn) {
-                linkDiscordBtn.textContent = 'Vincular Discord';
+                linkDiscordBtn.innerHTML = '<i class="fab fa-discord mr-2"></i>Vincular Discord';
                 linkDiscordBtn.className = 'bg-indigo-600 text-white px-4 py-2 rounded font-semibold hover:bg-indigo-700 transition w-full';
                 linkDiscordBtn.onclick = linkDiscordAccount;
             }
