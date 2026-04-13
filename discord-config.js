@@ -55,23 +55,37 @@ export function validateOAuthState(receivedState) {
  */
 export async function exchangeCodeForUserInfo(code) {
     try {
+        console.log('Iniciando intercambio de código...');
+        console.log('URL de API:', DISCORD_CONFIG.CLOUD_FUNCTION_URL);
+        console.log('Código:', code ? 'recibido' : 'NO recibido');
+
         const response = await fetch(DISCORD_CONFIG.CLOUD_FUNCTION_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ code })
+            body: JSON.stringify({ code }),
+            mode: 'cors'
         });
+
+        console.log('Fetch completado. Status:', response.status);
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al intercambiar código');
+            console.error('Response no es OK:', response.status, response.statusText);
+            try {
+                const error = await response.json();
+                throw new Error(error.error || `HTTP ${response.status}`);
+            } catch (e) {
+                throw new Error(`Error del servidor: ${response.statusText}`);
+            }
         }
         
         const userInfo = await response.json();
+        console.log('Información recibida:', userInfo);
         return userInfo;
     } catch (error) {
         console.error('Error intercambiando código:', error);
+        console.error('Stack:', error.stack);
         throw error;
     }
 }
