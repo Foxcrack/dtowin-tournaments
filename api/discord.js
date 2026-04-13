@@ -9,7 +9,7 @@ exports.handler = async (event, context) => {
       body = JSON.parse(event.body);
     }
 
-    const { code } = body;
+    const { code, redirectUri } = body;
 
     // CORS
     const headers = {
@@ -42,6 +42,7 @@ exports.handler = async (event, context) => {
     }
 
     if (!code) {
+      console.error('❌ No code provided');
       return {
         statusCode: 400,
         headers,
@@ -49,11 +50,23 @@ exports.handler = async (event, context) => {
       };
     }
 
+    if (!redirectUri) {
+      console.error('❌ No redirectUri provided');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Redirect URI required' })
+      };
+    }
+
     const clientId = process.env.DISCORD_CLIENT_ID;
     const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-    const redirectUri = process.env.DISCORD_REDIRECT_URI;
 
-    if (!clientId || !clientSecret || !redirectUri) {
+    if (!clientId || !clientSecret) {
+      console.error('❌ Missing environment variables:', {
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret
+      });
       return {
         statusCode: 500,
         headers,
@@ -61,12 +74,16 @@ exports.handler = async (event, context) => {
       };
     }
 
+    console.log('🔄 Intercambiando código por token...');
+    console.log('Client ID:', clientId.substring(0, 10) + '...');
+    console.log('Redirect URI:', redirectUri);
+
     const params = new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
       code: code,
       grant_type: 'authorization_code',
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri  // IMPORTANTE: Usar el redirect_uri del cliente
     });
 
     const tokenResp = await fetch('https://discord.com/api/oauth2/token', {
@@ -76,19 +93,34 @@ exports.handler = async (event, context) => {
     });
 
     if (!tokenResp.ok) {
+      const errorBody = await tokenResp.text();
+      console.error('❌ Token exchange failed:', {
+        status: tokenResp.status,
+        statusText: tokenResp.statusText,
+        body: errorBody
+      });
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Token exchange failed' })
+        body: JSON.stringify({ 
+          error: 'Token exchange failed',
+          details: errorBody 
+        })
       };
     }
 
     const tokenData = await tokenResp.json();
+    const accessToken = tokenData.access_token;
+    
+    console.log('✅ Token obtenido');
+
+    console.log('🔄 Obteniendo información del usuario...');
     const userResp = await fetch('https://discord.com/api/users/@me', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      headers: { Authorization: `Bearer ${accessToken}` }
     });
 
     if (!userResp.ok) {
+      console.error('❌ User fetch failed:', userResp.status, userResp.statusText);
       return {
         statusCode: 400,
         headers,
@@ -97,6 +129,8 @@ exports.handler = async (event, context) => {
     }
 
     const user = await userResp.json();
+    console.log('✅ Usuario verificado:', user.username);
+    
     return {
       statusCode: 200,
       headers,
@@ -110,7 +144,7 @@ exports.handler = async (event, context) => {
     };
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('💥 Error:', error);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },

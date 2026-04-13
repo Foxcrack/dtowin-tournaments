@@ -6,7 +6,7 @@ export const DISCORD_CONFIG = {
     CLOUD_FUNCTION_URL: 'https://dtowin-tournaments.netlify.app/.netlify/functions/discord',
     REDIRECT_URI: 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html',
     SCOPES: ['identify'],
-    API_ENDPOINT: 'https://discordapp.com/api'
+    API_ENDPOINT: 'https://discord.com/api' // Corregido: discord.com en lugar de discordapp.com
 };
 
 /**
@@ -57,14 +57,19 @@ export async function exchangeCodeForUserInfo(code) {
     try {
         console.log('Iniciando intercambio de código...');
         console.log('URL de API:', DISCORD_CONFIG.CLOUD_FUNCTION_URL);
+        console.log('Redirect URI:', DISCORD_CONFIG.REDIRECT_URI);
         console.log('Código:', code ? 'recibido' : 'NO recibido');
 
+        // Enviar código + redirect_uri a la función Netlify
         const response = await fetch(DISCORD_CONFIG.CLOUD_FUNCTION_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ 
+                code,
+                redirectUri: DISCORD_CONFIG.REDIRECT_URI // IMPORTANTE: Enviar el redirect_uri
+            }),
             mode: 'cors'
         });
 
@@ -73,8 +78,9 @@ export async function exchangeCodeForUserInfo(code) {
         if (!response.ok) {
             console.error('Response no es OK:', response.status, response.statusText);
             try {
-                const error = await response.json();
-                throw new Error(error.error || `HTTP ${response.status}`);
+                const errorData = await response.json();
+                console.error('Error details:', errorData);
+                throw new Error(errorData.error || errorData.details || `HTTP ${response.status}`);
             } catch (e) {
                 throw new Error(`Error del servidor: ${response.statusText}`);
             }
@@ -82,6 +88,12 @@ export async function exchangeCodeForUserInfo(code) {
         
         const userInfo = await response.json();
         console.log('Información recibida:', userInfo);
+        
+        // La respuesta debe tener el formato correcto
+        if (!userInfo.id && !userInfo.success) {
+            throw new Error('Respuesta del servidor inválida');
+        }
+        
         return userInfo;
     } catch (error) {
         console.error('Error intercambiando código:', error);
