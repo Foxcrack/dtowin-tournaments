@@ -1772,10 +1772,17 @@ function linkDiscordAccount() {
     const discordClientId = '1493118118950604910';
     const redirectUri = 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html';
     const scopes = ['identify'];
+    const currentUser = firebase.auth().currentUser;
+
+    if (!currentUser) {
+        mostrarNotificacion('Necesitas iniciar sesion antes de vincular Discord', 'error');
+        return;
+    }
 
     // Generar state para protección CSRF
     const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('discord_oauth_state', state);
+    sessionStorage.setItem('discord_oauth_pending_uid', currentUser.uid);
 
     const authUrl = new URL('https://discord.com/oauth2/authorize');
     authUrl.searchParams.append('client_id', discordClientId);

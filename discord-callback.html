@@ -34,12 +34,10 @@
         <p id="status" class="text-gray-100 text-sm mt-2">Por favor espera</p>
     </div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
 
-    <!-- Inicialización de Firebase -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
@@ -50,20 +48,54 @@
             appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
             measurementId: "G-R4Q5YKZXGY"
         };
+
         firebase.initializeApp(firebaseConfig);
     </script>
 
     <script type="module">
         import { validateOAuthState, exchangeCodeForUserInfo } from './discord-config.js';
 
+        async function waitForAuthenticatedUser(timeoutMs = 10000) {
+            const auth = firebase.auth();
+
+            if (auth.currentUser) {
+                return auth.currentUser;
+            }
+
+            return new Promise((resolve, reject) => {
+                let unsubscribe = null;
+
+                const timeoutId = setTimeout(() => {
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
+                    reject(new Error('No se encontro usuario autenticado'));
+                }, timeoutMs);
+
+                unsubscribe = auth.onAuthStateChanged((user) => {
+                    if (!user) {
+                        return;
+                    }
+
+                    clearTimeout(timeoutId);
+                    unsubscribe();
+                    resolve(user);
+                }, (error) => {
+                    clearTimeout(timeoutId);
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
+                    reject(error);
+                });
+            });
+        }
+
         async function handleDiscordCallback() {
             try {
-                // Obtener parámetros de la URL
                 const params = new URLSearchParams(window.location.search);
                 const code = params.get('code');
                 const state = params.get('state');
                 const error = params.get('error');
-
                 const statusEl = document.getElementById('status');
 
                 if (error) {
@@ -75,40 +107,43 @@
                 }
 
                 if (!code) {
-                    statusEl.textContent = 'Error: No se recibió código de autorización';
+                    statusEl.textContent = 'Error: No se recibio codigo de autorizacion';
                     setTimeout(() => {
                         window.location.href = 'perfil.html';
                     }, 2000);
                     return;
                 }
 
-                // Validar estado
                 if (!validateOAuthState(state)) {
-                    statusEl.textContent = 'Error: Validación de seguridad fallida';
+                    statusEl.textContent = 'Error: Validacion de seguridad fallida';
                     setTimeout(() => {
                         window.location.href = 'perfil.html';
                     }, 2000);
                     return;
                 }
 
-                statusEl.textContent = 'Intercambiando código...';
-
-                // Intercambiar código por información del usuario
+                statusEl.textContent = 'Intercambiando codigo...';
                 const discordUserInfo = await exchangeCodeForUserInfo(code);
 
                 if (!discordUserInfo || !discordUserInfo.id) {
-                    throw new Error('No se pudo obtener información de Discord');
+                    throw new Error('No se pudo obtener informacion de Discord');
                 }
 
-                statusEl.textContent = 'Guardando información de Discord...';
+                statusEl.textContent = 'Guardando informacion de Discord...';
 
-                // Obtener usuario de Firebase
-                const currentUser = firebase.auth().currentUser;
-                if (!currentUser) {
-                    throw new Error('No se encontró usuario autenticado');
+                try {
+                    await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                } catch (persistenceError) {
+                    console.warn('No se pudo establecer persistencia local:', persistenceError);
                 }
 
-                // Guardar info de Discord en Firestore
+                const currentUser = await waitForAuthenticatedUser();
+                const pendingUid = sessionStorage.getItem('discord_oauth_pending_uid');
+
+                if (pendingUid && pendingUid !== currentUser.uid) {
+                    throw new Error('La sesion recuperada no coincide con el usuario que inicio la vinculacion');
+                }
+
                 const usersRef = firebase.firestore().collection("usuarios");
                 const userQuery = await usersRef.where("uid", "==", currentUser.uid).get();
 
@@ -128,26 +163,24 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                statusEl.textContent = '¡Éxito! Redirigiendo...';
-                
-                // Redirigir al perfil después de 1 segundo
+                sessionStorage.removeItem('discord_oauth_pending_uid');
+                statusEl.textContent = 'Exito! Redirigiendo...';
+
                 setTimeout(() => {
                     window.location.href = 'perfil.html';
                 }, 1000);
-
             } catch (error) {
                 console.error('Error en callback:', error);
                 const statusEl = document.getElementById('status');
                 statusEl.textContent = `Error: ${error.message}`;
                 statusEl.classList.add('text-red-300');
-                
+
                 setTimeout(() => {
                     window.location.href = 'perfil.html';
                 }, 3000);
             }
         }
 
-        // Ejecutar cuando se carga la página
         handleDiscordCallback();
     </script>
 </body>
