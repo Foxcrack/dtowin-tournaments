@@ -1,18 +1,5 @@
 // api/exchangeDiscordCode.js - Cloud Function para Vercel
-// Maneja el intercambio de código de Discord por token y info de usuario
-
-const admin = require('firebase-admin');
-
-// Inicializar Firebase Admin si no está ya inicializado
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  });
-}
-
-const db = admin.firestore();
+// Maneja el intercambio de código de Discord por token e info de usuario
 
 module.exports = async function handler(req, res) {
   // Habilitar CORS
@@ -43,8 +30,12 @@ module.exports = async function handler(req, res) {
     const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
     const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 
-    if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
-      console.error('Credenciales de Discord no configuradas');
+    if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !REDIRECT_URI) {
+      console.error('Variables de Discord no configuradas:', {
+        hasClientId: !!DISCORD_CLIENT_ID,
+        hasClientSecret: !!DISCORD_CLIENT_SECRET,
+        hasRedirectUri: !!REDIRECT_URI
+      });
       return res.status(500).json({
         success: false,
         error: 'Configuración de servidor incompleta'
@@ -52,6 +43,8 @@ module.exports = async function handler(req, res) {
     }
 
     // Paso 1: Intercambiar código por token
+    console.log('Intercambiando código por token...');
+    
     const tokenParams = new URLSearchParams({
       'client_id': DISCORD_CLIENT_ID,
       'client_secret': DISCORD_CLIENT_SECRET,
@@ -73,7 +66,8 @@ module.exports = async function handler(req, res) {
       console.error('Error al intercambiar código:', errorData);
       return res.status(400).json({
         success: false,
-        error: 'Error al intercambiar código de autorización'
+        error: 'Error al intercambiar código de autorización',
+        details: errorData
       });
     }
 
@@ -81,6 +75,8 @@ module.exports = async function handler(req, res) {
     const accessToken = tokenData.access_token;
 
     // Paso 2: Obtener información del usuario
+    console.log('Obteniendo información del usuario...');
+    
     const userResponse = await fetch('https://discord.com/api/users/@me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`
@@ -109,7 +105,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error en exchangeDiscordCode:', error);
+    console.error('Error en exchangeDiscordCode:', error.message);
     return res.status(500).json({
       success: false,
       error: 'Error interno del servidor: ' + error.message
