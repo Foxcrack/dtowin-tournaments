@@ -1769,8 +1769,8 @@ async function updateDiscordStatus() {
  * Inicia el proceso de vinculación de Discord
  */
 function linkDiscordAccount() {
-    const discordClientId = 'YOUR_DISCORD_CLIENT_ID'; // Reemplazar
-    const redirectUri = `${window.location.origin}/discord-callback.html`;
+    const discordClientId = '1493118118950604910';
+    const redirectUri = 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html';
     const scopes = ['identify'];
 
     // Generar state para protección CSRF
