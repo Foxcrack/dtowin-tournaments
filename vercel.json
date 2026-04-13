@@ -1,7 +1,21 @@
 {
   "version": 2,
-  "buildCommand": "echo 'Static build'",
-  "outputDirectory": ".",
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    }
+  ],
   "env": {
     "DISCORD_CLIENT_ID": "@discord_client_id",
     "DISCORD_CLIENT_SECRET": "@discord_client_secret",
