@@ -1162,9 +1162,6 @@ async function loadCurrentProfileData() {
         selectedBannerId = userData.bannerId || null;
         console.log("Banner ID cargado:", selectedBannerId);
         
-        // Actualizar estado de Discord
-        await updateDiscordStatus();
-        
     } catch (error) {
         console.error("Error al cargar datos del perfil:", error);
         mostrarNotificacion("Error al cargar los datos del perfil", "error");
@@ -1772,8 +1769,8 @@ async function updateDiscordStatus() {
  * Inicia el proceso de vinculación de Discord
  */
 function linkDiscordAccount() {
-    const discordClientId = '1493118118950604910'; // Client ID de Discord
-    const redirectUri = 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html';
+    const discordClientId = 'YOUR_DISCORD_CLIENT_ID'; // Reemplazar
+    const redirectUri = `${window.location.origin}/discord-callback.html`;
     const scopes = ['identify'];
 
     // Generar state para protección CSRF
