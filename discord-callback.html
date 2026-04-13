@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinculando Discord...</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0042ff, #ff3000);
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="text-center">
+        <div class="spinner mx-auto mb-4"></div>
+        <p class="text-white text-lg font-semibold">Verificando tu cuenta de Discord...</p>
+        <p id="status" class="text-gray-100 text-sm mt-2">Por favor espera</p>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
+
+    <!-- Inicialización de Firebase -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
+            authDomain: "dtowin-tournament.firebaseapp.com",
+            projectId: "dtowin-tournament",
+            storageBucket: "dtowin-tournament.appspot.com",
+            messagingSenderId: "991226820083",
+            appId: "1:991226820083:web:6387773cf8c76a0f6ace86",
+            measurementId: "G-R4Q5YKZXGY"
+        };
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <script type="module">
+        import { validateOAuthState, exchangeCodeForUserInfo } from './discord-config.js';
+
+        async function handleDiscordCallback() {
+            try {
+                // Obtener parámetros de la URL
+                const params = new URLSearchParams(window.location.search);
+                const code = params.get('code');
+                const state = params.get('state');
+                const error = params.get('error');
+
+                const statusEl = document.getElementById('status');
+
+                if (error) {
+                    statusEl.textContent = `Error: ${error}`;
+                    setTimeout(() => {
+                        window.location.href = 'perfil.html';
+                    }, 2000);
+                    return;
+                }
+
+                if (!code) {
+                    statusEl.textContent = 'Error: No se recibió código de autorización';
+                    setTimeout(() => {
+                        window.location.href = 'perfil.html';
+                    }, 2000);
+                    return;
+                }
+
+                // Validar estado
+                if (!validateOAuthState(state)) {
+                    statusEl.textContent = 'Error: Validación de seguridad fallida';
+                    setTimeout(() => {
+                        window.location.href = 'perfil.html';
+                    }, 2000);
+                    return;
+                }
+
+                statusEl.textContent = 'Intercambiando código...';
+
+                // Intercambiar código por información del usuario
+                const discordUserInfo = await exchangeCodeForUserInfo(code);
+
+                if (!discordUserInfo || !discordUserInfo.id) {
+                    throw new Error('No se pudo obtener información de Discord');
+                }
+
+                statusEl.textContent = 'Guardando información de Discord...';
+
+                // Obtener usuario de Firebase
+                const currentUser = firebase.auth().currentUser;
+                if (!currentUser) {
+                    throw new Error('No se encontró usuario autenticado');
+                }
+
+                // Guardar info de Discord en Firestore
+                const usersRef = firebase.firestore().collection("usuarios");
+                const userQuery = await usersRef.where("uid", "==", currentUser.uid).get();
+
+                if (userQuery.empty) {
+                    throw new Error('Perfil de usuario no encontrado');
+                }
+
+                const userDoc = userQuery.docs[0];
+                await userDoc.ref.update({
+                    discord: {
+                        id: discordUserInfo.id,
+                        username: discordUserInfo.username,
+                        avatar: discordUserInfo.avatar,
+                        discriminator: discordUserInfo.discriminator,
+                        connectedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                statusEl.textContent = '¡Éxito! Redirigiendo...';
+                
+                // Redirigir al perfil después de 1 segundo
+                setTimeout(() => {
+                    window.location.href = 'perfil.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error en callback:', error);
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = `Error: ${error.message}`;
+                statusEl.classList.add('text-red-300');
+                
+                setTimeout(() => {
+                    window.location.href = 'perfil.html';
+                }, 3000);
+            }
+        }
+
+        // Ejecutar cuando se carga la página
+        handleDiscordCallback();
+    </script>
+</body>
+</html>

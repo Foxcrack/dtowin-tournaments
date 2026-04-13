@@ -865,6 +865,99 @@ export function configurarBotonesCheckIn() {
                 // Actualizar estado en la UI
                 const statusElement = document.querySelector(`#check-in-status-${tournamentId}`);
                 if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Asistencia confirmada';
+                }
+            } catch (error) {
+                console.error("Error al hacer check-in:", error);
+                window.mostrarNotificacion("Error al confirmar asistencia: " + error.message, "error");
+                
+                // Restaurar botón
+                newButton.innerHTML = originalText;
+                newButton.disabled = false;
+            }
+        });
+    } catch (error) {
+        console.error("Error  setting up check-in button:", error);
+    }
+}
+
+// ============================================
+// FUNCIONES PARA AUTOCOMPLETAR DISCORD
+// ============================================
+
+/**
+ * Obtiene el Discord vinculado del usuario actual
+ * Útil para autocompletar en formularios de inscripción
+ */
+export async function getUserDiscordInfo() {
+    try {
+        // Verificar autenticación
+        if (!isAuthenticated()) {
+            return null;
+        }
+        
+        // Obtener datos del usuario actual
+        const user = auth.currentUser;
+        
+        // Buscar usuario en Firestore
+        const usersRef = collection(db, "usuarios");
+        const userQuery = query(
+            usersRef,
+            where("uid", "==", user.uid)
+        );
+        
+        const userSnapshot = await getDocs(userQuery);
+        
+        if (userSnapshot.empty) {
+            console.log("Usuario no encontrado en Firestore");
+            return null;
+        }
+        
+        const userData = userSnapshot.docs[0].data();
+        
+        // Si tiene Discord vinculado, devolverlo
+        if (userData.discord && userData.discord.username) {
+            console.log(`Discord encontrado: ${userData.discord.username}`);
+            return {
+                id: userData.discord.id,
+                username: userData.discord.username,
+                avatar: userData.discord.avatar,
+                discriminator: userData.discord.discriminator
+            };
+        }
+        
+        console.log("Usuario no tiene Discord vinculado");
+        return null;
+        
+    } catch (error) {
+        console.error("Error al obtener información de Discord:", error);
+        return null;
+    }
+}
+
+/**
+ * Autocompleta un campo de Discord input con la información guardada
+ * @param {string} inputSelector - Selector CSS del input a completar
+ */
+export async function autoCompleteDiscordField(inputSelector) {
+    try {
+        const input = document.querySelector(inputSelector);
+        if (!input) {
+            console.warn(`No se encontró input con selector: ${inputSelector}`);
+            return;
+        }
+        
+        const discordInfo = await getUserDiscordInfo();
+        
+        if (discordInfo && discordInfo.username) {
+            input.value = discordInfo.username;
+            input.dataset.discordId = discordInfo.id;
+            console.log(`Discord autocompletado: ${discordInfo.username}`);
+        }
+    } catch (error) {
+        console.error("Error al autocompletar Discord:", error);
+    }
+}
                     statusElement.classList.remove('bg-red-100', 'text-red-800');
                     statusElement.classList.add('bg-green-100', 'text-green-800');
                     statusElement.textContent = 'Sí';

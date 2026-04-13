@@ -207,6 +207,12 @@
                     <img id="profileAvatar" src="dtowin.png" alt="Usuario" class="w-24 h-24 rounded-full border-4 border-white mb-4 md:mb-0 md:mr-6">
                     <div class="text-center md:text-left">
                         <h2 id="profileUsername" class="text-3xl font-bold">Cargando...</h2>
+                        <div id="discordInfo" class="mt-2 hidden">
+                            <p class="text-gray-200 text-sm">
+                                <i class="fab fa-discord mr-2" style="color: #5865F2;"></i>
+                                <span id="discordUsername">Discord</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,6 +336,16 @@
                             <p class="text-gray-400 text-sm">Cargando banners...</p>
                         </div>
                     </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-200 text-sm font-bold mb-2">Vinculación de Discord</label>
+                    <div id="discordStatus" class="p-3 rounded bg-gray-800 border border-gray-700 mb-3">
+                        <p class="text-gray-400 text-sm">Cargando estado de Discord...</p>
+                    </div>
+                    <button type="button" id="linkDiscordBtn" class="bg-indigo-600 text-white px-4 py-2 rounded font-semibold hover:bg-indigo-700 transition w-full">
+                        <i class="fab fa-discord mr-2"></i>Vincular Discord
+                    </button>
                 </div>
                 
                 <div class="flex justify-between mt-6">

@@ -297,6 +297,9 @@ async function loadProfile() {
         // Cargar historial de torneos
         loadUserTournaments(userData);
         
+        // Cargar información de Discord
+        loadDiscordInfo(userData);
+        
         // Si es el propio perfil del usuario, mostrar opciones adicionales
         if (!requestedUid && currentUser) {
             showProfileOptions();
@@ -1159,6 +1162,9 @@ async function loadCurrentProfileData() {
         selectedBannerId = userData.bannerId || null;
         console.log("Banner ID cargado:", selectedBannerId);
         
+        // Actualizar estado de Discord
+        await updateDiscordStatus();
+        
     } catch (error) {
         console.error("Error al cargar datos del perfil:", error);
         mostrarNotificacion("Error al cargar los datos del perfil", "error");
@@ -1694,4 +1700,170 @@ document.addEventListener("DOMContentLoaded", function() {
             console.warn("No se encontró el formulario de edición de perfil");
         }
     }, 1000); // Esperar 1 segundo para asegurar que el DOM está listo
+});
+
+// ============================================
+// FUNCIONES PARA VINCULAR DISCORD
+// ============================================
+
+/**
+ * Muestra el estado de vinculación de Discord en el modal
+ */
+async function updateDiscordStatus() {
+    try {
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            console.log("No hay usuario autenticado");
+            return;
+        }
+
+        // Buscar documento del usuario en Firestore
+        const usersRef = firebase.firestore().collection("usuarios");
+        const userQuery = await usersRef.where("uid", "==", currentUser.uid).get();
+
+        const discordStatusEl = document.getElementById('discordStatus');
+        if (!discordStatusEl) return;
+
+        if (userQuery.empty) {
+            discordStatusEl.innerHTML = `<p class="text-gray-400 text-sm">No vinculado</p>`;
+            return;
+        }
+
+        const userData = userQuery.docs[0].data();
+        
+        if (userData.discord && userData.discord.username) {
+            // Discord vinculado
+            discordStatusEl.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fab fa-discord mr-2" style="color: #5865F2; font-size: 1.2rem;"></i>
+                        <div>
+                            <p class="text-white font-semibold">${userData.discord.username}</p>
+                            <p class="text-gray-400 text-xs">ID: ${userData.discord.id}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cambiar botón a "Desvincular"
+            const linkDiscordBtn = document.getElementById('linkDiscordBtn');
+            if (linkDiscordBtn) {
+                linkDiscordBtn.textContent = 'Desvincular Discord';
+                linkDiscordBtn.className = 'bg-red-600 text-white px-4 py-2 rounded font-semibold hover:bg-red-700 transition w-full';
+                linkDiscordBtn.onclick = unlinkDiscord;
+            }
+        } else {
+            discordStatusEl.innerHTML = `<p class="text-gray-400 text-sm">No vinculado</p>`;
+            
+            // Cambiar botón a "Vincular"
+            const linkDiscordBtn = document.getElementById('linkDiscordBtn');
+            if (linkDiscordBtn) {
+                linkDiscordBtn.textContent = 'Vincular Discord';
+                linkDiscordBtn.className = 'bg-indigo-600 text-white px-4 py-2 rounded font-semibold hover:bg-indigo-700 transition w-full';
+                linkDiscordBtn.onclick = linkDiscordAccount;
+            }
+        }
+    } catch (error) {
+        console.error('Error al verificar estado de Discord:', error);
+    }
+}
+
+/**
+ * Inicia el proceso de vinculación de Discord
+ */
+function linkDiscordAccount() {
+    const discordClientId = '1493118118950604910'; // Client ID de Discord
+    const redirectUri = 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html';
+    const scopes = ['identify'];
+
+    // Generar state para protección CSRF
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('discord_oauth_state', state);
+
+    const authUrl = new URL('https://discord.com/oauth2/authorize');
+    authUrl.searchParams.append('client_id', discordClientId);
+    authUrl.searchParams.append('response_type', 'code');
+    authUrl.searchParams.append('redirect_uri', redirectUri);
+    authUrl.searchParams.append('scope', scopes.join(' '));
+    authUrl.searchParams.append('state', state);
+
+    // Redirigir a Discord OAuth
+    window.location.href = authUrl.toString();
+}
+
+/**
+ * Desvincula la cuenta de Discord
+ */
+async function unlinkDiscord() {
+    if (!confirm('¿Deseas desvincular tu cuenta de Discord?')) {
+        return;
+    }
+
+    try {
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+            throw new Error('No hay usuario autenticado');
+        }
+
+        const usersRef = firebase.firestore().collection("usuarios");
+        const userQuery = await usersRef.where("uid", "==", currentUser.uid).get();
+
+        if (!userQuery.empty) {
+            await userQuery.docs[0].ref.update({
+                discord: null,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            mostrarNotificacion('Discord desvinculado correctamente', 'success');
+            
+            // Actualizar el estado
+            await updateDiscordStatus();
+            
+            // También actualizar en la página principal si está visible
+            const discordInfo = document.getElementById('discordInfo');
+            if (discordInfo) {
+                discordInfo.classList.add('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error al desvincular Discord:', error);
+        mostrarNotificacion('Error al desvincular Discord: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Carga y muestra la información de Discord en el perfil
+ */
+async function loadDiscordInfo(userData) {
+    try {
+        if (userData.discord && userData.discord.username) {
+            const discordInfo = document.getElementById('discordInfo');
+            const discordUsername = document.getElementById('discordUsername');
+            
+            if (discordInfo && discordUsername) {
+                discordUsername.textContent = `@${userData.discord.username}`;
+                discordInfo.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar información de Discord:', error);
+    }
+}
+
+// Configurar evento del botón de vincular Discord cuando se cargue el modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar a que Bootstrap termine
+    setTimeout(function() {
+        const linkDiscordBtn = document.getElementById('linkDiscordBtn');
+        if (linkDiscordBtn) {
+            linkDiscordBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (this.textContent.includes('Vincular')) {
+                    linkDiscordAccount();
+                } else {
+                    unlinkDiscord();
+                }
+            });
+        }
+    }, 2000);
 });
