@@ -2,8 +2,8 @@
 // IMPORTANTE: Estos valores se configuran en Cloud Functions mediante variables de entorno
 
 export const DISCORD_CONFIG = {
-    CLIENT_ID: '1493118118950604910', // Client ID de Discord
-    CLOUD_FUNCTION_URL: 'https://dtowin-tournaments.vercel.app/api',
+    CLIENT_ID: '1493118118950604910',
+    CLOUD_FUNCTION_URL: 'https://dtowin-tournaments.vercel.app/api/discord',
     REDIRECT_URI: 'https://foxcrack.github.io/dtowin-tournaments/discord-callback.html',
     SCOPES: ['identify'],
     API_ENDPOINT: 'https://discordapp.com/api'
