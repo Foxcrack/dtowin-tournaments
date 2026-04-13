@@ -13,7 +13,7 @@ export const DISCORD_CONFIG = {
  * Inicia el flujo de autenticación de Discord
  */
 export function initiateDiscordOAuth() {
-    const clientId = 'YOUR_DISCORD_CLIENT_ID'; // Debe reemplazarse con el ID real
+    const clientId = DISCORD_CONFIG.CLIENT_ID;
     
     if (!clientId || clientId === 'YOUR_DISCORD_CLIENT_ID') {
         alert('Error: Discord Client ID no configurado. Por favor, configura tu ID de aplicación Discord.');
