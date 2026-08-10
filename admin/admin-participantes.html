@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/img/dtowin.png">
+    <link rel="stylesheet" href="admin-layout.css">
     <style>
         .badge {
             display: inline-flex;
@@ -19,45 +20,23 @@
             margin: 0 5px;
             color: white;
         }
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body>
     <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
+    <nav class="admin-navbar p-4 flex justify-between items-center">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <a href="admin-panel.html" class="flex items-center">
-                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-3">
+                    <h1 class="text-xl font-bold hidden sm:block">Panel de Administración</h1>
                 </a>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-                <div id="userProfile" class="flex items-center space-x-2">
-                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">Admin</span>
+            <div class="flex items-center space-x-6">
+                <a href="../index.html" class="text-gray-400 hover:text-white transition text-sm font-medium"><i class="fas fa-external-link-alt mr-2"></i>Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-3 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700">
+                    <img src="../assets/img/dtowin.png" alt="Admin" class="w-7 h-7 rounded-full border border-gray-600">
+                    <span class="text-sm font-medium">Admin</span>
                 </div>
             </div>
         </div>
@@ -65,63 +44,53 @@
 
     <!-- Main Content -->
     <div class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <!-- Sidebar -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <ul>
-                        <li>
-                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-trophy mr-2"></i> Torneos
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
-                                <i class="fas fa-users mr-2"></i> Participantes
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-certificate mr-2"></i> Badges
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-image mr-2"></i> Banners
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-chart-line mr-2"></i> Resultados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i> Configuración
-                            </a>
-                        </li>
-                    </ul>
+            <div class="md:col-span-3 lg:col-span-2">
+                <div class="admin-sidebar rounded-xl p-3 shadow-lg border border-gray-800/60 sticky top-24">
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3 mt-2">Menú Principal</div>
+                    <nav>
+                        <a href="admin-panel.html" class="sidebar-link">
+                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                        </a>
+                        <a href="admin-torneos.html" class="sidebar-link">
+                            <i class="fas fa-trophy mr-3"></i> Torneos
+                        </a>
+                        <a href="admin-participantes.html" class="sidebar-link active">
+                            <i class="fas fa-users mr-3"></i> Participantes
+                        </a>
+                        <a href="admin-badges.html" class="sidebar-link">
+                            <i class="fas fa-certificate mr-3"></i> Badges
+                        </a>
+                        <a href="admin-banners.html" class="sidebar-link">
+                            <i class="fas fa-image mr-3"></i> Banners
+                        </a>
+                        <a href="admin-resultados.html" class="sidebar-link">
+                            <i class="fas fa-chart-line mr-3"></i> Resultados
+                        </a>
+                        <a href="admin-configuracion.html" class="sidebar-link mt-6 border-t border-gray-800 pt-4">
+                            <i class="fas fa-cog mr-3"></i> Configuración
+                        </a>
+                    </nav>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="md:col-span-4">
+            <!-- Content Area -->
+            <div class="md:col-span-9 lg:col-span-10 space-y-8">
                 <!-- Participantes Section -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Participantes</h2>
-                        <div class="flex space-x-2">
+                <div class="admin-card p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+                        <div>
+                            <h2 class="text-3xl font-bold">Gestión de Participantes</h2>
+                            <p class="text-gray-400 text-sm mt-1">Busca usuarios, asigna roles, y otorga badges.</p>
+                        </div>
+                        <div class="flex space-x-3 mt-4 md:mt-0">
                             <div class="relative">
                                 <input type="text" id="searchParticipant" placeholder="Buscar participante..." 
-                                       class="border rounded-lg py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                                       class="admin-input py-2 pl-4 pr-10 rounded-full w-full md:w-64">
+                                <i class="fas fa-search absolute right-4 top-3 text-gray-500"></i>
                             </div>
-                            <select id="filterTorneo" class="border rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <select id="filterTorneo" class="admin-input py-2 px-4 rounded-full appearance-none">
                                 <option value="">Todos los torneos</option>
                                 <!-- Las opciones se cargarán dinámicamente -->
                             </select>
@@ -129,34 +98,40 @@
                     </div>
                     
                     <!-- Estadísticas rápidas -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 flex justify-between items-center">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="admin-card-inner rounded-xl p-5 flex justify-between items-center">
                             <div>
-                                <h3 class="text-sm font-semibold text-blue-800">Total Participantes</h3>
-                                <p class="text-2xl font-bold text-blue-600" id="totalParticipantesCounter">--</p>
+                                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Total Participantes</h3>
+                                <p class="text-3xl font-bold text-white mt-1" id="totalParticipantesCounter">--</p>
                             </div>
-                            <i class="fas fa-users text-3xl text-blue-300"></i>
+                            <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                <i class="fas fa-users text-2xl text-blue-400"></i>
+                            </div>
                         </div>
-                        <div class="bg-green-50 border border-green-100 rounded-lg p-4 flex justify-between items-center">
+                        <div class="admin-card-inner rounded-xl p-5 flex justify-between items-center">
                             <div>
-                                <h3 class="text-sm font-semibold text-green-800">Participantes Activos</h3>
-                                <p class="text-2xl font-bold text-green-600" id="participantesActivosCounter">--</p>
+                                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Participantes Activos</h3>
+                                <p class="text-3xl font-bold text-white mt-1" id="participantesActivosCounter">--</p>
                             </div>
-                            <i class="fas fa-user-check text-3xl text-green-300"></i>
+                            <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <i class="fas fa-user-check text-2xl text-green-400"></i>
+                            </div>
                         </div>
-                        <div class="bg-orange-50 border border-orange-100 rounded-lg p-4 flex justify-between items-center">
+                        <div class="admin-card-inner rounded-xl p-5 flex justify-between items-center">
                             <div>
-                                <h3 class="text-sm font-semibold text-orange-800">Badges Otorgados</h3>
-                                <p class="text-2xl font-bold text-orange-600" id="badgesOtorgadosCounter">--</p>
+                                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Badges Otorgados</h3>
+                                <p class="text-3xl font-bold text-white mt-1" id="badgesOtorgadosCounter">--</p>
                             </div>
-                            <i class="fas fa-medal text-3xl text-orange-300"></i>
+                            <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                <i class="fas fa-medal text-2xl text-purple-400"></i>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Tabla de participantes -->
-                    <div id="participantesContainer" class="overflow-x-auto">
-                        <div class="flex justify-center my-8">
-                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                    <div id="participantesContainer" class="admin-table-container">
+                        <div class="flex justify-center my-12">
+                            <i class="fas fa-circle-notch fa-spin text-blue-500 text-3xl"></i>
                         </div>
                     </div>
                 </div>
@@ -165,84 +140,84 @@
     </div>
 
     <!-- Modal de Detalles del Participante -->
-    <div id="participantDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl max-w-3xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
-            <button id="closeParticipantModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
+    <div id="participantDetailsModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="admin-modal-content max-w-3xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <button id="closeParticipantModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                <i class="fas fa-times text-xl"></i>
             </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800" id="participantName">Detalles del Participante</h3>
-                <p class="text-gray-600" id="participantEmail">email@example.com</p>
+            <div class="text-center mb-6 border-b border-gray-700/50 pb-4">
+                <h3 class="text-2xl font-bold text-white" id="participantName">Detalles del Participante</h3>
+                <p class="text-gray-400 mt-1" id="participantEmail">email@example.com</p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-gray-700 mb-2">Información General</h4>
-                    <div class="space-y-2 text-sm">
-                        <p><span class="text-gray-500">ID:</span> <span id="participantId" class="font-mono">UID123456</span></p>
-                        <p><span class="text-gray-500">Registro:</span> <span id="participantRegisterDate">01/01/2025</span></p>
-                        <p><span class="text-gray-500">Último login:</span> <span id="participantLastLogin">10/02/2025</span></p>
-                        <p><span class="text-gray-500">Puntos totales:</span> <span id="participantPoints" class="font-semibold">150</span></p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-gray-800/50 border border-gray-700/50 p-5 rounded-xl">
+                    <h4 class="font-semibold text-gray-300 mb-4 border-b border-gray-700 pb-2">Información General</h4>
+                    <div class="space-y-3 text-sm">
+                        <p class="flex justify-between"><span class="text-gray-500">ID:</span> <span id="participantId" class="font-mono text-gray-300">UID123456</span></p>
+                        <p class="flex justify-between"><span class="text-gray-500">Registro:</span> <span id="participantRegisterDate" class="text-gray-300">01/01/2025</span></p>
+                        <p class="flex justify-between"><span class="text-gray-500">Último login:</span> <span id="participantLastLogin" class="text-gray-300">10/02/2025</span></p>
+                        <p class="flex justify-between"><span class="text-gray-500">Puntos:</span> <span id="participantPoints" class="font-semibold text-white">150</span></p>
                     </div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-gray-700 mb-2">Rol de Usuario</h4>
-                    <div class="mb-2">
-                        <div class="flex items-center mb-2">
-                            <div id="userRoleBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <div class="bg-gray-800/50 border border-gray-700/50 p-5 rounded-xl">
+                    <h4 class="font-semibold text-gray-300 mb-4 border-b border-gray-700 pb-2">Rol de Usuario</h4>
+                    <div class="mb-4">
+                        <div class="flex items-center mb-4">
+                            <div id="userRoleBadge" class="status-badge active text-xs">
                                 Participante
                             </div>
                         </div>
-                        <div class="flex items-center">
-                            <input type="checkbox" id="isHostCheckbox" class="h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
-                            <label for="isHostCheckbox" class="ml-2 block text-sm text-gray-700">Permisos de Host</label>
-                        </div>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="isHostCheckbox" class="h-4 w-4 rounded border-gray-600 bg-gray-900 text-blue-500 focus:ring-blue-500">
+                            <span class="ml-2 block text-sm text-gray-300 font-medium">Permisos de Host</span>
+                        </label>
                     </div>
-                    <div class="flex space-x-2 mt-2">
-                        <button id="cancelUserRoleBtn" class="bg-gray-300 text-gray-700 px-4 py-1 rounded text-sm hover:bg-gray-400">
+                    <div class="flex space-x-2 mt-4">
+                        <button id="cancelUserRoleBtn" class="admin-btn-secondary py-1.5 px-3 text-xs flex-1">
                             Cancelar
                         </button>
-                        <button id="saveUserRoleBtn" class="dtowin-primary text-white px-4 py-1 rounded text-sm hover:opacity-90">
-                            Guardar Cambios
+                        <button id="saveUserRoleBtn" class="admin-btn-primary py-1.5 px-3 text-xs flex-1">
+                            Guardar
                         </button>
                     </div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-gray-700 mb-2">Ajuste de Puntos</h4>
-                    <div class="flex space-x-2 items-center">
-                        <input type="number" id="pointsAdjustInput" class="border rounded w-full py-1 px-2" placeholder="0">
-                        <button id="addPointsBtn" class="bg-green-500 text-white px-3 py-1 rounded text-sm">
+                <div class="bg-gray-800/50 border border-gray-700/50 p-5 rounded-xl">
+                    <h4 class="font-semibold text-gray-300 mb-4 border-b border-gray-700 pb-2">Ajuste de Puntos</h4>
+                    <div class="flex space-x-2 items-center mb-2">
+                        <input type="number" id="pointsAdjustInput" class="admin-input py-1.5 px-3 w-full" placeholder="0">
+                        <button id="addPointsBtn" class="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition" title="Añadir">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button id="subtractPointsBtn" class="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                        <button id="subtractPointsBtn" class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg transition" title="Restar">
                             <i class="fas fa-minus"></i>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Ingresa la cantidad de puntos a ajustar</p>
+                    <p class="text-xs text-gray-500">Ingresa la cantidad de puntos a ajustar</p>
                 </div>
             </div>
             
             <!-- Torneos del participante -->
             <div class="mb-6">
-                <h4 class="font-semibold text-gray-700 mb-2">Torneos Participados</h4>
-                <div id="userTournamentsContainer" class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
-                    <div class="flex justify-center">
-                        <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div>
+                <h4 class="font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">Torneos Participados</h4>
+                <div id="userTournamentsContainer" class="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl max-h-64 overflow-y-auto">
+                    <div class="flex justify-center my-4">
+                        <i class="fas fa-circle-notch fa-spin text-blue-500 text-xl"></i>
                     </div>
                 </div>
             </div>
             
             <!-- Badges del participante -->
             <div>
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="font-semibold text-gray-700">Badges Obtenidos</h4>
-                    <button id="addBadgeBtn" class="dtowin-blue text-white px-3 py-1 rounded text-sm">
+                <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                    <h4 class="font-semibold text-gray-300">Badges Obtenidos</h4>
+                    <button id="addBadgeBtn" class="admin-btn-primary text-xs py-1 px-3">
                         <i class="fas fa-plus mr-1"></i> Asignar Badge
                     </button>
                 </div>
-                <div id="userBadgesContainer" class="bg-gray-50 p-4 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-3 max-h-48 overflow-y-auto">
-                    <div class="flex justify-center">
-                        <div class="spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-orange-500"></div>
+                <div id="userBadgesContainer" class="bg-gray-900/50 border border-gray-700/50 p-4 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-4 max-h-48 overflow-y-auto">
+                    <div class="flex justify-center col-span-full my-4">
+                        <i class="fas fa-circle-notch fa-spin text-blue-500 text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -250,52 +225,52 @@
     </div>
 
     <!-- Modal para asignar Badge -->
-    <div id="badgeSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeBadgeModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
+    <div id="badgeSelectionModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="admin-modal-content max-w-md w-full p-6 relative">
+            <button id="closeBadgeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                <i class="fas fa-times text-xl"></i>
             </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800">Asignar Badge</h3>
-                <p class="text-gray-600">Selecciona un badge para asignar al participante</p>
+            <div class="text-center mb-6 border-b border-gray-700/50 pb-4">
+                <h3 class="text-2xl font-bold text-white">Asignar Badge</h3>
+                <p class="text-gray-400 mt-1">Selecciona un badge para asignar al participante</p>
             </div>
             
             <div id="badgesList" class="grid grid-cols-2 gap-3 mb-6 max-h-64 overflow-y-auto">
-                <div class="flex justify-center col-span-2">
-                    <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                <div class="flex justify-center col-span-2 my-4">
+                    <i class="fas fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
                 </div>
             </div>
             
-            <div class="flex flex-col">
-                <label class="block text-gray-700 text-sm font-bold mb-2">
+            <div class="flex flex-col mb-6">
+                <label class="block text-gray-400 text-sm font-semibold mb-2">
                     Motivo (opcional):
                 </label>
-                <input type="text" id="badgeReason" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" placeholder="Motivo de asignación...">
+                <input type="text" id="badgeReason" class="admin-input" placeholder="Motivo de asignación...">
             </div>
             
-            <div class="text-center mt-4">
-                <button id="assignBadgeButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition" disabled>
-                    Asignar Badge
+            <div class="text-center mt-4 border-t border-gray-700/50 pt-4">
+                <button id="assignBadgeButton" class="admin-btn-primary w-full py-3" disabled>
+                    <i class="fas fa-award mr-2"></i>Asignar Badge
                 </button>
             </div>
         </div>
     </div>
     
     <!-- Modal para confirmar eliminación de participante de torneo -->
-    <div id="confirmRemoveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-xl max-w-md w-full p-6">
+    <div id="confirmRemoveModal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 hidden backdrop-blur-sm">
+        <div class="admin-modal-content max-w-md w-full p-6">
             <div class="text-center mb-6">
-                <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
-                <h3 class="text-xl font-bold text-gray-800">Confirmar Eliminación</h3>
-                <p class="text-gray-600 mt-2">¿Estás seguro que deseas eliminar a este participante del torneo?</p>
-                <p class="text-gray-600 mt-1" id="removeParticipantTournamentName">Nombre del Torneo</p>
+                <i class="fas fa-exclamation-triangle text-5xl text-yellow-500 mb-4 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]"></i>
+                <h3 class="text-2xl font-bold text-white">Confirmar Eliminación</h3>
+                <p class="text-gray-400 mt-3">¿Estás seguro que deseas eliminar a este participante del torneo?</p>
+                <p class="text-white font-medium mt-2 p-2 bg-gray-800/50 rounded-lg border border-gray-700" id="removeParticipantTournamentName">Nombre del Torneo</p>
             </div>
             
-            <div class="flex justify-center space-x-4">
-                <button id="cancelRemoveBtn" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition">
+            <div class="flex justify-center space-x-4 mt-6">
+                <button id="cancelRemoveBtn" class="admin-btn-secondary px-6">
                     Cancelar
                 </button>
-                <button id="confirmRemoveBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition">
+                <button id="confirmRemoveBtn" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-semibold transition">
                     Eliminar
                 </button>
             </div>
@@ -303,8 +278,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
+    <footer class="admin-navbar py-6 mt-12 border-t border-gray-800/60">
+        <div class="container mx-auto text-center text-sm text-gray-500">
             <p>© 2025 Dtowin Torneos - Panel de Administración</p>
         </div>
     </footer>
@@ -354,37 +329,44 @@
         const notification = document.createElement('div');
         
         // Clases según el tipo de notificación
-        let bgColor = 'bg-blue-500';
+        let bgColor = 'bg-blue-600/90 border-blue-500';
         let icon = 'info-circle';
         
         if (tipo === 'success') {
-            bgColor = 'bg-green-500';
+            bgColor = 'bg-green-600/90 border-green-500';
             icon = 'check-circle';
         } else if (tipo === 'error') {
-            bgColor = 'bg-red-500';
+            bgColor = 'bg-red-600/90 border-red-500';
             icon = 'exclamation-circle';
         } else if (tipo === 'warning') {
-            bgColor = 'bg-yellow-500';
+            bgColor = 'bg-yellow-600/90 border-yellow-500';
             icon = 'exclamation-triangle';
         }
         
-        // Estilos de la notificación
-        notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
+        // Estilos de la notificación (Glassmorphism oscuro)
+        notification.className = `notification fixed top-6 right-6 ${bgColor} border text-white px-5 py-4 rounded-xl shadow-2xl backdrop-blur-md z-50 flex items-center transform transition-all duration-300 translate-y-0 opacity-100`;
         notification.innerHTML = `
-            <i class="fas fa-${icon} mr-2"></i>
-            <span>${mensaje}</span>
+            <i class="fas fa-${icon} mr-3 text-xl drop-shadow-md"></i>
+            <span class="font-medium tracking-wide drop-shadow-md">${mensaje}</span>
         `;
         
         // Añadir al DOM
         document.body.appendChild(notification);
         
+        // Efecto de entrada animado
+        notification.animate([
+            { transform: 'translateY(-20px)', opacity: 0 },
+            { transform: 'translateY(0)', opacity: 1 }
+        ], { duration: 300, easing: 'ease-out' });
+        
         // Eliminar después de 3 segundos
         setTimeout(() => {
-            notification.classList.add('opacity-0');
-            notification.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                notification.remove();
-            }, 500);
+            const anim = notification.animate([
+                { opacity: 1, transform: 'translateY(0)' },
+                { opacity: 0, transform: 'translateY(-20px)' }
+            ], { duration: 300, easing: 'ease-in' });
+            
+            anim.onfinish = () => notification.remove();
         }, 3000);
     }
     

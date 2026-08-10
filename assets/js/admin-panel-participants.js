@@ -215,13 +215,13 @@ async function loadParticipantes() {
         console.log("Cargando participantes...");
         
         // Mostrar carga
-        participantesContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
+        participantesContainer.innerHTML = '<div class="flex justify-center py-12"><i class="fas fa-circle-notch fa-spin text-blue-500 text-3xl"></i></div>';
         
         // Obtener usuarios de Firestore
         const usuariosSnapshot = await firebase.firestore().collection('usuarios').get();
         
         if (usuariosSnapshot.empty) {
-            participantesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay participantes registrados.</p>';
+            participantesContainer.innerHTML = '<p class="text-center text-gray-500 font-medium py-8">No hay participantes registrados.</p>';
             return;
         }
         
@@ -241,7 +241,7 @@ async function loadParticipantes() {
         
     } catch (error) {
         console.error("Error al cargar participantes:", error);
-        participantesContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar participantes. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>';
+        participantesContainer.innerHTML = '<p class="text-center text-red-500 py-8"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><br>Error al cargar participantes. <button class="text-blue-400 hover:text-blue-300 underline block mx-auto mt-4" onclick="window.location.reload()">Reintentar</button></p>';
     }
 }
 
@@ -250,25 +250,25 @@ function displayParticipants(participants) {
     if (!participantesContainer) return;
     
     if (participants.length === 0) {
-        participantesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No se encontraron participantes con los filtros aplicados.</p>';
+        participantesContainer.innerHTML = '<p class="text-center text-gray-500 font-medium py-8">No se encontraron participantes con los filtros aplicados.</p>';
         return;
     }
     
     // HTML para la tabla
     let html = `
-        <table class="min-w-full bg-white">
+        <table class="admin-table">
             <thead>
-                <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
-                    <th class="py-3 px-4 text-left">Participante</th>
-                    <th class="py-3 px-4 text-left">Email</th>
-                    <th class="py-3 px-4 text-left">Torneos</th>
-                    <th class="py-3 px-4 text-left">Puntos</th>
-                    <th class="py-3 px-4 text-left">Badges</th>
-                    <th class="py-3 px-4 text-left">Último login</th>
-                    <th class="py-3 px-4 text-left">Acciones</th>
+                <tr>
+                    <th>Participante</th>
+                    <th>Email</th>
+                    <th>Torneos</th>
+                    <th>Puntos</th>
+                    <th>Badges</th>
+                    <th>Último login</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody class="text-gray-600">
+            <tbody>
     `;
     
     // Añadir filas
@@ -286,25 +286,25 @@ function displayParticipants(participants) {
         
         // Agregar fila
         html += `
-            <tr class="border-b hover:bg-gray-50" data-participant-id="${participant.id}">
-                <td class="py-3 px-4 flex items-center">
-                    <img src="${participant.photoURL || 'https://via.placeholder.com/32'}" alt="${participant.nombre || participant.email}" class="w-8 h-8 rounded-full mr-2">
+            <tr data-participant-id="${participant.id}">
+                <td class="flex items-center">
+                    <img src="${participant.photoURL || 'https://via.placeholder.com/32'}" alt="${participant.nombre || participant.email}" class="w-8 h-8 rounded-full mr-3 border border-gray-600">
                     <div>
-                        <p class="font-medium">${participant.nombre || 'Sin nombre'}</p>
-                        <p class="text-xs text-gray-500">${participant.isHost ? '<span class="text-orange-500">Host</span>' : 'Participante'}</p>
+                        <p class="font-medium text-white">${participant.nombre || 'Sin nombre'}</p>
+                        <p class="text-xs text-gray-400">${participant.isHost ? '<span class="text-blue-400 font-semibold">Admin</span>' : 'Participante'}</p>
                     </div>
                 </td>
-                <td class="py-3 px-4">${participant.email || 'Sin email'}</td>
-                <td class="py-3 px-4">${torneosCount}</td>
-                <td class="py-3 px-4 font-medium">${participant.puntos || 0}</td>
-                <td class="py-3 px-4">
-                    <span class="bg-orange-100 text-orange-600 py-1 px-2 rounded text-xs">
+                <td class="text-gray-300">${participant.email || 'Sin email'}</td>
+                <td class="text-gray-300 text-center">${torneosCount}</td>
+                <td class="font-medium text-white text-center">${participant.puntos || 0}</td>
+                <td>
+                    <span class="status-badge active text-xs font-semibold">
                         ${badgesCount} badges
                     </span>
                 </td>
-                <td class="py-3 px-4">${lastLogin}</td>
-                <td class="py-3 px-4">
-                    <button class="text-blue-500 hover:text-blue-700 view-participant-btn" title="Ver detalles">
+                <td class="text-gray-400">${lastLogin}</td>
+                <td class="text-right">
+                    <button class="text-blue-400 hover:text-blue-300 transition view-participant-btn" title="Ver detalles">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>

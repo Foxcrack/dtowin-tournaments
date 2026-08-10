@@ -1,124 +1,315 @@
-/* Dark Mode Styles for Profile Page */
+/* ═══════════════════════════════════════════════════════════════
+   perfil.css — Dtowin Profile Page Premium UI
+   ═══════════════════════════════════════════════════════════════ */
 
-body {
-    background-color: #0f0f0f;
-    color: #ffffff;
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+    --blue:      #2563eb;
+    --blue-dark: #1d4ed8;
+    --blue-glow: rgba(37, 99, 235, 0.35);
+    --red:       #ef4444;
+    --accent:    #f43f5e;
+    --purple:    #8b5cf6;
+
+    --bg-base:   #080b14;
+    --bg-card:   #0f1422;
+    --border:    rgba(255,255,255,0.07);
+    --border-hi: rgba(255,255,255,0.14);
+
+    --text-pri:  #f0f4ff;
+    --text-sec:  #8898bb;
+    --text-dim:  #4a5680;
+
+    --grad-main: linear-gradient(135deg, var(--blue) 0%, var(--accent) 100%);
+    --grad-text: linear-gradient(90deg, #60a5fa, #f43f5e);
+    --radius:    14px;
+    --radius-sm: 8px;
+    --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* ── Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--text-pri);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HEADER / NAVBAR
+   ══════════════════════════════════════════════════════════════ */
+.perfil-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(8, 11, 20, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.3s;
+}
+
+.perfil-header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.perfil-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.perfil-brand-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 12px var(--blue-glow);
+}
+.perfil-brand-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-pri);
+}
+.perfil-brand-accent { color: var(--accent); }
+
+.perfil-desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.perfil-nav-link {
+    padding: 0.4rem 0.875rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-sec);
+    text-decoration: none;
+    transition: color var(--transition), background var(--transition);
+}
+.perfil-nav-link:hover, .perfil-nav-link.active {
+    color: var(--text-pri);
+    background: var(--border);
+}
+.perfil-nav-link.active { color: #60a5fa; }
+
+.perfil-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.perfil-btn-login {
+    background: var(--grad-main);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--transition), box-shadow var(--transition);
+    position: relative;
+    white-space: nowrap;
+}
+.perfil-btn-login:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 20px var(--blue-glow);
+}
+
+.perfil-mobile-btn {
+    display: none;
+    background: var(--border);
+    border: 1px solid var(--border-hi);
+    color: var(--text-pri);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition);
+}
+.perfil-mobile-btn:hover { background: var(--border-hi); }
+
+.perfil-mobile-menu {
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.perfil-mobile-menu.hidden { display: none; }
+
+.perfil-mobile-link {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    color: var(--text-sec);
+    text-decoration: none;
+    transition: all var(--transition);
+}
+.perfil-mobile-link:hover, .perfil-mobile-link.active {
+    color: var(--text-pri);
+    background: var(--border);
+}
+
+.perfil-mobile-login-btn {
+    margin-top: 0.5rem;
+    background: var(--grad-main);
+    color: #fff;
+    border: none;
+    padding: 0.625rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   USER DROPDOWN (shared with index-torneos)
+   ══════════════════════════════════════════════════════════════ */
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: #111827;
+    border: 1px solid var(--border-hi);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    z-index: 9999;
+    overflow: hidden;
+    animation: dropIn 0.18s ease;
+}
+@keyframes dropIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-pri);
+    transition: background var(--transition);
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+.dropdown-item:hover { background: rgba(255,255,255,0.07); }
+.dropdown-item i { width: 16px; color: var(--text-sec); }
+.dropdown-item-logout { color: #f87171; }
+.dropdown-item-logout:hover { background: rgba(239,68,68,0.1); }
+.dropdown-item-logout i { color: #ef4444; }
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE & GENERAL OVERRIDES
+   ══════════════════════════════════════════════════════════════ */
 section {
-    background-color: #0f0f0f;
+    background-color: var(--bg-base);
 }
 
 /* Spinner animation */
 .spinner {
-    border-color: #2a2a2a;
+    animation: spin 1s linear infinite;
+    border-color: rgba(255,255,255,0.1);
+    border-top-color: var(--blue);
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Tab content styling */
-.tab-content {
-    color: #e0e0e0;
+.tab-content { color: #e0e0e0; }
+
+/* Gradient background (used in profile header) */
+.gradient-background {
+    background: linear-gradient(135deg, #0042ff, #ff3000);
 }
 
-/* Override any remaining light gray text */
-.text-gray-500 {
-    color: #a0a0a0 !important;
-}
-
-.text-gray-600 {
-    color: #999999 !important;
-}
-
-.text-gray-700 {
-    color: #888888 !important;
-}
-
-.text-gray-800 {
-    color: #ffffff !important;
-}
-
-/* Modal styling overrides */
-#editProfileModal .bg-white {
-    background-color: #1a1a1a !important;
-}
-
-#editProfileModal .text-gray-800 {
-    color: #ffffff !important;
-}
-
-#editProfileModal .text-gray-700 {
-    color: #e0e0e0 !important;
-}
-
-/* Input fields in modals */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-textarea {
-    background-color: #2a2a2a;
-    color: #ffffff;
-    border-color: #404040;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-textarea:focus {
-    border-color: #2563eb;
-    outline: none;
-    background-color: #2a2a2a;
-    color: #ffffff;
-}
-
-/* Button styling */
-button {
-    transition: all 0.2s ease;
-}
-
+/* dtowin-primary button */
 .dtowin-primary {
     background: linear-gradient(135deg, #ff6b1a 0%, #ff8c42 100%);
+    transition: all 0.2s ease;
 }
-
 .dtowin-primary:hover {
     background: linear-gradient(135deg, #ff5500 0%, #ff7a2b 100%);
 }
 
-/* Profile container borders */
-.border-gray-200 {
-    border-color: #333333 !important;
+/* Badge */
+.badge {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    margin: 0 5px;
+    color: white;
 }
 
-.border-b {
-    border-bottom-color: #333333 !important;
+/* Banner options */
+.banner-option {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.banner-option:hover { transform: scale(1.05); }
+.banner-option.selected {
+    box-shadow: 0 0 8px #ff6b1a, inset 0 0 8px rgba(255, 107, 26, 0.3);
 }
 
-/* Link styling */
-a {
-    color: #60a5fa;
+/* Notification */
+.notification { transition: opacity 0.3s ease; }
+
+/* Input fields */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+    background-color: rgba(255,255,255,0.05);
+    color: var(--text-pri);
+    border-color: var(--border-hi);
+    font-family: var(--font);
+}
+input:focus, textarea:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
 }
 
-a:hover {
-    color: #93c5fd;
-}
+/* Override Tailwind color classes for dark */
+.text-gray-400, .text-gray-500 { color: var(--text-sec) !important; }
+.text-gray-600, .text-gray-700 { color: #9ba8c5 !important; }
+.text-gray-800 { color: var(--text-pri) !important; }
+.text-white { color: #ffffff !important; }
+.border-gray-200, .border-b { border-color: var(--border-hi) !important; }
 
-/* Ensure proper contrast for all text */
-.text-white {
-    color: #ffffff !important;
-}
+#profileContainer { color: var(--text-pri); }
+.tab-content h3 { color: var(--text-pri); }
+.tab-content p { color: var(--text-sec); }
 
-.text-gray-300,
-.text-gray-400 {
-    color: #a0a0a0 !important;
-}
+/* Modal overrides */
+#editProfileModal { background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); }
 
-/* Profile template elements */
-#profileContainer {
-    color: #ffffff;
-}
-
-.tab-content h3 {
-    color: #ffffff;
-}
-
-.tab-content p {
-    color: #a0a0a0;
+/* Responsive */
+@media (max-width: 768px) {
+    .perfil-desktop-nav { display: none; }
+    .perfil-mobile-btn { display: flex; }
+    .perfil-header-inner { padding: 0 1rem; }
 }

@@ -78,34 +78,38 @@ function initializeProfile() {
 async function updateAuthUI(user) {
     const loginBtn = document.getElementById('loginBtn');
     if (!loginBtn) return;
-    
-    // Remover event listeners previos
-    loginBtn.onclick = null;
-    
+
+    // Recreate the element as a div if user is logged in to avoid invalid HTML (a tag inside button)
+    const newLoginBtn = document.createElement(user ? 'div' : 'button');
+    newLoginBtn.id = 'loginBtn';
+    newLoginBtn.className = loginBtn.className;
+    loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+    const btn = document.getElementById('loginBtn');
+
     if (user) {
-        // Usuario autenticado - mostrar perfil y logout
         const userName = user.displayName || user.email.split('@')[0] || 'Usuario';
-        loginBtn.innerHTML = `
+        btn.innerHTML = `
             <div class="flex items-center gap-2 cursor-pointer" id="userProfile">
                 <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="Perfil" class="w-8 h-8 rounded-full object-cover border-2 border-white">
                 <span class="font-semibold">${userName}</span>
-                <i class="fas fa-chevron-down text-sm"></i>
+                <i class="fas fa-chevron-down text-sm opacity-80"></i>
             </div>
         `;
-        
-        // Agregar event listener al botón para manejar clicks en el dropdown
-        loginBtn.addEventListener('click', handleUserProfileClick);
+        // Click opens DROPDOWN only — never the login modal
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleUserProfileClick(e);
+        });
         removeUserDropdownProfile();
     } else {
-        // Usuario no autenticado - mostrar botón login
-        loginBtn.innerHTML = 'Iniciar Sesión';
-        loginBtn.onclick = () => {
+        btn.innerHTML = 'Iniciar Sesión';
+        btn.addEventListener('click', () => {
             const loginModal = document.getElementById('loginModal');
             if (loginModal) {
                 loginModal.classList.remove('hidden');
                 loginModal.classList.add('flex');
             }
-        };
+        });
         removeUserDropdownProfile();
     }
 }
@@ -113,48 +117,47 @@ async function updateAuthUI(user) {
 // Handler para el click en el perfil del usuario
 function handleUserProfileClick(e) {
     e.stopPropagation();
+    const loginBtn = document.getElementById('loginBtn');
     let dropdownMenu = document.getElementById('userDropdownMenuProfile');
-    
+
     if (dropdownMenu) {
-        // Toggle existente
         dropdownMenu.classList.toggle('hidden');
         return;
     }
-    
-    // Crear nuevo dropdown
+
     dropdownMenu = document.createElement('div');
     dropdownMenu.id = 'userDropdownMenuProfile';
-    dropdownMenu.className = 'absolute top-16 right-4 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-40 min-w-max';
+    dropdownMenu.className = 'user-dropdown';
     dropdownMenu.innerHTML = `
-        <a href="perfil.html" class="block px-4 py-2 text-white hover:bg-gray-700 rounded-t-lg">
-            <i class="fas fa-user mr-2"></i>Mi Perfil
+        <a href="perfil.html" class="dropdown-item">
+            <i class="fas fa-user"></i>Mi Perfil
         </a>
-        <button id="logoutBtnDropdown" class="w-full text-left px-4 py-2 text-white hover:bg-gray-700 rounded-b-lg">
-            <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+        <button id="logoutBtnDropdown" class="dropdown-item dropdown-item-logout">
+            <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
         </button>
     `;
-    
-    const userProfile = document.getElementById('userProfile');
-    userProfile.parentElement.style.position = 'relative';
-    userProfile.parentElement.appendChild(dropdownMenu);
-    
-    // Evento logout
-    document.getElementById('logoutBtnDropdown').addEventListener('click', async () => {
+
+    loginBtn.style.position = 'relative';
+    loginBtn.appendChild(dropdownMenu);
+
+    document.getElementById('logoutBtnDropdown').addEventListener('click', async (ev) => {
+        ev.stopPropagation();
         try {
             await firebase.auth().signOut();
             window.location.href = 'index.html';
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
-            alert("Error al cerrar sesión");
         }
     });
-    
-    // Cerrar dropdown al hacer click fuera
-    document.addEventListener('click', (e) => {
-        if (!userProfile.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownMenu.classList.add('hidden');
-        }
-    });
+
+    setTimeout(() => {
+        document.addEventListener('click', function closeDD(ev) {
+            if (!loginBtn.contains(ev.target)) {
+                removeUserDropdownProfile();
+                document.removeEventListener('click', closeDD);
+            }
+        });
+    }, 10);
 }
 
 // Crear dropdown para usuario autenticado (perfil page)

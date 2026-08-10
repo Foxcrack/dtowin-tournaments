@@ -7,192 +7,227 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/img/dtowin.png">
-    <style>
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="admin-layout.css">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-[#0f1115] text-gray-200 font-sans min-h-screen">
     <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
+    <nav class="admin-navbar p-4 flex justify-between items-center relative z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <a href="admin-panel.html" class="flex items-center">
-                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-3 shadow-lg">
+                    <h1 class="text-xl font-bold hidden sm:block text-white">Panel de Administración</h1>
                 </a>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-                <div id="userProfile" class="flex items-center space-x-2">
-                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">Admin</span>
+            <div class="flex items-center space-x-6">
+                <a href="../index.html" class="text-gray-400 hover:text-white transition text-sm font-medium"><i class="fas fa-external-link-alt mr-2"></i>Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-3 bg-gray-800/80 px-3 py-1.5 rounded-full border border-gray-700 shadow-md">
+                    <img src="../assets/img/dtowin.png" alt="Admin" class="w-7 h-7 rounded-full border border-gray-600">
+                    <span class="text-sm font-medium text-white">Admin</span>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+    <div class="container mx-auto py-8 px-4 relative z-10">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <!-- Sidebar -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <ul>
-                        <li>
-                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-trophy mr-2"></i> Torneos
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-users mr-2"></i> Participantes
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-certificate mr-2"></i> Badges
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
-                                <i class="fas fa-image mr-2"></i> Banners
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-chart-line mr-2"></i> Resultados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i> Configuración
-                            </a>
-                        </li>
-                    </ul>
+            <div class="md:col-span-3 lg:col-span-2">
+                <div class="admin-sidebar rounded-xl p-3 shadow-2xl border border-gray-800/60 sticky top-24 backdrop-blur-md bg-gray-900/60">
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3 mt-2">Menú Principal</div>
+                    <nav>
+                        <a href="admin-panel.html" class="sidebar-link">
+                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                        </a>
+                        <a href="admin-torneos.html" class="sidebar-link">
+                            <i class="fas fa-trophy mr-3"></i> Torneos
+                        </a>
+                        <a href="admin-participantes.html" class="sidebar-link">
+                            <i class="fas fa-users mr-3"></i> Participantes
+                        </a>
+                        <a href="admin-badges.html" class="sidebar-link">
+                            <i class="fas fa-certificate mr-3"></i> Badges
+                        </a>
+                        <a href="admin-banners.html" class="sidebar-link active">
+                            <i class="fas fa-image mr-3"></i> Banners
+                        </a>
+                        <a href="admin-resultados.html" class="sidebar-link">
+                            <i class="fas fa-chart-line mr-3"></i> Resultados
+                        </a>
+                        <a href="admin-configuracion.html" class="sidebar-link mt-6 border-t border-gray-800 pt-4">
+                            <i class="fas fa-cog mr-3"></i> Configuración
+                        </a>
+                    </nav>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="md:col-span-4">
-                <!-- Banners Section -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Banners</h2>
-                        <button id="headerCreateBannerBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                            <i class="fas fa-plus mr-2"></i>Crear Banner
-                        </button>
+            <!-- Content Area -->
+            <div class="md:col-span-9 lg:col-span-10 space-y-6">
+                <!-- Header -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white mb-2">Banners de la Página Principal</h2>
+                        <p class="text-gray-400">Administra los carruseles e imágenes destacados de la portada.</p>
                     </div>
-                    
-                    <!-- Form para crear/editar banner (oculto inicialmente) -->
-                    <div id="bannerFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden">
-                        <h3 class="font-semibold text-lg mb-2" id="bannerFormTitle">Crear Nuevo Banner</h3>
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBannerForm">
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerNombre">
-                                    Nombre del Banner
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerNombre" type="text" placeholder="Nombre del banner">
-                            </div>
-                            
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerDescripcion">
-                                    Descripción (opcional)
-                                </label>
-                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerDescripcion" rows="2" placeholder="Descripción breve del banner"></textarea>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerUrl">
-                                    URL de destino
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerUrl" type="url" placeholder="https://...">
-                                <p class="text-xs text-gray-500 mt-1">Página a la que llevará el banner al hacer clic.</p>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerOrden">
-                                    Orden
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="bannerOrden" type="number" min="1" value="1">
-                                <p class="text-xs text-gray-500 mt-1">Posición en la que aparecerá (menor número = mayor prioridad).</p>
-                            </div>
-                            
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="bannerImagen">
-                                    Imagen del Banner
-                                </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                    id="bannerImagen" 
-                                    type="file" 
-                                    accept="image/png, image/jpeg">
-                                <p class="text-xs text-gray-500 mt-1">Resolución recomendada: 1200×400 pixels. Formato: JPG o PNG.</p>
-                            </div>
-                            
-                            <div class="md:col-span-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" id="bannerVisible" class="mr-2" checked>
-                                    <span class="text-gray-700 font-bold text-sm">Banner visible</span>
-                                </label>
-                                <p class="text-xs text-gray-500 mt-1">Desmarcar para ocultar el banner temporalmente.</p>
-                            </div>
-                            
-                            <div class="md:col-span-2 flex justify-end">
-                                <button type="button" id="cancelBannerButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition mr-2">
-                                    Cancelar
-                                </button>
-                                <button type="submit" id="submitBannerButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                    Crear Banner
-                                </button>
-                            </div>
-                        </form>
+                    <button id="nuevoBannerBtn" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-[0_0_15px_rgba(255,107,26,0.4)] transition-all flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Nuevo Banner
+                    </button>
+                </div>
+
+                <!-- Dashboard Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="admin-card p-6 border-t-4 border-t-blue-500 flex flex-col items-center justify-center">
+                        <i class="fas fa-images text-4xl text-blue-400 mb-3"></i>
+                        <h4 class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Total Banners</h4>
+                        <p class="text-3xl font-bold text-white" id="totalBanners">-</p>
                     </div>
-                    
-                    <!-- Lista de banners -->
-                    <h3 class="font-semibold text-lg mb-3">Banners Disponibles</h3>
-                    <div id="bannersContainer" class="mt-4">
-                        <div class="flex justify-center my-8">
-                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-                        </div>
+                    <div class="admin-card p-6 border-t-4 border-t-green-500 flex flex-col items-center justify-center">
+                        <i class="fas fa-check-circle text-4xl text-green-400 mb-3"></i>
+                        <h4 class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Banners Activos</h4>
+                        <p class="text-3xl font-bold text-white" id="activeBanners">-</p>
+                    </div>
+                    <div class="admin-card p-6 border-t-4 border-t-purple-500 flex flex-col items-center justify-center">
+                        <i class="fas fa-mouse-pointer text-4xl text-purple-400 mb-3"></i>
+                        <h4 class="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-1">Clics Totales</h4>
+                        <p class="text-3xl font-bold text-white" id="totalClicks">-</p>
+                    </div>
+                </div>
+
+                <!-- Banners List -->
+                <div class="admin-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 border-b border-gray-700 pb-2"><i class="fas fa-list text-orange-400 mr-2"></i>Listado de Banners</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-800/50 border-b border-gray-700">
+                                    <th class="p-4 font-semibold text-gray-300 text-sm uppercase tracking-wider">Imagen</th>
+                                    <th class="p-4 font-semibold text-gray-300 text-sm uppercase tracking-wider">Título</th>
+                                    <th class="p-4 font-semibold text-gray-300 text-sm uppercase tracking-wider">Estado</th>
+                                    <th class="p-4 font-semibold text-gray-300 text-sm uppercase tracking-wider">Orden</th>
+                                    <th class="p-4 font-semibold text-gray-300 text-sm uppercase tracking-wider text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bannersList" class="divide-y divide-gray-700/50">
+                                <tr>
+                                    <td colspan="5" class="text-center py-8">
+                                        <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                                        <p class="text-gray-400">Cargando banners...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
-            <p>© 2025 Dtowin Torneos - Panel de Administración</p>
-        </div>
-    </footer>
+    <!-- Modal Formulario Banner -->
+    <div id="bannerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-opacity duration-300 overflow-y-auto">
+        <div class="admin-card w-full max-w-2xl relative animate-fade-in-up border border-white/10 my-8 p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                <h3 class="text-xl font-bold text-white" id="modalTitle"><i class="fas fa-image text-orange-500 mr-2"></i>Nuevo Banner</h3>
+                <button id="cerrarModalBtn" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
 
-    <!-- Scripts Firebase -->
+            <form id="bannerForm">
+                <input type="hidden" id="bannerId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Columna Izquierda -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm font-semibold mb-2" for="bannerTitulo">
+                                Título del Banner
+                            </label>
+                            <input type="text" id="bannerTitulo" class="form-input w-full" required placeholder="Ej: Gran Torneo de Verano">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-300 text-sm font-semibold mb-2" for="bannerSubtitulo">
+                                Subtítulo (Opcional)
+                            </label>
+                            <input type="text" id="bannerSubtitulo" class="form-input w-full" placeholder="Ej: Inscríbete ahora y gana premios">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-300 text-sm font-semibold mb-2" for="bannerLink">
+                                Enlace de Destino (URL)
+                            </label>
+                            <input type="text" id="bannerLink" class="form-input w-full" placeholder="Ej: https://... o /torneos.html">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-300 text-sm font-semibold mb-2" for="bannerOrden">
+                                    Orden
+                                </label>
+                                <input type="number" id="bannerOrden" class="form-input w-full" required min="1" value="1">
+                            </div>
+                            <div>
+                                <label class="block text-gray-300 text-sm font-semibold mb-2" for="bannerEstado">
+                                    Estado
+                                </label>
+                                <select id="bannerEstado" class="form-select w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-3 py-2">
+                                    <option value="activo">Activo</option>
+                                    <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna Derecha (Imagen) -->
+                    <div>
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">
+                            Imagen del Banner
+                        </label>
+                        
+                        <div class="bg-gray-800/50 border-2 border-dashed border-gray-600 rounded-xl p-4 text-center h-48 flex flex-col items-center justify-center relative overflow-hidden mb-3 group transition-colors hover:border-orange-500">
+                            <input type="file" id="bannerImagen" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
+                            
+                            <div id="imagePreviewContainer" class="absolute inset-0 w-full h-full hidden">
+                                <img id="bannerImagePreview" src="" alt="Preview" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <p class="text-white font-semibold"><i class="fas fa-camera mr-2"></i>Cambiar Imagen</p>
+                                </div>
+                            </div>
+                            
+                            <div id="imagePlaceholder" class="text-gray-400 transition-colors group-hover:text-orange-400">
+                                <i class="fas fa-cloud-upload-alt text-4xl mb-2"></i>
+                                <p class="text-sm font-semibold">Clic o arrastra para subir</p>
+                                <p class="text-xs mt-1">Recomendado: 1920x600px (JPG, PNG, WebP)</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Progress (hidden by default) -->
+                        <div id="uploadProgressContainer" class="hidden">
+                            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                <span>Subiendo imagen...</span>
+                                <span id="uploadProgressText">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 rounded-full h-2">
+                                <div id="uploadProgressBar" class="bg-orange-500 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-700 mt-4">
+                    <button type="button" id="cancelarFormBtn" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-semibold transition border border-gray-700">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="guardarBannerBtn" class="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg font-bold shadow-[0_0_15px_rgba(255,107,26,0.4)] transition-all">
+                        <i class="fas fa-save mr-2"></i> Guardar Banner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore-compat.js"></script>
@@ -200,7 +235,6 @@
 
     <!-- Inicialización de Firebase -->
     <script>
-    // Configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBHW2HsP2T6DOwLaOYloqZFerFmU_UA4kE",
         authDomain: "dtowin-tournament.firebaseapp.com",
@@ -211,675 +245,45 @@
         measurementId: "G-R4Q5YKZXGY"
     };
 
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
+    if (!window.firebase?.apps?.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
 
-    // Hacer Firebase disponible globalmente
-    window.firebase = firebase;
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => console.log("Persistencia de sesión configurada correctamente"))
+        .catch((error) => console.error("Error al configurar persistencia de sesión:", error));
+        
     window.db = firebase.firestore();
     window.auth = firebase.auth();
     window.storage = firebase.storage();
-
-    // Configurar persistencia para mantener la sesión
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-        .then(() => {
-            console.log("Persistencia de sesión configurada correctamente");
-        })
-        .catch((error) => {
-            console.error("Error al configurar persistencia de sesión:", error);
-        });
+    
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) existingNotification.remove();
+        
+        const notification = document.createElement('div');
+        let bgColor = 'bg-blue-600/90 border-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') { bgColor = 'bg-green-600/90 border-green-500'; icon = 'check-circle'; }
+        else if (tipo === 'error') { bgColor = 'bg-red-600/90 border-red-500'; icon = 'exclamation-circle'; }
+        
+        notification.className = `notification fixed top-6 right-6 ${bgColor} border text-white px-5 py-4 rounded-xl shadow-2xl backdrop-blur-md z-50 flex items-center transform transition-all duration-300 translate-y-0 opacity-100`;
+        notification.innerHTML = `<i class="fas fa-${icon} mr-3 text-xl drop-shadow-md"></i><span class="font-medium tracking-wide drop-shadow-md">${mensaje}</span>`;
+        
+        document.body.appendChild(notification);
+        notification.animate([{ transform: 'translateY(-20px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+        
+        setTimeout(() => {
+            const anim = notification.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-20px)' }], { duration: 300, easing: 'ease-in' });
+            anim.onfinish = () => notification.remove();
+        }, 3000);
+    }
+    window.mostrarNotificacion = mostrarNotificacion;
+    window.showNotification = mostrarNotificacion;
     </script>
-
-    <!-- Script principal integrado -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Referencias a elementos DOM
-        const bannersContainer = document.getElementById('bannersContainer');
-        const bannerFormSection = document.getElementById('bannerFormSection');
-        const createBannerForm = document.getElementById('createBannerForm');
-        const headerCreateBannerBtn = document.getElementById('headerCreateBannerBtn');
-        const bannerFormTitle = document.getElementById('bannerFormTitle');
-        const cancelBannerButton = document.getElementById('cancelBannerButton');
-        const submitBannerButton = document.getElementById('submitBannerButton');
-        
-        // Variable para controlar el estado de inicialización
-        let isInitialized = false;
-        
-        // Verificar autenticación
-        firebase.auth().onAuthStateChanged(async function(user) {
-            if (user) {
-                console.log("Usuario autenticado:", user.uid);
-                // Verificar si es administrador
-                const isAdmin = await esUsuarioAdmin(user.uid);
-                
-                if (!isAdmin) {
-                    mostrarNotificacion("No tienes permisos para gestionar banners", "error");
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 3000);
-                    return;
-                }
-                
-                console.log("Usuario validado como administrador");
-                
-                // Configurar eventos
-                configurarEventos();
-                
-                // Cargar banners
-                cargarBanners();
-                
-            } else {
-                console.log("No hay usuario autenticado");
-                window.location.href = "index.html";
-            }
-        });
-        
-        // Función para verificar si el usuario es administrador
-        async function esUsuarioAdmin(userId) {
-            try {
-                // Lista de IDs de administradores
-                const adminUIDs = ["dvblFee1ZnVKJNWBOR22tSAsNet2"];
-                
-                // Si está en la lista directamente
-                if (adminUIDs.includes(userId)) {
-                    return true;
-                }
-                
-                // Verificar en base de datos
-                const snapshot = await db.collection("usuarios")
-                    .where("uid", "==", userId)
-                    .where("isHost", "==", true)
-                    .get();
-                
-                return !snapshot.empty;
-            } catch (error) {
-                console.error("Error al verificar si es administrador:", error);
-                return false;
-            }
-        }
-        
-        // Configurar eventos
-        function configurarEventos() {
-            console.log("Configurando eventos...");
-            
-            // Botón crear banner
-            if (headerCreateBannerBtn) {
-                headerCreateBannerBtn.addEventListener('click', function() {
-                    resetearFormulario();
-                    mostrarFormulario();
-                });
-            }
-            
-            // Botón cancelar
-            if (cancelBannerButton) {
-                cancelBannerButton.addEventListener('click', function() {
-                    ocultarFormulario();
-                });
-            }
-            
-            // Formulario
-            if (createBannerForm) {
-                createBannerForm.addEventListener('submit', manejarEnvioFormulario);
-            }
-            
-            // Preview de imagen
-            const bannerImagen = document.getElementById('bannerImagen');
-            if (bannerImagen) {
-                bannerImagen.addEventListener('change', manejarPreviewImagen);
-            }
-        }
-        
-        // Mostrar formulario
-        function mostrarFormulario() {
-            if (bannerFormSection) {
-                bannerFormSection.classList.remove('hidden');
-                bannerFormSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-        
-        // Ocultar formulario
-        function ocultarFormulario() {
-            if (bannerFormSection) {
-                bannerFormSection.classList.add('hidden');
-            }
-        }
-        
-        // Resetear formulario
-        function resetearFormulario() {
-            console.log("Reseteando formulario");
-            if (createBannerForm) {
-                createBannerForm.reset();
-                
-                // Resetear botón
-                if (submitBannerButton) {
-                    submitBannerButton.textContent = 'Crear Banner';
-                    submitBannerButton.dataset.editMode = 'false';
-                    delete submitBannerButton.dataset.bannerId;
-                }
-                
-                // Resetear título
-                if (bannerFormTitle) {
-                    bannerFormTitle.textContent = 'Crear Nuevo Banner';
-                }
-                
-                // Limpiar previews
-                const previews = createBannerForm.querySelectorAll('.image-preview');
-                previews.forEach(preview => preview.remove());
-            }
-        }
-        
-        // Función para mostrar notificaciones
-        function mostrarNotificacion(mensaje, tipo = "info") {
-            // Verificar si ya existe una notificación
-            const existingNotification = document.querySelector('.notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-            
-            // Crear elemento de notificación
-            const notification = document.createElement('div');
-            
-            // Clases según el tipo de notificación
-            let bgColor = 'bg-blue-500';
-            let icon = 'info-circle';
-            
-            if (tipo === 'success') {
-                bgColor = 'bg-green-500';
-                icon = 'check-circle';
-            } else if (tipo === 'error') {
-                bgColor = 'bg-red-500';
-                icon = 'exclamation-circle';
-            } else if (tipo === 'warning') {
-                bgColor = 'bg-yellow-500';
-                icon = 'exclamation-triangle';
-            }
-            
-            // Estilos de la notificación
-            notification.className = `notification fixed top-4 right-4 ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center`;
-            notification.innerHTML = `
-                <i class="fas fa-${icon} mr-2"></i>
-                <span>${mensaje}</span>
-            `;
-            
-            // Añadir al DOM
-            document.body.appendChild(notification);
-            
-            // Eliminar después de 3 segundos
-            setTimeout(() => {
-                notification.classList.add('opacity-0');
-                notification.style.transition = 'opacity 0.5s';
-                setTimeout(() => {
-                    notification.remove();
-                }, 500);
-            }, 3000);
-        }
-        
-        // Manejar preview de imagen
-        function manejarPreviewImagen(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            // Verificar que sea imagen
-            if (!file.type.startsWith('image/')) {
-                mostrarNotificacion("El archivo debe ser una imagen", "error");
-                event.target.value = '';
-                return;
-            }
-            
-            // Verificar tamaño
-            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-            if (file.size > MAX_SIZE) {
-                mostrarNotificacion("La imagen es demasiado grande. Máximo 5MB", "warning");
-            }
-            
-            // Eliminar preview existente
-            const container = event.target.parentElement;
-            const existingPreview = container.querySelector('.image-preview');
-            if (existingPreview) {
-                existingPreview.remove();
-            }
-            
-            // Crear nuevo preview
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'image-preview mt-2';
-                previewDiv.innerHTML = `
-                    <p class="text-sm text-gray-600">Vista previa:</p>
-                    <img src="${e.target.result}" alt="Vista previa" class="h-32 object-cover rounded mt-1">
-                    <p class="text-xs text-gray-500">${file.name} (${(file.size / 1024).toFixed(1)} KB)</p>
-                `;
-                container.appendChild(previewDiv);
-            };
-            
-            reader.onerror = function() {
-                mostrarNotificacion("Error al generar vista previa", "error");
-            };
-            
-            reader.readAsDataURL(file);
-        }
-        
-        // Leer archivo como base64
-        function readFileAsBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-                reader.readAsDataURL(file);
-            });
-        }
-        
-        // Manejar envío del formulario
-        async function manejarEnvioFormulario(event) {
-            event.preventDefault();
-            
-            // Obtener datos
-            const nombre = document.getElementById('bannerNombre').value.trim();
-            const descripcion = document.getElementById('bannerDescripcion').value.trim();
-            const url = document.getElementById('bannerUrl').value.trim();
-            const orden = parseInt(document.getElementById('bannerOrden').value) || 1;
-            const visible = document.getElementById('bannerVisible').checked;
-            const bannerImagen = document.getElementById('bannerImagen');
-            
-            // Validación
-            if (!nombre) {
-                mostrarNotificacion("El nombre es obligatorio", "error");
-                return;
-            }
-            
-            // Verificar imagen
-            const imageFile = bannerImagen && bannerImagen.files.length > 0 ? bannerImagen.files[0] : null;
-            const isEditMode = submitBannerButton && submitBannerButton.dataset.editMode === 'true';
-            const bannerId = isEditMode ? submitBannerButton.dataset.bannerId : null;
-            
-            if (!imageFile && !isEditMode) {
-                mostrarNotificacion("Debes seleccionar una imagen", "error");
-                return;
-            }
-            
-            if (imageFile && !imageFile.type.startsWith('image/')) {
-                mostrarNotificacion("El archivo debe ser una imagen válida", "error");
-                return;
-            }
-            
-            // Mostrar estado de carga
-            if (submitBannerButton) {
-                submitBannerButton.disabled = true;
-                submitBannerButton.innerHTML = '<div class="inline-block spinner rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div> Procesando...';
-            }
-            
-            try {
-                // Datos del banner
-                const bannerData = {
-                    nombre,
-                    descripcion,
-                    url,
-                    orden,
-                    visible
-                };
-                
-                // Convertir imagen a base64
-                if (imageFile) {
-                    const base64Image = await readFileAsBase64(imageFile);
-                    bannerData.imageData = base64Image;
-                }
-                
-                // Editar o crear banner
-                if (isEditMode && bannerId) {
-                    await actualizarBanner(bannerId, bannerData);
-                    mostrarNotificacion("Banner actualizado correctamente", "success");
-                } else {
-                    await crearBanner(bannerData);
-                    mostrarNotificacion("Banner creado correctamente", "success");
-                }
-                
-                // Reiniciar formulario
-                resetearFormulario();
-                ocultarFormulario();
-                
-                // Recargar lista
-                await cargarBanners();
-                
-            } catch (error) {
-                console.error("Error al procesar banner:", error);
-                mostrarNotificacion(error.message || "Error al procesar el banner", "error");
-            } finally {
-                // Restaurar botón
-                if (submitBannerButton) {
-                    submitBannerButton.disabled = false;
-                    submitBannerButton.textContent = isEditMode ? 'Actualizar Banner' : 'Crear Banner';
-                }
-            }
-        }
-        
-        // Crear nuevo banner
-        async function crearBanner(bannerData) {
-            const user = firebase.auth().currentUser;
-            
-            // Añadir metadatos
-            bannerData.createdBy = user.uid;
-            bannerData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            bannerData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-            
-            // Guardar en Firestore
-            const bannerRef = await db.collection("banners").add(bannerData);
-            return { id: bannerRef.id, success: true };
-        }
-        
-        // Actualizar banner existente
-        async function actualizarBanner(bannerId, bannerData) {
-            const user = firebase.auth().currentUser;
-            
-            // Añadir metadatos de actualización
-            const updateData = {
-                ...bannerData,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedBy: user.uid
-            };
-            
-            // Si no hay nueva imagen, no sobrescribir la existente
-            if (!bannerData.imageData) {
-                delete updateData.imageData;
-            }
-            
-            // Actualizar en Firestore
-            const bannerRef = db.collection("banners").doc(bannerId);
-            await bannerRef.update(updateData);
-            
-            return { id: bannerId, success: true };
-        }
-        
-        // Cargar y mostrar banners
-        async function cargarBanners() {
-            if (!bannersContainer) {
-                console.warn("No se encontró el contenedor de banners");
-                return;
-            }
-            
-            // Mostrar spinner de carga
-            bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
-            
-            try {
-                // Obtener banners
-                const bannersRef = db.collection("banners");
-                const bannersSnapshot = await bannersRef.orderBy("orden", "asc").get();
-                
-                // Si no hay banners
-                if (bannersSnapshot.empty) {
-                    bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
-                    return;
-                }
-                
-                // Procesar banners
-                const banners = [];
-                bannersSnapshot.forEach(doc => {
-                    banners.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-                
-                // Crear grid
-                let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
-                
-                banners.forEach(banner => {
-                    // Fecha
-                    const fecha = banner.createdAt ? new Date(banner.createdAt.seconds * 1000) : new Date();
-                    const fechaFormateada = fecha.toLocaleDateString('es-ES');
-                    
-                    // Estado
-                    const estado = banner.visible !== false ? 
-                        '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
-                        '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
-                    
-                    // Imagen
-                    const imageSource = banner.imageUrl || banner.imageData || '';
-                    
-                    // Tarjeta
-                    html += `
-                        <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
-                            <div class="relative">
-                                <img src="${imageSource}" alt="${banner.nombre}" class="w-full h-48 object-cover">
-                                <div class="absolute top-2 right-2 flex space-x-1">
-                                    <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
-                                    ${estado}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-bold text-lg mb-1">${banner.nombre}</h3>
-                                <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'Sin descripción'}</p>
-                                
-                                <div class="flex justify-between items-center text-sm text-gray-500 mt-3">
-                                    <div class="truncate mr-2">
-                                        <span class="text-blue-500 font-medium">URL:</span> 
-                                        <a href="${banner.url}" target="_blank" class="hover:underline truncate">${banner.url || '#'}</a>
-                                    </div>
-                                    <span>Creado: ${fechaFormateada}</span>
-                                </div>
-                                
-                                <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
-                                    <button class="text-blue-500 hover:text-blue-700 toggle-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
-                                        <i class="fas fa-eye${banner.visible !== false ? '' : '-slash'}"></i>
-                                    </button>
-                                    <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Editar banner">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Eliminar banner">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += '</div>';
-                
-                // Insertar en el DOM
-                bannersContainer.innerHTML = html;
-                
-                // Añadir event listeners
-                agregarListenersBanners();
-                
-            } catch (error) {
-                console.error("Error al cargar banners:", error);
-                bannersContainer.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                        <p class="font-bold">Error al cargar banners</p>
-                        <p>${error.message || "Inténtalo de nuevo"}</p>
-                        <button onclick="window.location.reload()" class="mt-2 bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded">
-                            Reintentar
-                        </button>
-                    </div>
-                `;
-            }
-        }
-        
-        // Añadir event listeners a las tarjetas de banners
-        function agregarListenersBanners() {
-            // Botones de visibilidad
-            document.querySelectorAll('.toggle-visibility-btn').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const bannerCard = this.closest('[data-banner-id]');
-                    const bannerId = bannerCard.dataset.bannerId;
-                    
-                    try {
-                        // Obtener datos actuales
-                        const bannerRef = db.collection("banners").doc(bannerId);
-                        const bannerSnap = await bannerRef.get();
-                        
-                        if (!bannerSnap.exists) {
-                            mostrarNotificacion("No se encontró el banner", "error");
-                            return;
-                        }
-                        
-                        const bannerData = bannerSnap.data();
-                        const newVisibility = bannerData.visible === false ? true : false;
-                        
-                        // Mostrar estado de carga
-                        const originalHtml = this.innerHTML;
-                        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                        this.disabled = true;
-                        
-                        // Actualizar visibilidad
-                        await bannerRef.update({
-                            visible: newVisibility,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        
-                        // Actualizar UI
-                        const icon = this.querySelector('i');
-                        if (newVisibility) {
-                            icon.className = 'fas fa-eye';
-                            // Cambiar etiqueta
-                            const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
-                            if (statusLabel) {
-                                statusLabel.className = 'bg-green-100 text-green-600 py-1 px-2 rounded text-xs';
-                                statusLabel.textContent = 'Visible';
-                            }
-                        } else {
-                            icon.className = 'fas fa-eye-slash';
-                            // Cambiar etiqueta
-                            const statusLabel = bannerCard.querySelector('.absolute > span:last-child');
-                            if (statusLabel) {
-                                statusLabel.className = 'bg-red-100 text-red-600 py-1 px-2 rounded text-xs';
-                                statusLabel.textContent = 'Oculto';
-                            }
-                        }
-                        
-                        this.title = newVisibility ? 'Ocultar banner' : 'Mostrar banner';
-                        this.disabled = false;
-                        
-                        mostrarNotificacion(`Banner ${newVisibility ? 'visible' : 'oculto'} correctamente`, "success");
-                        
-                    } catch (error) {
-                        console.error("Error al cambiar visibilidad:", error);
-                        mostrarNotificacion("Error al cambiar visibilidad", "error");
-                        
-                        // Restaurar botón
-                        this.innerHTML = originalHtml;
-                        this.disabled = false;
-                    }
-                });
-            });
-            
-            // Botones de editar
-            document.querySelectorAll('.edit-banner-btn').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const bannerId = this.closest('[data-banner-id]').dataset.bannerId;
-                    
-                    try {
-                        await cargarBannerParaEditar(bannerId);
-                    } catch (error) {
-                        console.error("Error al cargar banner para editar:", error);
-                        mostrarNotificacion("Error al cargar banner para editar", "error");
-                    }
-                });
-            });
-            
-            // Botones de eliminar
-            document.querySelectorAll('.delete-banner-btn').forEach(button => {
-                button.addEventListener('click', async function() {
-                    const bannerCard = this.closest('[data-banner-id]');
-                    const bannerId = bannerCard.dataset.bannerId;
-                    const bannerName = bannerCard.querySelector('h3').textContent;
-                    
-                    if (confirm(`¿Estás seguro que deseas eliminar el banner "${bannerName}"?`)) {
-                        try {
-                            // Mostrar estado de carga
-                            const originalHtml = this.innerHTML;
-                            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                            this.disabled = true;
-                            
-                            // Eliminar banner
-                            const bannerRef = db.collection("banners").doc(bannerId);
-                            await bannerRef.delete();
-                            
-                            // Eliminar de la UI
-                            bannerCard.remove();
-                            
-                            mostrarNotificacion("Banner eliminado correctamente", "success");
-                            
-                            // Si no quedan banners
-                            if (document.querySelectorAll('[data-banner-id]').length === 0) {
-                                bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
-                            }
-                            
-                        } catch (error) {
-                            console.error("Error al eliminar banner:", error);
-                            mostrarNotificacion(error.message || "Error al eliminar banner", "error");
-                            
-                            // Restaurar botón
-                            this.innerHTML = originalHtml;
-                            this.disabled = false;
-                        }
-                    }
-                });
-            });
-        }
-        
-        // Cargar banner para edición
-        async function cargarBannerParaEditar(bannerId) {
-            try {
-                // Obtener datos del banner
-                const bannerRef = db.collection("banners").doc(bannerId);
-                const bannerSnap = await bannerRef.get();
-                
-                if (!bannerSnap.exists) {
-                    throw new Error("No se encontró el banner para editar");
-                }
-                
-                const banner = bannerSnap.data();
-                
-                // Llenar formulario
-                document.getElementById('bannerNombre').value = banner.nombre || '';
-                document.getElementById('bannerDescripcion').value = banner.descripcion || '';
-                document.getElementById('bannerUrl').value = banner.url || '';
-                document.getElementById('bannerOrden').value = banner.orden || 1;
-                document.getElementById('bannerVisible').checked = banner.visible !== false;
-                
-                // Mostrar imagen actual
-                const imageSource = banner.imageUrl || banner.imageData;
-                if (imageSource) {
-                    const container = document.getElementById('bannerImagen').parentElement;
-                    
-                    // Eliminar preview existente
-                    const existingPreview = container.querySelector('.image-preview');
-                    if (existingPreview) {
-                        existingPreview.remove();
-                    }
-                    
-                    // Crear preview
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'image-preview mt-2';
-                    previewDiv.innerHTML = `
-                        <p class="text-sm text-gray-600">Imagen actual:</p>
-                        <img src="${imageSource}" alt="Imagen actual" class="h-32 object-cover rounded mt-1">
-                        <p class="text-xs text-gray-500">Cargar nueva imagen para reemplazar (opcional)</p>
-                    `;
-                    container.appendChild(previewDiv);
-                }
-                
-                // Actualizar título y botón
-                if (bannerFormTitle) {
-                    bannerFormTitle.textContent = 'Editar Banner';
-                }
-                
-                if (submitBannerButton) {
-                    submitBannerButton.textContent = 'Actualizar Banner';
-                    submitBannerButton.dataset.editMode = 'true';
-                    submitBannerButton.dataset.bannerId = bannerId;
-                }
-                
-                // Mostrar formulario
-                mostrarFormulario();
-                
-            } catch (error) {
-                console.error("Error al cargar banner para editar:", error);
-                throw error;
-            }
-        }
-    });
-    </script>
+    
+    <!-- Scripts -->
+    <script src="../assets/js/admin-panel-banners.js"></script>
 </body>
 </html>

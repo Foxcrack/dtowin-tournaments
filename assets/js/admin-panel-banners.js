@@ -1,14 +1,13 @@
 // admin-panel-banners.js - Script para la gestión de banners
-import { showNotification } from '../../utils.js';
 
 // DOM elements
-const bannersContainer = document.getElementById('bannersContainer');
-const bannerFormSection = document.getElementById('bannerFormSection');
-const createBannerForm = document.getElementById('createBannerForm');
-const headerCreateBannerBtn = document.getElementById('headerCreateBannerBtn');
-const bannerFormTitle = document.getElementById('bannerFormTitle');
-const cancelBannerButton = document.getElementById('cancelBannerButton');
-const submitBannerButton = document.getElementById('submitBannerButton');
+const bannersContainer = document.getElementById('bannersList');
+const bannerFormSection = document.getElementById('bannerModal');
+const createBannerForm = document.getElementById('bannerForm');
+const headerCreateBannerBtn = document.getElementById('nuevoBannerBtn');
+const bannerFormTitle = document.getElementById('modalTitle');
+const cancelBannerButton = document.getElementById('cancelarFormBtn');
+const submitBannerButton = document.getElementById('guardarBannerBtn');
 
 // Variable para controlar el estado de inicialización
 let isInitialized = false;
@@ -24,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadingTimeout = setTimeout(() => {
         console.error("Tiempo de espera agotado al cargar banners");
         if (bannersContainer) {
-            bannersContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar banners: Tiempo de espera agotado. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></p>';
+            bannersContainer.innerHTML = '<tr><td colspan="5" class="text-center text-red-500 py-4">Error al cargar banners: Tiempo de espera agotado. <button class="text-blue-500 underline" onclick="window.location.reload()">Reintentar</button></td></tr>';
         }
     }, 15000); // 15 segundos de tiempo máximo
     
@@ -93,12 +92,12 @@ async function initBannersManagement() {
         showNotification("Error al cargar la gestión de banners. Inténtalo de nuevo.", "error");
         
         if (bannersContainer) {
-            bannersContainer.innerHTML = `<p class="text-center text-red-500 py-4">
+            bannersContainer.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-4">
                 Error al cargar banners: ${error.message || "Error desconocido"}. 
                 <button class="text-blue-500 underline" onclick="window.location.reload()">
                     Reintentar
                 </button>
-            </p>`;
+            </td></tr>`;
         }
     }
 }
@@ -201,12 +200,12 @@ function setupEventListeners() {
 // Reset the banner form to its initial state
 function resetBannerForm() {
     console.log("Reseteando formulario");
-    const form = document.getElementById('createBannerForm');
+    const form = document.getElementById('bannerForm');
     if (form) {
         form.reset();
         
         // Reset button text and mode
-        const submitBtn = document.getElementById('submitBannerButton');
+        const submitBtn = document.getElementById('guardarBannerBtn');
         if (submitBtn) {
             submitBtn.textContent = 'Crear Banner';
             submitBtn.dataset.editMode = 'false';
@@ -311,11 +310,12 @@ async function handleBannerFormSubmit(event) {
     console.log("Manejando envío de formulario de banner");
     
     // Get form data
-    const nombre = document.getElementById('bannerNombre').value.trim();
-    const descripcion = document.getElementById('bannerDescripcion').value.trim();
-    const url = document.getElementById('bannerUrl').value.trim();
+    const nombre = document.getElementById('bannerTitulo').value.trim();
+    const descripcion = document.getElementById('bannerSubtitulo').value.trim();
+    const url = document.getElementById('bannerLink').value.trim();
     const orden = parseInt(document.getElementById('bannerOrden').value) || 1;
-    const visible = document.getElementById('bannerVisible').checked;
+    const estadoSelect = document.getElementById('bannerEstado');
+    const visible = estadoSelect ? estadoSelect.value === 'activo' : true;
     const bannerImagen = document.getElementById('bannerImagen');
     
     console.log("Datos del formulario:", { nombre, url, orden, visible });
@@ -328,7 +328,7 @@ async function handleBannerFormSubmit(event) {
     
     // Verificar que la imagen sea válida
     const imageFile = bannerImagen && bannerImagen.files.length > 0 ? bannerImagen.files[0] : null;
-    const submitBtn = document.getElementById('submitBannerButton');
+    const submitBtn = document.getElementById('guardarBannerBtn');
     const isEditMode = submitBtn && submitBtn.dataset.editMode === 'true';
     
     if (!imageFile && !isEditMode) {
@@ -423,7 +423,7 @@ async function handleBannerFormSubmit(event) {
         showNotification(error.message || "Error al procesar el banner", "error");
     } finally {
         // Restore button
-        const submitButton = document.getElementById('submitBannerButton');
+        const submitButton = document.getElementById('guardarBannerBtn');
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = isEditMode ? 'Actualizar Banner' : 'Crear Banner';
@@ -442,7 +442,7 @@ async function loadBanners() {
         console.log("Cargando banners...");
         
         // Show loading spinner
-        bannersContainer.innerHTML = '<div class="flex justify-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div></div>';
+        bannersContainer.innerHTML = '<tr><td colspan="5" class="text-center py-8"><div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto mb-2"></div><p class="text-gray-400">Cargando banners...</p></td></tr>';
         
         // Get banners from Firestore
         const bannersRef = firebase.firestore().collection("banners");
@@ -451,7 +451,7 @@ async function loadBanners() {
         // Check if we have banners
         if (bannersSnapshot.empty) {
             console.log("No hay banners disponibles");
-            bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
+            bannersContainer.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">No hay banners disponibles. Crea el primer banner.</td></tr>';
             return;
         }
         
@@ -466,60 +466,41 @@ async function loadBanners() {
             });
         });
         
-        // Create grid of banner cards
-        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
+        // Create table rows
+        let html = '';
         
         banners.forEach(banner => {
-            // Calcular fecha
             const fecha = banner.createdAt ? new Date(banner.createdAt.seconds * 1000) : new Date();
             const fechaFormateada = fecha.toLocaleDateString('es-ES');
             
-            // Estado (visible/oculto)
             const estado = banner.visible !== false ? 
-                '<span class="bg-green-100 text-green-600 py-1 px-2 rounded text-xs">Visible</span>' : 
-                '<span class="bg-red-100 text-red-600 py-1 px-2 rounded text-xs">Oculto</span>';
+                '<span class="bg-green-500/20 text-green-400 py-1 px-3 rounded-full text-xs font-semibold">Activo</span>' : 
+                '<span class="bg-red-500/20 text-red-400 py-1 px-3 rounded-full text-xs font-semibold">Inactivo</span>';
             
-            // Determinar fuente de imagen (imageUrl o imageData)
             const imageSource = banner.imageUrl || banner.imageData || '';
             
             html += `
-                <div class="bg-white rounded-lg shadow overflow-hidden" data-banner-id="${banner.id}">
-                    <div class="relative">
-                        <img src="${imageSource}" alt="${banner.nombre}" class="w-full h-48 object-cover">
-                        <div class="absolute top-2 right-2 flex space-x-1">
-                            <span class="bg-gray-800 bg-opacity-75 text-white py-1 px-2 rounded text-xs">Orden: ${banner.orden}</span>
-                            ${estado}
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="font-bold text-lg mb-1">${banner.nombre}</h3>
-                        <p class="text-gray-600 text-sm mb-2">${banner.descripcion || 'Sin descripción'}</p>
-                        
-                        <div class="flex justify-between items-center text-sm text-gray-500 mt-3">
-                            <div class="truncate mr-2">
-                                <span class="text-blue-500 font-medium">URL:</span> 
-                                <a href="${banner.url}" target="_blank" class="hover:underline truncate">${banner.url || '#'}</a>
-                            </div>
-                            <span>Creado: ${fechaFormateada}</span>
-                        </div>
-                        
-                        <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
-                            <button class="text-blue-500 hover:text-blue-700 toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
+                <tr class="border-b border-gray-700/50 hover:bg-gray-800/50 transition-colors" data-banner-id="${banner.id}">
+                    <td class="p-4"><img src="${imageSource}" alt="${banner.nombre}" class="w-24 h-12 object-cover rounded shadow-sm border border-gray-700"></td>
+                    <td class="p-4 font-bold text-white">${banner.nombre}</td>
+                    <td class="p-4">${estado}</td>
+                    <td class="p-4 font-semibold text-gray-300">${banner.orden}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <button class="text-gray-400 hover:text-white bg-gray-800 border border-gray-700 hover:bg-gray-700 px-3 py-1.5 rounded transition toggle-banner-visibility-btn" title="${banner.visible !== false ? 'Ocultar banner' : 'Mostrar banner'}">
                                 <i class="fas fa-eye${banner.visible !== false ? '' : '-slash'}"></i>
                             </button>
-                            <button class="text-orange-500 hover:text-orange-700 edit-banner-btn" title="Editar banner">
+                            <button class="text-orange-400 hover:text-white bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500 px-3 py-1.5 rounded transition edit-banner-btn" title="Editar banner">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="text-red-500 hover:text-red-700 delete-banner-btn" title="Eliminar banner">
+                            <button class="text-red-400 hover:text-white bg-red-500/10 border border-red-500/30 hover:bg-red-500 px-3 py-1.5 rounded transition delete-banner-btn" title="Eliminar banner">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
         });
-        
-        html += '</div>';
         
         bannersContainer.innerHTML = html;
         
@@ -530,7 +511,7 @@ async function loadBanners() {
         
     } catch (error) {
         console.error("Error al cargar banners:", error);
-        bannersContainer.innerHTML = '<p class="text-center text-red-500 py-4">Error al cargar banners. Inténtalo de nuevo.</p>';
+        bannersContainer.innerHTML = '<tr><td colspan="5" class="text-center text-red-500 py-4">Error al cargar banners. Inténtalo de nuevo.</td></tr>';
     }
 }
 
@@ -642,7 +623,7 @@ function addBannerEventListeners() {
                     
                     // If no banners left, show message
                     if (document.querySelectorAll('[data-banner-id]').length === 0) {
-                        bannersContainer.innerHTML = '<p class="text-center text-gray-600 py-4">No hay banners disponibles. Crea el primer banner.</p>';
+                        bannersContainer.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">No hay banners disponibles. Crea el primer banner.</td></tr>';
                     }
                     
                 } catch (error) {
@@ -675,11 +656,15 @@ async function loadBannerForEdit(bannerId) {
         console.log("Datos del banner:", banner);
         
         // Fill form with banner data
-        document.getElementById('bannerNombre').value = banner.nombre || '';
-        document.getElementById('bannerDescripcion').value = banner.descripcion || '';
-        document.getElementById('bannerUrl').value = banner.url || '';
+        document.getElementById('bannerTitulo').value = banner.nombre || '';
+        document.getElementById('bannerSubtitulo').value = banner.descripcion || '';
+        document.getElementById('bannerLink').value = banner.url || '';
         document.getElementById('bannerOrden').value = banner.orden || 1;
-        document.getElementById('bannerVisible').checked = banner.visible !== false;
+        
+        const estadoSelect = document.getElementById('bannerEstado');
+        if (estadoSelect) {
+            estadoSelect.value = banner.visible !== false ? 'activo' : 'inactivo';
+        }
         
         // Mostrar la imagen actual (de imageUrl o imageData)
         const imageSource = banner.imageUrl || banner.imageData;
@@ -724,8 +709,3 @@ async function loadBannerForEdit(bannerId) {
     }
 }
 
-// Exportar funciones
-export {
-    initBannersManagement,
-    loadBanners
-};

@@ -750,7 +750,7 @@ async function renderTournaments(containerId, torneos) {
                         <h3 class="text-xl font-bold text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h3>
                         <span class="bg-${getStatusColor(torneo.estado)} text-white text-xs px-2 py-1 rounded-full">${torneo.estado}</span>
                     </div>
-                    <p class="text-gray-600 mb-4">${torneo.descripcion || 'Sin descripción disponible.'}</p>
+                    <p class="text-gray-600 mb-4 whitespace-pre-wrap">${torneo.descripcion || 'Sin descripción disponible.'}</p>
                     <div class="flex items-center text-gray-500 text-sm mb-4">
                         <i class="far fa-calendar-alt mr-2"></i>
                         <span>${fechaFormateada}</span>

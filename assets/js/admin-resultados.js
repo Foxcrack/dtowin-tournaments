@@ -134,18 +134,56 @@ function setupEventListeners() {
     document.getElementById('buscarParticipante').addEventListener('input', filterParticipantes);
     
     // Modal de edición
-    document.getElementById('editResultadosForm').addEventListener('submit', handleEditResultados);
-    document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
-    document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+    document.getElementById('editarResultadoForm').addEventListener('submit', handleEditResultados);
+    document.getElementById('cancelarEdicionBtn').addEventListener('click', closeEditModal);
+    document.getElementById('cerrarModalBtn').addEventListener('click', closeEditModal);
     
     // Cambiar torneo
     document.getElementById('cambiarTorneoBtn').addEventListener('click', deselectTorneo);
     
-    // Modal de emparejamiento
-    document.getElementById('agregarEmparejamientoForm').addEventListener('submit', handleAddEmparejamiento);
-    document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        btn.addEventListener('click', closeEmparejamientoModal);
+    // Challonge Sync Modal
+    document.getElementById('sincronizarChallongeBtn').addEventListener('click', () => {
+        const modal = document.getElementById('syncChallongeModal');
+        
+        // Actualizar visualmente la distribución de puntos
+        if (torneoActualId) {
+            const torneoActual = allTorneos.find(t => t.id === torneoActualId);
+            const puntosConfig = torneoActual && torneoActual.puntosPosicion ? torneoActual.puntosPosicion : null;
+            
+            const p1 = puntosConfig ? (puntosConfig['1'] || 0) : 100;
+            const p2 = puntosConfig ? (puntosConfig['2'] || 0) : 75;
+            const p3 = puntosConfig ? (puntosConfig['3'] || 0) : 50;
+            const pResto = puntosConfig ? 0 : 10;
+            
+            const list = modal.querySelector('ul.space-y-2');
+            if (list) {
+                list.innerHTML = `
+                    <li><span class="inline-block w-6 text-yellow-400"><i class="fas fa-medal"></i></span> 1er Lugar: <span class="font-bold text-white">${p1} pts</span> y 1 victoria</li>
+                    <li><span class="inline-block w-6 text-gray-400"><i class="fas fa-medal"></i></span> 2do Lugar: <span class="font-bold text-white">${p2} pts</span></li>
+                    <li><span class="inline-block w-6 text-orange-400"><i class="fas fa-medal"></i></span> 3er Lugar: <span class="font-bold text-white">${p3} pts</span></li>
+                    <li><span class="inline-block w-6 text-blue-400"><i class="fas fa-medal"></i></span> Resto: <span class="font-bold text-white">${pResto} pts</span></li>
+                `;
+            }
+        }
+        
+        modal.classList.remove('hidden');
     });
+    document.getElementById('cerrarSyncModalBtn').addEventListener('click', () => {
+        document.getElementById('syncChallongeModal').classList.add('hidden');
+    });
+    document.getElementById('cancelarSyncBtn').addEventListener('click', () => {
+        document.getElementById('syncChallongeModal').classList.add('hidden');
+    });
+    document.getElementById('iniciarSyncBtn').addEventListener('click', startChallongeSync);
+    
+    // Modal de emparejamiento (if still exists)
+    const formEmparejamiento = document.getElementById('agregarEmparejamientoForm');
+    if (formEmparejamiento) {
+        formEmparejamiento.addEventListener('submit', handleAddEmparejamiento);
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', closeEmparejamientoModal);
+        });
+    }
 }
 
 // Actualizar botones de filtro de estado
@@ -270,11 +308,11 @@ function renderTorneos(torneos) {
         }
         
         html += `
-            <div class="participante-card" onclick="selectTorneo('${torneo.id}', '${(torneo.nombre || 'Torneo').replace(/'/g, "\\'")}')">
+            <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:bg-gray-700/50 hover:border-gray-600 transition-all cursor-pointer group" onclick="selectTorneo('${torneo.id}', '${(torneo.nombre || 'Torneo').replace(/'/g, "\\'")}')">
                 <div class="flex items-start justify-between">
                     <div class="flex-grow">
-                        <h4 class="font-bold text-lg text-gray-800">${torneo.nombre || 'Torneo sin nombre'}</h4>
-                        <p class="text-sm text-gray-600 mt-1">
+                        <h4 class="font-bold text-lg text-white group-hover:text-orange-400 transition-colors">${torneo.nombre || 'Torneo sin nombre'}</h4>
+                        <p class="text-sm text-gray-400 mt-1">
                             <i class="fas fa-calendar mr-2"></i>${fechaFormateada}
                         </p>
                         <p class="text-sm mt-2">
@@ -283,8 +321,8 @@ function renderTorneos(torneos) {
                             </span>
                         </p>
                     </div>
-                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold whitespace-nowrap ml-4">
-                        Seleccionar
+                    <span class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-semibold whitespace-nowrap ml-4 group-hover:bg-blue-500 group-hover:text-white transition-colors flex items-center">
+                        <i class="fas fa-check mr-2"></i>Seleccionar
                     </span>
                 </div>
             </div>
@@ -325,6 +363,20 @@ async function selectTorneo(torneoId, torneoNombre) {
         
         // Cargar participantes del torneo
         await loadParticipantes(torneoId);
+        
+        // Mostrar u ocultar botón de sincronización
+        const torneo = allTorneos.find(t => t.id === torneoId);
+        const syncBtn = document.getElementById('sincronizarChallongeBtn');
+        const estadoText = document.getElementById('tornoSeleccionadoEstado');
+        
+        if (torneo) {
+            estadoText.textContent = `Estado: ${torneo.estado || 'Desconocido'}`;
+            if (torneo.estado === 'Finalizado' && torneo.challonge && torneo.challonge.slug) {
+                syncBtn.classList.remove('hidden');
+            } else {
+                syncBtn.classList.add('hidden');
+            }
+        }
         
         // Scroll a la sección de participantes
         document.getElementById('participantesSection').scrollIntoView({ behavior: 'smooth' });
@@ -447,11 +499,14 @@ function renderParticipantes(participantes) {
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-500">${participante.nombreJuego}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-500">${participante.discord}</div>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="puntos-badge font-bold text-orange-500">${participante.puntos}</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <span class="puntos-badge">${participante.puntos}</span>
+                    <div class="text-sm font-semibold text-gray-600">
+                        <span class="text-green-600">${participante.victorias || 0}</span> / 
+                        <span class="text-red-600">${participante.derrotas || 0}</span>
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                     <span class="posicion-badge ${posicionClass}">${posicionText}</span>
@@ -500,20 +555,22 @@ function openEditModal(participanteId, nombreJuego, puntos, posicion) {
     participanteActualId = participanteId;
     participanteActualNombre = nombreJuego;
     
-    document.getElementById('participanteNombre').textContent = nombreJuego;
-    document.getElementById('editPuntos').value = puntos;
-    document.getElementById('editPosicion').value = posicion;
+    const participante = allParticipantes.find(p => p.id === participanteId);
+    let ganadas = participante ? (participante.victorias || 0) : 0;
+    let perdidas = participante ? (participante.derrotas || 0) : 0;
     
-    // Cargar emparejamientos
-    loadEmparejamientos(participanteId);
+    document.getElementById('nombreParticipanteModal').textContent = nombreJuego;
+    document.getElementById('puntosAsignados').value = puntos || 0;
+    document.getElementById('posicionFinal').value = posicion || '';
+    document.getElementById('partidasGanadas').value = ganadas;
+    document.getElementById('partidasPerdidas').value = perdidas;
     
-    document.getElementById('editResultadosModal').classList.remove('hidden');
+    document.getElementById('editarResultadoModal').classList.remove('hidden');
 }
 
 // Cerrar modal de edición
 function closeEditModal() {
-    document.getElementById('editResultadosModal').classList.add('hidden');
-    // No nulificar participanteActualId aquí, podría ser usado por el modal de emparejamiento
+    document.getElementById('editarResultadoModal').classList.add('hidden');
 }
 
 // Cargar emparejamientos de un participante
@@ -566,7 +623,7 @@ async function loadEmparejamientos(participanteId) {
                                 <span class="text-3xl font-bold" style="color: ${colorTexto};">
                                     ${iconoResultado}
                                 </span>
-                                <button type="button" class="text-red-500 hover:text-red-700 text-sm" onclick="deleteEmparejamiento(${index})">
+                                <button type="button" class="text-gray-600 hover:text-gray-900 text-sm" onclick="deleteEmparejamiento(${index})">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
@@ -598,11 +655,13 @@ async function handleEditResultados(e) {
     e.preventDefault();
     
     try {
-        const puntos = parseInt(document.getElementById('editPuntos').value);
-        const posicion = document.getElementById('editPosicion').value;
+        const puntos = parseInt(document.getElementById('puntosAsignados').value) || 0;
+        const posicion = document.getElementById('posicionFinal').value || '';
+        const ganadas = parseInt(document.getElementById('partidasGanadas').value) || 0;
+        const perdidas = parseInt(document.getElementById('partidasPerdidas').value) || 0;
         
-        if (isNaN(puntos) || puntos < 0) {
-            showError("Los puntos deben ser un número válido");
+        if (puntos < 0) {
+            showError("Los puntos deben ser un número válido mayor o igual a 0");
             return;
         }
         
@@ -612,12 +671,11 @@ async function handleEditResultados(e) {
             .collection("inscripciones")
             .doc(participanteActualId);
         
-        const participante = allParticipantes.find(p => p.id === participanteActualId);
-        
         await inscripcionRef.update({
             puntos: puntos,
             posicion: posicion,
-            emparejamientos: participante.emparejamientos,
+            victorias: ganadas,
+            derrotas: perdidas,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
@@ -626,6 +684,8 @@ async function handleEditResultados(e) {
         if (idx !== -1) {
             allParticipantes[idx].puntos = puntos;
             allParticipantes[idx].posicion = posicion;
+            allParticipantes[idx].victorias = ganadas;
+            allParticipantes[idx].derrotas = perdidas;
         }
         
         // Recargar tabla
@@ -907,4 +967,134 @@ function showSuccess(message) {
     document.body.appendChild(notification);
     
     setTimeout(() => notification.remove(), 3000);
+}
+
+// Lógica de Sincronización Challonge desde el Frontend (Sin Cloud Functions)
+async function startChallongeSync() {
+    if (!torneoActualId) return;
+    
+    const syncStatusBox = document.getElementById('syncStatusBox');
+    const syncStatusText = document.getElementById('syncStatusText');
+    const iniciarBtn = document.getElementById('iniciarSyncBtn');
+    
+    try {
+        syncStatusBox.classList.remove('hidden');
+        syncStatusText.textContent = "Obteniendo datos desde Challonge...";
+        iniciarBtn.disabled = true;
+        iniciarBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        // 1. Obtener datos del torneo
+        const torneoActual = allTorneos.find(t => t.id === torneoActualId);
+        if (!torneoActual || !torneoActual.challonge || !torneoActual.challonge.slug) {
+            throw new Error("El torneo no está vinculado correctamente con Challonge.");
+        }
+        
+        const slug = torneoActual.challonge.slug;
+        const apiKey = 'c6782be4d1c6b70d5eaeef76180a8f724ea743674e805da2'; 
+        const puntosConfig = torneoActual.puntosPosicion || null;
+        
+        // 2. Fetch a Challonge usando un proxy CORS público
+        const targetUrl = `https://api.challonge.com/v1/tournaments/${slug}/participants.json?api_key=${apiKey}`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) {
+            throw new Error("No se pudo contactar con la API de Challonge.");
+        }
+        
+        const participantsData = await response.json();
+        
+        // 3. Procesar resultados y asignar puntos en Firestore
+        syncStatusText.textContent = "Guardando resultados en la base de datos...";
+        let processedCount = 0;
+        const batch = db.batch();
+        
+        for (const p of participantsData) {
+            const participant = p.participant;
+            const name = participant.name ? participant.name.toLowerCase() : "";
+            const finalRank = participant.final_rank;
+            
+            if (!finalRank) continue;
+            
+            // Buscar participante en la lista de inscritos actual
+            const fbUser = allParticipantes.find(u => 
+                (u.nombreJuego && u.nombreJuego.toLowerCase() === name) || 
+                (u.nombre && u.nombre.toLowerCase() === name)
+            );
+            
+            if (fbUser) {
+                // Calcular puntos según configuración del torneo o default
+                let puntosAsignados = puntosConfig ? 0 : 10;
+                let victoriasSumadas = 0;
+                
+                if (finalRank === 1) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["1"]) || 0) : 100;
+                    victoriasSumadas = 1;
+                } else if (finalRank === 2) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["2"]) || 0) : 75;
+                } else if (finalRank === 3) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["3"]) || 0) : 50;
+                }
+                
+                // Actualizar en subcolección de inscripciones
+                const inscripcionDocRef = db.collection("torneos").doc(torneoActualId).collection("inscripciones").doc(fbUser.id);
+                batch.update(inscripcionDocRef, {
+                    posicion: finalRank,
+                    puntos: puntosAsignados,
+                    challongeSync: true
+                });
+                
+                // Actualizar perfil global del usuario
+                const userDocRef = db.collection("usuarios").doc(fbUser.id);
+                batch.set(userDocRef, {
+                    puntos: firebase.firestore.FieldValue.increment(puntosAsignados),
+                    victorias: firebase.firestore.FieldValue.increment(victoriasSumadas),
+                    torneosJugados: firebase.firestore.FieldValue.arrayUnion(torneoActualId)
+                }, { merge: true });
+                
+                processedCount++;
+            }
+        }
+        
+        // Marcar torneo como sincronizado
+        const torneoRef = db.collection("torneos").doc(torneoActualId);
+        batch.update(torneoRef, {
+            resultadosSincronizados: true,
+            fechaSincronizacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await batch.commit();
+        
+        // Éxito
+        syncStatusBox.className = 'mb-6 p-4 rounded-xl border border-green-500/30 bg-green-500/10';
+        syncStatusBox.innerHTML = `
+            <div class="flex items-center text-green-400">
+                <i class="fas fa-check-circle mr-3 text-xl"></i>
+                <span class="font-medium">¡Sincronización exitosa! Se procesaron ${processedCount} participantes.</span>
+            </div>
+        `;
+        
+        await loadParticipantes(torneoActualId);
+        
+        setTimeout(() => {
+            document.getElementById('syncChallongeModal').classList.add('hidden');
+            syncStatusBox.classList.add('hidden');
+            iniciarBtn.disabled = false;
+            iniciarBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }, 3000);
+        
+        showSuccess("Resultados de Challonge sincronizados correctamente");
+
+    } catch (error) {
+        console.error("Error sincronizando:", error);
+        syncStatusBox.className = 'mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10';
+        syncStatusBox.innerHTML = `
+            <div class="flex items-start text-red-400">
+                <i class="fas fa-exclamation-triangle mr-3 mt-1 text-xl"></i>
+                <span class="font-medium">Error: ${error.message}</span>
+            </div>
+        `;
+        iniciarBtn.disabled = false;
+        iniciarBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
 }

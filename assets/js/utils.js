@@ -102,16 +102,18 @@ export function getUserTimeZone() {
 export function convertLocalToUTC(dateStr, timeStr, timeZone = null) {
     const userTimeZone = timeZone || getUserTimeZone();
     
-    // Crear fecha en la zona horaria específica
-    const localDateTime = new Date(`${dateStr}T${timeStr}:00`);
+    console.log("Convirtiendo a UTC:", dateStr, timeStr, "Zona:", userTimeZone);
     
-    // Obtener el offset de la zona horaria
-    const tempDate = new Date(localDateTime.toLocaleString("en-US", { timeZone: userTimeZone }));
-    const tempUTC = new Date(localDateTime.toLocaleString("en-US", { timeZone: "UTC" }));
-    const offset = tempUTC.getTime() - tempDate.getTime();
+    // Crear fecha en la zona horaria local del usuario
+    const localDateTime = `${dateStr}T${timeStr}:00`;
+    console.log("DateTime string:", localDateTime);
     
-    // Aplicar el offset para obtener UTC correcto
-    return new Date(localDateTime.getTime() + offset);
+    // Crear Date object que interprete la fecha como local
+    // El navegador ya asume la zona horaria local si no hay 'Z' al final
+    const localDate = new Date(localDateTime);
+    console.log("Fecha UTC interpretada automáticamente:", localDate);
+    
+    return localDate;
 }
 
 /**

@@ -97,7 +97,7 @@ export async function initDashboard() {
 
         if (proximosSnap.empty) {
             torneosTable.innerHTML = `
-                <tr><td colspan="5" class="text-center py-4 text-gray-500">No hay torneos próximos registrados.</td></tr>
+                <tr><td colspan="5" class="text-center py-8 text-gray-500">No hay torneos próximos registrados.</td></tr>
             `;
         } else {
             proximosSnap.forEach(doc => {
@@ -107,29 +107,29 @@ export async function initDashboard() {
                 let estadoClase, estadoTexto;
                 switch (torneo.estado) {
                     case 'Abierto':
-                        estadoClase = 'bg-green-100 text-green-800';
+                        estadoClase = 'status-badge active';
                         estadoTexto = 'Abierto';
                         break;
                     case 'En Progreso':
-                        estadoClase = 'bg-blue-100 text-blue-800';
+                        estadoClase = 'status-badge active';
                         estadoTexto = 'En Progreso';
                         break;
                     case 'Próximamente':
-                        estadoClase = 'bg-yellow-100 text-yellow-800';
+                        estadoClase = 'status-badge pending';
                         estadoTexto = 'Próximamente';
                         break;
                     default:
-                        estadoClase = 'bg-gray-100 text-gray-800';
+                        estadoClase = 'status-badge closed';
                         estadoTexto = torneo.estado || 'Desconocido';
                 }
                 torneosTable.innerHTML += `
                     <tr>
-                        <td class="px-6 py-4">${torneo.nombre || "Sin nombre"}</td>
-                        <td class="px-6 py-4">${fecha}</td>
-                        <td class="px-6 py-4">${inscritos}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClase}">${estadoTexto}</span></td>
-                        <td class="px-6 py-4 text-right">
-                            <a href="admin-torneos.html?id=${doc.id}" class="text-blue-500 hover:underline">Ver</a>
+                        <td>${torneo.nombre || "Sin nombre"}</td>
+                        <td>${fecha}</td>
+                        <td>${inscritos}</td>
+                        <td><span class="${estadoClase}">${estadoTexto}</span></td>
+                        <td class="text-right">
+                            <a href="admin-torneos.html?id=${doc.id}" class="text-blue-500 hover:text-blue-400 transition-colors underline">Ver Detalles</a>
                         </td>
                     </tr>
                 `;
@@ -138,7 +138,7 @@ export async function initDashboard() {
     } catch (error) {
         console.error("Error al cargar próximos torneos:", error);
         torneosTable.innerHTML = `
-            <tr><td colspan="5" class="text-center py-4 text-red-500">Error al cargar torneos.</td></tr>
+            <tr><td colspan="5" class="text-center py-8 text-red-500">Error al cargar torneos.</td></tr>
         `;
     }
 }

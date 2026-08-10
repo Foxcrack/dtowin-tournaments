@@ -37,18 +37,11 @@ function convertLocalToUTC(dateStr, timeStr, timeZone = null) {
     console.log("DateTime string:", localDateTime);
     
     // Crear Date object que interprete la fecha como local
+    // El navegador ya asume la zona horaria local si no hay 'Z' al final
     const localDate = new Date(localDateTime);
-    console.log("Fecha local interpretada:", localDate);
+    console.log("Fecha UTC interpretada automáticamente:", localDate);
     
-    // Obtener offset de zona horaria en minutos
-    const offsetMinutes = localDate.getTimezoneOffset();
-    console.log("Offset en minutos:", offsetMinutes);
-    
-    // Convertir a UTC sumando el offset
-    const utcDate = new Date(localDate.getTime() - (offsetMinutes * 60000));
-    console.log("Fecha UTC final:", utcDate);
-    
-    return utcDate;
+    return localDate;
 }
 
 // Variables para elementos DOM (se inicializarán cuando el DOM esté listo)
@@ -512,16 +505,16 @@ function renderTorneosTable(torneos) {
         html += `
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">
+                    <div class="text-sm font-medium text-white">
                         ${torneo.nombre || 'Sin nombre'}
-                        ${torneo.bracketsLink ? `<span class="inline-block ml-2 text-green-600 text-xs" title="Tiene brackets"><i class="fas fa-check-circle"></i> Brackets</span>` : ''}
+                        ${torneo.bracketsLink ? `<span class="inline-block ml-2 text-green-400 text-xs" title="Tiene brackets"><i class="fas fa-check-circle"></i> Brackets</span>` : ''}
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-500">${fechaFormateada}</div>
+                    <div class="text-sm text-gray-300">${fechaFormateada}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="text-sm text-gray-500">${inscritos}</div>
+                    <div class="text-sm text-gray-300">${inscritos}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${estadoClass}">
@@ -772,8 +765,16 @@ function fillFormWithTournamentData(tournamentData) {
         const hours = String(fechaEnZonaAdmin.getHours()).padStart(2, '0');
         const minutes = String(fechaEnZonaAdmin.getMinutes()).padStart(2, '0');
         
-        document.getElementById('fechaTorneo').value = `${year}-${month}-${day}`;
-        document.getElementById('horaTorneo').value = `${hours}:${minutes}`;
+        const datetimeElem = document.getElementById('fechaTorneo');
+        if (datetimeElem && datetimeElem.type === 'datetime-local') {
+            datetimeElem.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        } else if (datetimeElem) {
+            datetimeElem.value = `${year}-${month}-${day}`;
+        }
+        
+        if (document.getElementById('horaTorneo')) {
+            document.getElementById('horaTorneo').value = `${hours}:${minutes}`;
+        }
         
         console.log("Fecha local para el admin:", `${year}-${month}-${day} ${hours}:${minutes}`);
         
@@ -784,11 +785,15 @@ function fillFormWithTournamentData(tournamentData) {
         const date = new Date(tournamentData.fecha.seconds * 1000);
         const formattedDate = date.toISOString().split('T')[0];
         document.getElementById('fechaTorneo').value = formattedDate;
-        document.getElementById('horaTorneo').value = tournamentData.hora || '';
+        if (document.getElementById('horaTorneo')) {
+            document.getElementById('horaTorneo').value = tournamentData.hora || '';
+        }
     }
     
     // Capacidad
-    document.getElementById('capacidadTorneo').value = tournamentData.capacidad || '';
+    if (document.getElementById('capacidadTorneo')) {
+        document.getElementById('capacidadTorneo').value = tournamentData.capacidad || '';
+    }
 
     // Juego/categoria
     document.getElementById('juegoTorneo').value = tournamentData.juego || 'tetrio';
@@ -995,8 +1000,15 @@ async function handleTournamentFormSubmit(e) {
         }
         
         // Recopilar datos del formulario
-        const fechaInput = document.getElementById('fechaTorneo').value;
-        const horaInput = document.getElementById('horaTorneo').value;
+        let fechaInput = document.getElementById('fechaTorneo').value;
+        let horaInput = document.getElementById('horaTorneo') ? document.getElementById('horaTorneo').value : '00:00';
+        
+        // Si el input es datetime-local, vendrá junto con una 'T'
+        if (fechaInput && fechaInput.includes('T')) {
+            const parts = fechaInput.split('T');
+            fechaInput = parts[0];
+            horaInput = parts[1];
+        }
         
         // Convertir fecha y hora local a UTC
         let fechaHoraUTC;
@@ -1012,7 +1024,7 @@ async function handleTournamentFormSubmit(e) {
             juego: document.getElementById('juegoTorneo').value || 'tetrio',
             rankCap: document.getElementById('rankCapTorneo').value || null,
             fechaHora: fechaHoraUTC, // Guardamos fecha y hora juntas en UTC
-            capacidad: parseInt(document.getElementById('capacidadTorneo').value) || null,
+            capacidad: document.getElementById('capacidadTorneo') ? parseInt(document.getElementById('capacidadTorneo').value) || null : null,
             estado: document.getElementById('estadoTorneo').value,
             puntosPosicion: {
                 1: parseInt(document.getElementById('puntos1').value) || 0,

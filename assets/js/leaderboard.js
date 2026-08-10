@@ -30,47 +30,77 @@ const fullLeaderboardBody = document.getElementById("fullLeaderboardBody");
 
 // Escuchar cambios de autenticación
 onAuthStateChanged(auth, async (user) => {
-  if (user && adminUIDs.includes(user.uid)) {
-    // Mostrar botón Admin
-    const loginBtn = document.getElementById("loginBtn");
-    if (loginBtn) {
-    loginBtn.innerHTML = `
-        <div class="flex items-center bg-white rounded-lg px-3 py-1">
-        <img src="${user.photoURL || 'dtowin.png'}" alt="Profile" class="w-8 h-8 rounded-full mr-2">
-        <span class="text-gray-800 font-medium">${user.displayName || 'Perfil'}</span>
-        </div>
-    `;
-    loginBtn.classList.remove("bg-white", "text-orange-500");
-    loginBtn.classList.add("cursor-pointer");
-    loginBtn.addEventListener("click", () => {
-        window.location.href = "perfil.html";
-    });
+  if (user) {
+    // Mostrar botón de Admin si corresponde
+    if (adminUIDs.includes(user.uid)) {
+        const adminBtn = document.createElement("a");
+        adminBtn.href = "admin/admin-panel.html";
+        adminBtn.className = "fixed top-4 right-4 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 transition z-50";
+        adminBtn.innerHTML = `<i class="fas fa-tools mr-2"></i>Panel Admin`;
+        document.body.appendChild(adminBtn);
     }
 
-    // También actualizamos el menú móvil si existe
-    const mobileMenu = document.getElementById("mobileMenu");
-    if (mobileMenu) {
-    const googleBtn = mobileMenu.querySelector("#mobileLoginBtn");
-    if (googleBtn) {
-        googleBtn.remove(); // Elimina el botón viejo
-    }
+    // Actualizar UI del Navbar (Premium Header)
+    const headerActions = document.querySelector('.header-actions');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (loginBtn && headerActions) {
+        loginBtn.classList.add('hidden');
+        
+        let userDropdown = document.getElementById('userDropdown');
+        if (!userDropdown) {
+            userDropdown = document.createElement('div');
+            userDropdown.id = 'userDropdown';
+            userDropdown.className = 'user-dropdown';
+            
+            userDropdown.innerHTML = `
+                <div class="user-dropdown-toggle" id="userDropdownToggle">
+                    <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="User" class="user-avatar" id="userAvatar">
+                    <span class="user-name" id="userName">${user.displayName || 'Usuario'}</span>
+                    <i class="fas fa-chevron-down ml-2 text-xs transition-transform duration-200"></i>
+                </div>
+                <div class="user-dropdown-menu" id="userDropdownMenu">
+                    <a href="perfil.html" class="dropdown-item">
+                        <i class="fas fa-user text-blue-400"></i> Mi Perfil
+                    </a>
+                    <a href="#" id="logoutBtn" class="dropdown-item text-red-400 hover:bg-red-400/10">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
+            `;
+            // Insertar antes del botón de menú móvil si existe
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            if (mobileMenuToggle) {
+                headerActions.insertBefore(userDropdown, mobileMenuToggle);
+            } else {
+                headerActions.appendChild(userDropdown);
+            }
 
-    // Añadir perfil al menú móvil
-    const profileLink = document.createElement("a");
-    profileLink.href = "perfil.html";
-    profileLink.className = "flex items-center space-x-2 px-4 py-2 hover:text-gray-300 transition";
-    profileLink.innerHTML = `
-        <img src="${user.photoURL || 'dtowin.png'}" alt="Perfil" class="w-6 h-6 rounded-full">
-        <span>${user.displayName || "Perfil"}</span>
-    `;
-    mobileMenu.appendChild(profileLink);
-    }
+            // Eventos del Dropdown
+            const toggle = userDropdown.querySelector('#userDropdownToggle');
+            const menu = userDropdown.querySelector('#userDropdownMenu');
+            const chevron = toggle.querySelector('.fa-chevron-down');
+            
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('active');
+                chevron.style.transform = menu.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+            });
 
-    const adminBtn = document.createElement("a");
-    adminBtn.href = "admin/admin-panel.html";
-    adminBtn.className = "fixed top-4 right-4 bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 transition z-50";
-    adminBtn.innerHTML = `<i class="fas fa-tools mr-2"></i>Panel Admin`;
-    document.body.appendChild(adminBtn);
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target) && menu.classList.contains('active')) {
+                    menu.classList.remove('active');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await auth.signOut();
+                window.location.reload();
+            });
+        }
+    }
   }
 
   // Cargar usuarios desde Firestore
@@ -85,10 +115,12 @@ onAuthStateChanged(auth, async (user) => {
     
     users.push({
       uid: data.uid || userDoc.id,
-      nombre: data.nombre || "Jugador",
+      nombre: data.nombre || data.displayName || data.email || "Jugador",
       puntos: data.puntos || 0,
       creado: data.createdAt?.seconds || 0,
-      bannerId: data.bannerId || null
+      bannerId: data.bannerId || null,
+      photoURL: data.photoURL || null,
+      badges: data.badges || 0
     });
   }
 
@@ -126,38 +158,43 @@ async function renderLeaderboard(users) {
     
     // Renderizar con los banners cargados
     fullLeaderboardBody.innerHTML = users.map((user, i) => {
-      let clasePosicion = "";
-      let medalla = "";
-  
-      if (i === 0) {
-        clasePosicion = "leaderboard-gold";
-        medalla = "🥇";
-      } else if (i === 1) {
-        clasePosicion = "leaderboard-silver";
-        medalla = "🥈";
-      } else if (i === 2) {
-        clasePosicion = "leaderboard-bronze";
-        medalla = "🥉";
-      }
-  
-      const delay = i * 50; // cada fila se retrasa 50ms más que la anterior
-      const bannerImage = bannerMap.get(user.uid);
+        const position = i + 1;
+        let medalla = "";
+        let claseMedalla = "text-gray-400";
+    
+        if (position === 1) { medalla = "🥇"; claseMedalla = "text-yellow-400"; }
+        else if (position === 2) { medalla = "🥈"; claseMedalla = "text-gray-300"; }
+        else if (position === 3) { medalla = "🥉"; claseMedalla = "text-yellow-700"; }
+    
+        const bannerImage = bannerMap.get(user.uid);
+        
+        let badgesCount = 0;
+        if (user.badges && typeof user.badges === "object" && !Array.isArray(user.badges)) {
+            badgesCount = Object.keys(user.badges).length;
+        } else if (typeof user.badges === "number") {
+            badgesCount = user.badges;
+        }
 
-      return `
-        <div class="leaderboard-row ${clasePosicion} leaderboard-anim" style="animation-delay: ${delay}ms;" onclick="window.location.href='perfil.html?uid=${user.uid}'">
-          ${bannerImage ? `
-            <div class="leaderboard-banner-diagonal" style="background-image: url('${bannerImage}');"></div>
-          ` : ''}
-          <div class="leaderboard-left">
-            <div class="leaderboard-position">#${i + 1}</div>
-            <div class="leaderboard-medal">${medalla}</div>
-            <div class="leaderboard-name">${user.nombre}</div>
-          </div>
-          <div class="leaderboard-right">
-            <div class="leaderboard-points">${user.puntos} pts</div>
-          </div>
-        </div>
-      `;
+        return `
+            <a href="perfil.html?uid=${encodeURIComponent(user.uid)}" class="block hover:bg-gray-800 transition group" style="background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div class="flex items-center justify-between p-4 relative overflow-hidden">
+                    ${bannerImage ? `<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 250px; opacity: 0.25; background: url('${bannerImage}') center/cover no-repeat; clip-path: polygon(0% 0%, 100% 0%, 75% 100%, 0% 100%); transition: opacity 0.3s ease;" class="group-hover:opacity-40"></div>` : ''}
+                    
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span class="font-bold text-xl w-12 ${claseMedalla}">${medalla} #${position}</span>
+                        <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="Avatar" class="w-12 h-12 rounded-full object-cover border border-gray-700 group-hover:border-blue-500 transition-colors">
+                        <div>
+                            <p class="font-semibold text-white group-hover:text-blue-400 transition-colors text-lg">${user.nombre}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right relative z-10">
+                        <p class="font-bold text-blue-400 text-xl">${user.puntos || 0} <span class="text-sm font-normal text-gray-400">pts</span></p>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fas fa-medal text-yellow-500 mr-1"></i>${badgesCount} badges</p>
+                    </div>
+                </div>
+            </a>
+        `;
     }).join("");
 }
 

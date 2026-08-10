@@ -1,71 +1,76 @@
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Leaderboard Global Completo - Dtowin</title>
-      
-        <!-- Estilos externos -->
-        <link rel="icon" href="assets/img/dtowin.png" type="image/png">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-        <link rel="stylesheet" href="assets/css/leaderboard-completo.css" />
-        <link rel="icon" type="image/png" href="assets/img/dtowin.png">
-    </head>
-    <body class="bg-gray-950 min-h-screen">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard Global Completo - Dtowin</title>
+    <meta name="description" content="Ranking global de los mejores competidores en Dtowin Torneos.">
+    <link rel="icon" type="image/png" href="assets/img/dtowin.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/index-torneos.css">
+    <!-- Extra tweaks for the full page leaderboard -->
+    <style>
+        .leaderboard-full-section {
+            padding: 120px 2rem 4rem;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, rgba(37,99,235,0.08) 0%, transparent 70%);
+        }
+        .full-leaderboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
 
-    <!-- Navbar -->
-        <nav class="gradient-background text-white p-4 shadow-md">
-            <div class="container mx-auto flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full">
-                    <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
-                </div>
-                <div class="hidden md:flex items-center space-x-6">
-                    <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
-                    <a href="index-torneos.html" class="hover:text-gray-300 transition">Torneos</a>
-                    <a href="leaderboard-completo.html" class="hover:text-gray-300 transition">Leaderboard</a>
-                    <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
-                </div>
-                <button class="md:hidden text-xl" id="mobileMenuBtn">
+<body>
+    <!-- ═══════════════════════════════════════ HEADER ═══════════════════════════════════════ -->
+    <header id="mainHeader">
+        <div class="header-inner">
+            <a href="index-torneos.html" class="brand">
+                <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="brand-logo">
+                <span class="brand-name">Dtowin <span class="brand-accent">Torneos</span></span>
+            </a>
+
+            <nav class="desktop-nav">
+                <a href="index.html" class="nav-link">Inicio</a>
+                <a href="index-torneos.html" class="nav-link">Torneos</a>
+                <a href="leaderboard-completo.html" class="nav-link active">Leaderboard</a>
+            </nav>
+
+            <div class="header-actions">
+                <button id="loginBtn" class="btn-login">Iniciar Sesión</button>
+                <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Menu">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
-            
-            <!-- Mobile Menu -->
-            <div id="mobileMenu" class="md:hidden hidden">
-                <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
-                    <a href="index.html" class="hover:text-gray-300 transition">Inicio</a>
-                    <a href="index-torneos.html" class="hover:text-gray-300 transition">Torneos</a>
-                    <a href="leaderboard-completo.html" class="hover:text-gray-300 transition">Leaderboard</a>
-                </div>
-            </div>
-        </nav>
+        </div>
 
+        <!-- Mobile Nav -->
+        <div id="mobileNav" class="mobile-nav hidden">
+            <a href="index.html" class="mobile-nav-link">Inicio</a>
+            <a href="index-torneos.html" class="mobile-nav-link">Torneos</a>
+            <a href="leaderboard-completo.html" class="mobile-nav-link active">Leaderboard</a>
+        </div>
+    </header>
 
-
-
-    <!-- Leaderboard Section -->
-    <section class="py-16 px-4 bg-gray-950">
-        <div class="container mx-auto">
-        <h2 class="text-3xl font-bold mb-8 text-center text-white">Leaderboard Global Completo</h2>
-        <div class="bg-gray-900 rounded-xl shadow-lg overflow-hidden max-w-4xl mx-auto border border-gray-800">
-            <div class="gradient-background text-white p-4">
-            <div class="grid grid-cols-12 font-semibold">
-                <div class="col-span-1 text-center">#</div>
-                <div class="col-span-8">Jugador</div>
-                <div class="col-span-3 text-center">Puntos</div>
-            </div>
-            </div>
-            <div id="fullLeaderboardBody" class="divide-y divide-gray-800">
+    <!-- ═══════════════════════════════════════ LEADERBOARD ═══════════════════════════════════════ -->
+    <section class="leaderboard-full-section">
+        <div class="section-header">
+            <h2 class="section-title">Ranking <span class="gradient-text">Global</span></h2>
+            <p class="section-subtitle">Los mejores competidores de la plataforma</p>
+        </div>
+        
+        <div class="full-leaderboard-container" id="fullLeaderboardBody">
             <!-- El leaderboard se carga dinámicamente -->
-            </div>
+            <div class="loader-wrap"><div class="loader"></div></div>
         </div>
+
         <div class="text-center mt-8">
-            <a href="index-torneos.html" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            <i class="fas fa-arrow-left mr-2"></i> Volver
+            <a href="index-torneos.html" class="btn-secondary-hero inline-flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Volver a Torneos
             </a>
-        </div>
         </div>
     </section>
 

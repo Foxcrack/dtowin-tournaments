@@ -346,3 +346,116 @@ exports.exchangeDiscordCode = onRequest(async (request, response) => {
     });
   }
 });
+
+const { onCall } = require("firebase-functions/v2/https");
+
+exports.syncChallongeTournament = onCall({ cors: true }, async (request) => {
+    // En v2, los datos están en request.data
+    const { torneoId } = request.data;
+    
+    if (!torneoId) {
+        return { success: false, error: "Falta el ID del torneo" };
+    }
+    
+    try {
+        const torneoRef = db.collection("torneos").doc(torneoId);
+        const torneoDoc = await torneoRef.get();
+        
+        if (!torneoDoc.exists) {
+            return { success: false, error: "El torneo no existe" };
+        }
+        
+        const torneoData = torneoDoc.data();
+        
+        if (!torneoData.challonge || !torneoData.challonge.slug || !torneoData.challonge.apiKey) {
+            return { success: false, error: "Torneo no vinculado con Challonge o falta API Key" };
+        }
+        
+        const { slug, apiKey } = torneoData.challonge;
+        
+        // Fetch participants with final ranks
+        const url = \`https://api.challonge.com/v1/tournaments/\${slug}/participants.json?api_key=\${apiKey}\`;
+        const challongeResponse = await fetch(url);
+        
+        if (!challongeResponse.ok) {
+            return { success: false, error: "Fallo al contactar API de Challonge" };
+        }
+        
+        const participantsData = await challongeResponse.json();
+        
+        // Obtener inscripciones de Firebase para relacionar
+        const inscripcionesRef = db.collection("torneos").doc(torneoId).collection("inscripciones");
+        const inscripcionesSnap = await inscripcionesRef.where("estado", "==", "inscrito").get();
+        
+        let processedCount = 0;
+        const batch = db.batch();
+        
+        // Preparar mapa de inscripciones por gameUsername para búsqueda rápida
+        const firebaseInscritos = {};
+        inscripcionesSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.gameUsername) {
+                firebaseInscritos[data.gameUsername.toLowerCase()] = { id: doc.id, ...data };
+            }
+        });
+        
+        const puntosConfig = torneoData.puntosPosicion || null;
+        
+        for (const p of participantsData) {
+            const participant = p.participant;
+            const name = participant.name ? participant.name.toLowerCase() : "";
+            const finalRank = participant.final_rank;
+            
+            if (!finalRank) continue; // Si no tiene rank final, ignorar
+            
+            // Buscar si tenemos a este usuario en Firebase
+            const fbUser = firebaseInscritos[name];
+            if (fbUser) {
+                // Calcular puntos según la lógica fijada o la del torneo
+                let puntosAsignados = puntosConfig ? 0 : 10;
+                let victoriasSumadas = 0;
+                
+                if (finalRank === 1) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["1"]) || 0) : 100;
+                    victoriasSumadas = 1;
+                } else if (finalRank === 2) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["2"]) || 0) : 75;
+                } else if (finalRank === 3) {
+                    puntosAsignados = puntosConfig ? (parseInt(puntosConfig["3"]) || 0) : 50;
+                }
+                
+                // Actualizar en subcolección de inscripciones
+                const inscripcionDocRef = inscripcionesRef.doc(fbUser.id);
+                batch.update(inscripcionDocRef, {
+                    posicion: finalRank,
+                    puntos: puntosAsignados,
+                    challongeSync: true
+                });
+                
+                // Actualizar perfil global del usuario
+                const userDocRef = db.collection("usuarios").doc(fbUser.id);
+                batch.set(userDocRef, {
+                    puntos: admin.firestore.FieldValue.increment(puntosAsignados),
+                    victorias: admin.firestore.FieldValue.increment(victoriasSumadas),
+                    torneosJugados: admin.firestore.FieldValue.arrayUnion(torneoId)
+                }, { merge: true });
+                
+                processedCount++;
+            }
+        }
+        
+        // Marcar torneo como sincronizado
+        batch.update(torneoRef, {
+            resultadosSincronizados: true,
+            fechaSincronizacion: admin.firestore.FieldValue.serverTimestamp()
+        });
+        
+        await batch.commit();
+        
+        return { success: true, procesados: processedCount };
+        
+    } catch (error) {
+        logger.error("Error sincronizando Challonge:", error);
+        return { success: false, error: error.message };
+    }
+});

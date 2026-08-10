@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/img/dtowin.png">
+    <link rel="stylesheet" href="admin-layout.css">
     <style>
         .badge {
             display: inline-flex;
@@ -19,61 +20,37 @@
             margin: 0 5px;
             color: white;
         }
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .badge-preview {
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .badge-preview:hover {
             transform: scale(1.05);
-        }
-        .notification {
-            transition: opacity 0.3s ease;
+            box-shadow: 0 0 15px rgba(255,107,26,0.3);
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body>
     <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
+    <nav class="admin-navbar p-4 flex justify-between items-center">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <a href="admin-panel.html" class="flex items-center">
-                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-3">
+                    <h1 class="text-xl font-bold hidden sm:block">Panel de Administración</h1>
                 </a>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-                <div id="userProfile" class="flex items-center space-x-2">
-                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full" id="userAvatar">
-                    <span class="hidden md:inline" id="userName">Admin</span>
+            <div class="flex items-center space-x-6">
+                <a href="../index.html" class="text-gray-400 hover:text-white transition text-sm font-medium"><i class="fas fa-external-link-alt mr-2"></i>Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-3 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700">
+                    <img src="../assets/img/dtowin.png" alt="Admin" class="w-7 h-7 rounded-full border border-gray-600" id="userAvatar">
+                    <span class="text-sm font-medium" id="userName">Admin</span>
                 </div>
             </div>
         </div>
@@ -81,88 +58,80 @@
 
     <!-- Main Content -->
     <div class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <!-- Sidebar -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <ul>
-                        <li>
-                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-trophy mr-2"></i> Torneos
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-users mr-2"></i> Participantes
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
-                                <i class="fas fa-certificate mr-2"></i> Badges
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                 <i class="fas fa-image mr-2"></i> Banners
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-chart-line mr-2"></i> Resultados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i> Configuración
-                            </a>
-                        </li>
-                    </ul>
+            <div class="md:col-span-3 lg:col-span-2">
+                <div class="admin-sidebar rounded-xl p-3 shadow-lg border border-gray-800/60 sticky top-24">
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3 mt-2">Menú Principal</div>
+                    <nav>
+                        <a href="admin-panel.html" class="sidebar-link">
+                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                        </a>
+                        <a href="admin-torneos.html" class="sidebar-link">
+                            <i class="fas fa-trophy mr-3"></i> Torneos
+                        </a>
+                        <a href="admin-participantes.html" class="sidebar-link">
+                            <i class="fas fa-users mr-3"></i> Participantes
+                        </a>
+                        <a href="admin-badges.html" class="sidebar-link active">
+                            <i class="fas fa-certificate mr-3"></i> Badges
+                        </a>
+                        <a href="admin-banners.html" class="sidebar-link">
+                            <i class="fas fa-image mr-3"></i> Banners
+                        </a>
+                        <a href="admin-resultados.html" class="sidebar-link">
+                            <i class="fas fa-chart-line mr-3"></i> Resultados
+                        </a>
+                        <a href="admin-configuracion.html" class="sidebar-link mt-6 border-t border-gray-800 pt-4">
+                            <i class="fas fa-cog mr-3"></i> Configuración
+                        </a>
+                    </nav>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="md:col-span-4">
+            <!-- Content Area -->
+            <div class="md:col-span-9 lg:col-span-10 space-y-8">
                 <!-- Badges Section -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
-                    <div class="flex justify-between mb-6">
-                        <h2 class="text-2xl font-bold">Gestión de Badges</h2>
-                        <button id="headerCreateBadgeBtn" class="dtowin-primary text-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                <div class="admin-card p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+                        <div>
+                            <h2 class="text-3xl font-bold">Gestión de Badges</h2>
+                            <p class="text-gray-400 text-sm mt-1">Crea y administra recompensas visuales para los participantes.</p>
+                        </div>
+                        <button id="headerCreateBadgeBtn" class="admin-btn-primary">
                             <i class="fas fa-plus mr-2"></i>Crear Badge
                         </button>
                     </div>
                     
                     <!-- Form para crear/editar badge (oculto inicialmente) -->
-                    <div id="badgeFormSection" class="bg-gray-50 p-4 rounded-lg mb-6 hidden fade-in">
-                        <h3 class="font-semibold text-lg mb-2" id="formTitle">Crear Nuevo Badge</h3>
-                        <form class="grid grid-cols-1 md:grid-cols-2 gap-4" id="createBadgeForm">
+                    <div id="badgeFormSection" class="admin-card-inner rounded-xl p-6 mb-8 hidden fade-in border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                        <h3 class="font-semibold text-xl mb-6 text-white flex items-center" id="formTitle">
+                            <i class="fas fa-certificate text-blue-500 mr-2"></i> Crear Nuevo Badge
+                        </h3>
+                        <form class="grid grid-cols-1 md:grid-cols-2 gap-6" id="createBadgeForm">
                             <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="nombreBadge">
+                                <label class="block text-gray-400 text-sm font-semibold mb-2" for="nombreBadge">
                                     Nombre del Badge *
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombreBadge" type="text" placeholder="Nombre del badge" required>
+                                <input class="admin-input" id="nombreBadge" type="text" placeholder="Ej: Campeón Invicto" required>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcionBadge">
+                                <label class="block text-gray-400 text-sm font-semibold mb-2" for="descripcionBadge">
                                     Descripción *
                                 </label>
-                                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcionBadge" rows="2" placeholder="Descripción del badge" required></textarea>
+                                <textarea class="admin-input" id="descripcionBadge" rows="2" placeholder="Se otorga al ganar sin perder un solo set..." required></textarea>
                             </div>
                             <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="colorBadge">
-                                    Color
+                                <label class="block text-gray-400 text-sm font-semibold mb-2" for="colorBadge">
+                                    Color Temático
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="colorBadge" type="color" value="#ff6b1a">
+                                <input class="admin-input h-10 p-1 cursor-pointer" id="colorBadge" type="color" value="#ff6b1a">
                             </div>
                             <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="iconoBadge">
-                                    Ícono
+                                <label class="block text-gray-400 text-sm font-semibold mb-2" for="iconoBadge">
+                                    Ícono por defecto
                                 </label>
-                                <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="iconoBadge">
+                                <select class="admin-input" id="iconoBadge">
                                     <option value="trophy">Trofeo</option>
                                     <option value="medal">Medalla</option>
                                     <option value="star">Estrella</option>
@@ -175,32 +144,29 @@
                                     <option value="gem">Gema</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-bold mb-2" for="imagenBadge">
-                                    Imagen del Badge (PNG recomendado)
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-400 text-sm font-semibold mb-2" for="imagenBadge">
+                                    Imagen del Badge (Prioridad sobre el ícono)
                                 </label>
-                                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                    id="imagenBadge" 
-                                    type="file" 
-                                    accept="image/png, image/jpeg, image/svg+xml">
-                                <p class="text-xs text-gray-500 mt-1">PNG con transparencia recomendado para mejores resultados.</p>
+                                <input class="admin-input" id="imagenBadge" type="file" accept="image/png, image/jpeg, image/svg+xml">
+                                <p class="text-xs text-blue-400 mt-2"><i class="fas fa-info-circle mr-1"></i> PNG con transparencia (200x200px) recomendado para mejores resultados.</p>
                             </div>
-                            <div class="flex items-center">
+                            <div class="md:col-span-2 flex items-center p-4 bg-gray-900/50 rounded-xl border border-gray-700/50">
                                 <!-- Contenedor de vista previa -->
-                                <div id="badgePreviewContainer" class="border border-gray-300 rounded-full h-32 w-32 flex items-center justify-center bg-gray-200 overflow-hidden badge-preview">
-                                    <i class="fas fa-image text-4xl text-gray-400"></i> <!-- Icono por defecto -->
+                                <div id="badgePreviewContainer" class="border-2 border-gray-700 rounded-full h-24 w-24 flex items-center justify-center bg-gray-800 overflow-hidden badge-preview shadow-lg">
+                                    <i class="fas fa-image text-3xl text-gray-500"></i>
                                 </div>
-                                <div class="ml-4">
-                                    <p class="text-sm text-gray-600">Vista previa</p>
-                                    <p class="text-xs text-gray-500">Tamaño recomendado: 200x200px</p>
+                                <div class="ml-6">
+                                    <p class="text-sm font-medium text-white mb-1">Vista previa en vivo</p>
+                                    <p class="text-xs text-gray-400">Así se verá el badge en el perfil del jugador.</p>
                                 </div>
                             </div>
-                            <div class="md:col-span-2 flex justify-end">
-                                <button type="button" id="cancelButton" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition mr-2">
+                            <div class="md:col-span-2 flex justify-end space-x-3 mt-4 pt-4 border-t border-gray-800">
+                                <button type="button" id="cancelButton" class="admin-btn-secondary px-6">
                                     Cancelar
                                 </button>
-                                <button type="submit" id="submitButton" class="dtowin-primary text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
-                                    Crear Badge
+                                <button type="submit" id="submitButton" class="admin-btn-primary px-8">
+                                    <i class="fas fa-save mr-2"></i> Guardar Badge
                                 </button>
                             </div>
                         </form>
@@ -210,17 +176,17 @@
                     <div class="flex flex-col md:flex-row gap-4 mb-6">
                         <div class="flex-grow">
                             <div class="relative">
-                                <input type="text" id="searchBadges" placeholder="Buscar badges..." class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-300">
-                                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                                <input type="text" id="searchBadges" placeholder="Buscar badges..." class="admin-input py-2.5 pl-4 pr-10 rounded-full w-full">
+                                <i class="fas fa-search absolute right-4 top-3.5 text-gray-500"></i>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Lista de badges -->
-                    <h3 class="font-semibold text-lg mb-3">Badges Disponibles</h3>
+                    <h3 class="font-semibold text-xl mb-4 text-white">Badges Disponibles</h3>
                     <div id="badgesContainer" class="mt-4">
-                        <div class="flex justify-center my-8">
-                            <div class="spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+                        <div class="flex justify-center my-12">
+                            <i class="fas fa-circle-notch fa-spin text-blue-500 text-3xl"></i>
                         </div>
                     </div>
                 </div>
@@ -229,8 +195,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
+    <footer class="admin-navbar py-6 mt-12 border-t border-gray-800/60">
+        <div class="container mx-auto text-center text-sm text-gray-500">
             <p>© 2025 Dtowin Torneos - Panel de Administración</p>
         </div>
     </footer>
@@ -267,6 +233,31 @@
         .catch((error) => {
             console.error("Error al configurar persistencia de sesión:", error);
         });
+        
+    // Función para mostrar notificaciones con estilo oscuro
+    function mostrarNotificacion(mensaje, tipo = "info") {
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) existingNotification.remove();
+        
+        const notification = document.createElement('div');
+        let bgColor = 'bg-blue-600/90 border-blue-500';
+        let icon = 'info-circle';
+        
+        if (tipo === 'success') { bgColor = 'bg-green-600/90 border-green-500'; icon = 'check-circle'; }
+        else if (tipo === 'error') { bgColor = 'bg-red-600/90 border-red-500'; icon = 'exclamation-circle'; }
+        
+        notification.className = `notification fixed top-6 right-6 ${bgColor} border text-white px-5 py-4 rounded-xl shadow-2xl backdrop-blur-md z-50 flex items-center transform transition-all duration-300 translate-y-0 opacity-100`;
+        notification.innerHTML = `<i class="fas fa-${icon} mr-3 text-xl drop-shadow-md"></i><span class="font-medium tracking-wide drop-shadow-md">${mensaje}</span>`;
+        
+        document.body.appendChild(notification);
+        notification.animate([{ transform: 'translateY(-20px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+        
+        setTimeout(() => {
+            const anim = notification.animate([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-20px)' }], { duration: 300, easing: 'ease-in' });
+            anim.onfinish = () => notification.remove();
+        }, 3000);
+    }
+    window.mostrarNotificacion = mostrarNotificacion;
     </script>
 
     <!-- Script para gestión de badges -->

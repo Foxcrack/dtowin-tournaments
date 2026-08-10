@@ -7,49 +7,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" type="image/png" href="../assets/img/dtowin.png">
-    <style>
-        .gradient-background {
-            background: linear-gradient(135deg, #0042ff, #ff3000);
-        }
-        .dtowin-primary {
-            background-color: #ff6b1a;
-        }
-        .dtowin-blue {
-            background-color: #0042ff;
-        }
-        .dtowin-green {
-            background-color: #00b894;
-        }
-        .dtowin-red {
-            background-color: #ff3000;
-        }
-        .dtowin-cream {
-            background-color: #fff3e6;
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="admin-layout.css">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body>
     <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
+    <nav class="admin-navbar p-4 flex justify-between items-center">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <a href="admin-panel.html" class="flex items-center">
-                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Panel de Administración Dtowin</h1>
+                    <img src="../assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-3">
+                    <h1 class="text-xl font-bold hidden sm:block">Panel de Administración</h1>
                 </a>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="../index.html" class="hover:text-gray-300 transition">Ver Sitio</a>
-                <div id="userProfile" class="flex items-center space-x-2">
-                    <img src="https://via.placeholder.com/40" alt="Admin" class="w-8 h-8 rounded-full">
-                    <span class="hidden md:inline">Admin</span>
+            <div class="flex items-center space-x-6">
+                <a href="../index.html" class="text-gray-400 hover:text-white transition text-sm font-medium"><i class="fas fa-external-link-alt mr-2"></i>Ver Sitio</a>
+                <div id="userProfile" class="flex items-center space-x-3 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700">
+                    <img src="../assets/img/dtowin.png" alt="Admin" class="w-7 h-7 rounded-full border border-gray-600">
+                    <span class="text-sm font-medium">Admin</span>
                 </div>
             </div>
         </div>
@@ -57,153 +31,121 @@
 
     <!-- Main Content -->
     <div class="container mx-auto py-8 px-4">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
             <!-- Sidebar -->
-            <div class="md:col-span-1">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <ul>
-                        <li>
-                            <a href="admin-panel.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1 bg-gray-100 text-orange-500 font-semibold">
-                                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-torneos.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-trophy mr-2"></i> Torneos
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-participantes.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-users mr-2"></i> Participantes
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-badges.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-certificate mr-2"></i> Badges
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-banners.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-image mr-2"></i> Banners
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-resultados.html" class="block py-2 px-4 rounded hover:bg-gray-100 mb-1">
-                                <i class="fas fa-chart-line mr-2"></i> Resultados
-                            </a>
-                        </li>
-                        <li>
-                            <a href="admin-configuracion.html" class="block py-2 px-4 rounded hover:bg-gray-100">
-                                <i class="fas fa-cog mr-2"></i> Configuración
-                            </a>
-                        </li>
-                    </ul>
+            <div class="md:col-span-3 lg:col-span-2">
+                <div class="admin-sidebar rounded-xl p-3 shadow-lg border border-gray-800/60 sticky top-24">
+                    <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3 mt-2">Menú Principal</div>
+                    <nav>
+                        <a href="admin-panel.html" class="sidebar-link active">
+                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                        </a>
+                        <a href="admin-torneos.html" class="sidebar-link">
+                            <i class="fas fa-trophy mr-3"></i> Torneos
+                        </a>
+                        <a href="admin-participantes.html" class="sidebar-link">
+                            <i class="fas fa-users mr-3"></i> Participantes
+                        </a>
+                        <a href="admin-badges.html" class="sidebar-link">
+                            <i class="fas fa-certificate mr-3"></i> Badges
+                        </a>
+                        <a href="admin-banners.html" class="sidebar-link">
+                            <i class="fas fa-image mr-3"></i> Banners
+                        </a>
+                        <a href="admin-resultados.html" class="sidebar-link">
+                            <i class="fas fa-chart-line mr-3"></i> Resultados
+                        </a>
+                        <a href="admin-configuracion.html" class="sidebar-link mt-6 border-t border-gray-800 pt-4">
+                            <i class="fas fa-cog mr-3"></i> Configuración
+                        </a>
+                    </nav>
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="md:col-span-4">
-                <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+            <!-- Content Area -->
+            <div class="md:col-span-9 lg:col-span-10 space-y-8">
+                <h2 class="text-3xl font-bold mb-2">Visión General</h2>
+                <p class="text-gray-400 mb-8">Métricas principales de la plataforma Dtowin.</p>
                 
                 <!-- Estadísticas -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-blue-500 text-white rounded-lg shadow p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-lg font-semibold mb-2">Total Usuarios</h3>
-                                <p class="text-2xl font-bold" id="totalUsuariosCounter">--</p>
-                            </div>
-                            <i class="fas fa-users text-4xl opacity-80"></i>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="admin-card stat-card">
+                        <i class="fas fa-users stat-icon"></i>
+                        <h3 class="stat-title">Total Usuarios</h3>
+                        <p class="stat-value" id="totalUsuariosCounter">--</p>
                     </div>
                     
-                    <div class="bg-green-500 text-white rounded-lg shadow p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-lg font-semibold mb-2">Torneos Activos</h3>
-                                <p class="text-2xl font-bold" id="torneosActivosCounter">--</p>
-                            </div>
-                            <i class="fas fa-trophy text-4xl opacity-80"></i>
-                        </div>
+                    <div class="admin-card stat-card" style="--accent-blue: var(--accent-green);">
+                        <i class="fas fa-trophy stat-icon"></i>
+                        <h3 class="stat-title">Torneos Activos</h3>
+                        <p class="stat-value" id="torneosActivosCounter">--</p>
                     </div>
                     
-                    <div class="dtowin-primary text-white rounded-lg shadow p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-lg font-semibold mb-2">Badges Otorgados</h3>
-                                <p class="text-2xl font-bold" id="badgesOtorgadosCounter">--</p>
-                            </div>
-                            <i class="fas fa-certificate text-4xl opacity-80"></i>
-                        </div>
+                    <div class="admin-card stat-card" style="--accent-blue: var(--accent-orange);">
+                        <i class="fas fa-certificate stat-icon"></i>
+                        <h3 class="stat-title">Badges Otorgados</h3>
+                        <p class="stat-value" id="badgesOtorgadosCounter">--</p>
                     </div>
                 </div>
                 
                 <!-- Acceso Rápido -->
-                <h3 class="text-lg font-semibold mb-4">Acceso Rápido</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    <a href="admin-torneos.html" class="bg-blue-500 hover:bg-blue-600 transition text-white rounded-lg shadow p-4 flex items-center">
-                        <div class="bg-blue-600 p-3 rounded-full mr-4">
-                            <i class="fas fa-trophy text-xl"></i>
+                <h3 class="text-xl font-bold mt-10 mb-4 border-b border-gray-800 pb-2">Acceso Rápido</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <a href="admin-torneos.html" class="admin-card p-5 flex items-center group cursor-pointer hover:-translate-y-1 transition-transform">
+                        <div class="bg-blue-500/20 text-blue-400 p-4 rounded-xl mr-5 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                            <i class="fas fa-trophy text-2xl"></i>
                         </div>
                         <div>
-                            <h4 class="text-lg font-semibold">Torneos</h4>
-                            <p class="text-sm opacity-90">Gestionar torneos</p>
+                            <h4 class="text-lg font-bold group-hover:text-blue-400 transition-colors">Gestionar Torneos</h4>
+                            <p class="text-sm text-gray-400 mt-1">Crear, editar y ver estado de los torneos activos.</p>
                         </div>
                     </a>
                     
-                    <a href="admin-participantes.html" class="bg-green-500 hover:bg-green-600 transition text-white rounded-lg shadow p-4 flex items-center">
-                        <div class="bg-green-600 p-3 rounded-full mr-4">
-                            <i class="fas fa-users text-xl"></i>
+                    <a href="admin-participantes.html" class="admin-card p-5 flex items-center group cursor-pointer hover:-translate-y-1 transition-transform">
+                        <div class="bg-green-500/20 text-green-400 p-4 rounded-xl mr-5 group-hover:bg-green-500 group-hover:text-white transition-colors">
+                            <i class="fas fa-users text-2xl"></i>
                         </div>
                         <div>
-                            <h4 class="text-lg font-semibold">Participantes</h4>
-                            <p class="text-sm opacity-90">Gestionar usuarios</p>
+                            <h4 class="text-lg font-bold group-hover:text-green-400 transition-colors">Base de Participantes</h4>
+                            <p class="text-sm text-gray-400 mt-1">Modificar usuarios, asignar puntos y medallas.</p>
                         </div>
                     </a>
                 </div>
                 
                 <!-- Próximos Torneos -->
-                <h3 class="text-lg font-semibold mb-4">Próximos Torneos</h3>
-                <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nombre
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Inscritos
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Acciones
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="proximosTorneosTable">
-                            <!-- Los torneos se cargarán dinámicamente -->
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    <div class="flex justify-center">
-                                        <div class="spinner rounded-full h-6 w-6 border-t-2 border-b-2 border-orange-500"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <h3 class="text-xl font-bold mt-10 mb-4 border-b border-gray-800 pb-2">Próximos Torneos</h3>
+                <div class="admin-card p-1">
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Fecha</th>
+                                    <th>Inscritos</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proximosTorneosTable">
+                                <!-- Los torneos se cargarán dinámicamente -->
+                                <tr>
+                                    <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                                        <div class="flex justify-center">
+                                            <i class="fas fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="gradient-background text-white py-4 px-4 mt-8">
-        <div class="container mx-auto text-center">
+    <footer class="admin-navbar py-6 mt-12 border-t border-gray-800/60">
+        <div class="container mx-auto text-center text-sm text-gray-500">
             <p>© 2025 Dtowin Torneos - Panel de Administración</p>
         </div>
     </footer>

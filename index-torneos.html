@@ -1,237 +1,324 @@
 <!DOCTYPE html>
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dtowin - Plataforma de Torneos y Eventos</title>
+    <meta name="description" content="Participa en emocionantes torneos competitivos, gana puntos, consigue badges y escala en el ranking global de Dtowin.">
     <link rel="icon" type="image/png" href="assets/img/dtowin.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/index-torneos.css">
 </head>
 
-<body class="bg-gray-50">
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-blue-600 to-red-500 p-6 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="h-8">
-            <span class="text-white text-2xl font-bold">Dtowin Torneos</span>
+<body>
+    <!-- ═══════════════════════════════════════ HEADER ═══════════════════════════════════════ -->
+    <header id="mainHeader">
+        <div class="header-inner">
+            <a href="index-torneos.html" class="brand">
+                <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="brand-logo">
+                <span class="brand-name">Dtowin <span class="brand-accent">Torneos</span></span>
+            </a>
+
+            <nav class="desktop-nav">
+                <a href="index.html" class="nav-link">Inicio</a>
+                <a href="index-torneos.html" class="nav-link active">Torneos</a>
+                <a href="leaderboard-completo.html" class="nav-link">Leaderboard</a>
+            </nav>
+
+            <div class="header-actions">
+                <button id="loginBtn" class="btn-login">Iniciar Sesión</button>
+                <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
         </div>
-        <nav class="flex gap-6 text-white font-semibold">
-            <a href="index.html">Inicio</a>
-            <a href="index-torneos.html">Torneos</a>
-            <a href="leaderboard-completo.html">Leaderboard</a>
-            <button id="loginBtn" class="bg-white text-red-600 px-4 py-2 rounded-lg font-bold">Iniciar Sesión</button>
-        </nav>
+
+        <!-- Mobile Nav -->
+        <div id="mobileNav" class="mobile-nav hidden">
+            <a href="index.html" class="mobile-nav-link">Inicio</a>
+            <a href="index-torneos.html" class="mobile-nav-link active">Torneos</a>
+            <a href="leaderboard-completo.html" class="mobile-nav-link">Leaderboard</a>
+        </div>
     </header>
 
-    <!-- Hero -->
-    <section class="text-center py-16 bg-gradient-to-r from-blue-600 to-red-500 text-white">
-        <img src="assets/img/Foxpica.png" alt="Dtowin Mascot" class="mx-auto mb-6" style="max-height: 160px;">
-        <h1 class="text-4xl font-bold mb-4">Bienvenido a la Plataforma de Torneos Dtowin</h1>
-        <p class="mb-6">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.
-        </p>
-        <button id="registerBtn"
-            class="bg-white text-red-600 font-bold py-2 px-6 rounded-lg shadow hover:bg-red-100 transition">¡Regístrate
-            Ahora!</button>
+    <!-- ═══════════════════════════════════════ HERO ═══════════════════════════════════════ -->
+    <section class="hero-section">
+        <div class="hero-bg-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-mascot-wrap">
+                <img src="assets/img/Foxpica.png" alt="Dtowin Mascot" class="hero-mascot">
+            </div>
+            <div class="hero-badge">🏆 Plataforma Competitiva</div>
+            <h1 class="hero-title">Bienvenido a la Plataforma de Torneos Dtowin</h1>
+            <p class="hero-subtitle">Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.</p>
+            <div class="hero-actions">
+                <button id="registerBtn" class="btn-primary-hero">
+                    <i class="fas fa-rocket"></i>
+                    ¡Regístrate Ahora!
+                </button>
+                <a href="#torneos" class="btn-secondary-hero">
+                    <i class="fas fa-trophy"></i>
+                    Ver Torneos
+                </a>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="stat-num" id="statTorneos">50+</span>
+                <span class="stat-label">Torneos Activos</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+                <span class="stat-num" id="statJugadores">1k+</span>
+                <span class="stat-label">Jugadores</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+                <span class="stat-num">24/7</span>
+                <span class="stat-label">Disponible</span>
+            </div>
+        </div>
     </section>
 
-    <!-- Torneos y Eventos -->
-    <section class="py-12 bg-gray-900 text-gray-100">
-        <h2 class="text-3xl font-bold text-center mb-10 text-white">Torneos y Eventos</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto px-4">
+    <!-- ═══════════════════════════════════════ TORNEOS ═══════════════════════════════════════ -->
+    <section class="tournaments-section" id="torneos">
+        <div class="section-header">
+            <h2 class="section-title">Torneos <span class="gradient-text">& Eventos</span></h2>
+            <p class="section-subtitle">Encuentra el torneo perfecto para ti</p>
+        </div>
+
+        <div class="tournaments-grid">
             <!-- En Progreso -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">En Progreso</h3>
-                <div id="torneos-en-proceso" class="min-h-[100px] flex flex-col gap-4">
-                    <div class="loader mx-auto"></div>
+            <div class="tournament-category">
+                <div class="category-header category-live">
+                    <div class="category-icon"><i class="fas fa-circle-dot"></i></div>
+                    <div>
+                        <h3 class="category-title">En Progreso</h3>
+                        <p class="category-desc">Torneos activos ahora mismo</p>
+                    </div>
+                    <div class="live-badge">EN VIVO</div>
+                </div>
+                <div id="torneos-en-proceso" class="tournament-list">
+                    <div class="loader-wrap"><div class="loader"></div></div>
                 </div>
             </div>
 
             <!-- Inscripciones Abiertas -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">Inscripciones Abiertas</h3>
-                <div id="torneos-abiertos" class="min-h-[100px] flex flex-col gap-4">
-                    <div class="loader mx-auto"></div>
+            <div class="tournament-category">
+                <div class="category-header category-open">
+                    <div class="category-icon"><i class="fas fa-door-open"></i></div>
+                    <div>
+                        <h3 class="category-title">Inscripciones Abiertas</h3>
+                        <p class="category-desc">¡Únete antes de que cierren!</p>
+                    </div>
+                </div>
+                <div id="torneos-abiertos" class="tournament-list">
+                    <div class="loader-wrap"><div class="loader"></div></div>
                 </div>
             </div>
 
             <!-- Check-in -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">Confirma tu Asistencia</h3>
-                <div id="torneos-checkin" class="min-h-[100px] flex flex-col gap-4">
-                    <div class="loader mx-auto"></div>
+            <div class="tournament-category">
+                <div class="category-header category-checkin">
+                    <div class="category-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div>
+                        <h3 class="category-title">Confirma tu Asistencia</h3>
+                        <p class="category-desc">Check-in requerido</p>
+                    </div>
+                </div>
+                <div id="torneos-checkin" class="tournament-list">
+                    <div class="loader-wrap"><div class="loader"></div></div>
                 </div>
             </div>
 
             <!-- Próximamente -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h3 class="text-xl font-bold mb-4 text-gray-200">Próximamente</h3>
-                <div id="torneos-proximos" class="min-h-[100px] flex flex-col gap-4">
-                    <div class="loader mx-auto"></div>
+            <div class="tournament-category">
+                <div class="category-header category-soon">
+                    <div class="category-icon"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <h3 class="category-title">Próximamente</h3>
+                        <p class="category-desc">Prepárate para lo que viene</p>
+                    </div>
+                </div>
+                <div id="torneos-proximos" class="tournament-list">
+                    <div class="loader-wrap"><div class="loader"></div></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Leaderboard Global -->
-    <section class="py-12 bg-gray-950">
-        <h2 class="text-3xl font-bold text-center mb-8 text-white">Leaderboard Global</h2>
-        <div id="leaderboard" class="max-w-4xl mx-auto bg-gray-900 rounded-lg shadow p-6 border border-gray-800">
-            <div class="text-center text-gray-400">Cargando leaderboard...</div>
+    <!-- ═══════════════════════════════════════ LEADERBOARD ═══════════════════════════════════════ -->
+    <section class="leaderboard-section">
+        <div class="section-header">
+            <h2 class="section-title">Leaderboard <span class="gradient-text">Global</span></h2>
+            <p class="section-subtitle">Los mejores competidores de la plataforma</p>
         </div>
-        <div class="flex justify-center mt-6">
-            <a href="leaderboard-completo.html"
-                class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
-                Ver Leaderboard Completo
+        <div id="leaderboard" class="leaderboard-table-wrap">
+            <div class="loader-wrap"><div class="loader"></div></div>
+        </div>
+        <div class="leaderboard-action">
+            <a href="leaderboard-completo.html" class="btn-primary-hero">
+                <i class="fas fa-list-ol"></i>
+                Ver Ranking Completo
             </a>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="bg-gradient-to-r from-blue-600 to-red-500 text-white py-8 mt-0">
-        <div class="max-w-6xl mx-auto flex flex-wrap justify-between gap-8 px-4">
-            <div>
-                <h3 class="font-bold text-lg mb-2">Dtowin Torneos</h3>
-                <p>La plataforma líder para organizar y participar en torneos competitivos.</p>
+    <!-- ═══════════════════════════════════════ FOOTER ═══════════════════════════════════════ -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <img src="assets/img/dtowin.png" alt="Dtowin" class="footer-logo">
+                <h3 class="footer-brand-name">Dtowin Torneos</h3>
+                <p class="footer-desc">La plataforma líder para organizar y participar en torneos competitivos.</p>
+                <div class="footer-social">
+                    <a href="https://vulpium-f8c62.web.app" target="_blank" class="social-link" aria-label="Web"><i class="fas fa-globe"></i></a>
+                </div>
             </div>
-            <div>
-                <h4 class="font-bold mb-2">Enlaces</h4>
+            <div class="footer-links">
+                <h4 class="footer-heading">Navegación</h4>
                 <ul>
                     <li><a href="index.html">Inicio</a></li>
                     <li><a href="index-torneos.html">Torneos</a></li>
                     <li><a href="leaderboard-completo.html">Leaderboard</a></li>
+                    <li><a href="perfil.html">Mi Perfil</a></li>
                 </ul>
             </div>
-            <div>
-                <h4 class="font-bold mb-2">Soporte</h4>
+            <div class="footer-links">
+                <h4 class="footer-heading">Soporte</h4>
                 <ul>
                     <li><a href="https://vulpium-f8c62.web.app">Contacto</a></li>
                     <li><a href="terminos_condiciones.html">Términos y Condiciones</a></li>
                 </ul>
             </div>
         </div>
-        <div class="text-center mt-8 text-sm">&copy; 2025 Dtowin Torneos. Todos los derechos reservados.</div>
+        <div class="footer-bottom">
+            <p>© 2025 Dtowin Torneos. Todos los derechos reservados.</p>
+        </div>
     </footer>
 
-    <!-- Modales -->
-    <!-- Modal de Login -->
-    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeLoginModal" type="button" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold mb-4">Iniciar Sesión</h2>
-            <!-- Solo botón de Google -->
-            <div class="mt-4">
-                <button id="googleLoginBtn"
-                    class="w-full bg-red-500 text-white py-2 rounded-lg font-bold hover:bg-red-600 flex items-center justify-center gap-2">
-                    <i class="fab fa-google"></i>Iniciar con Google
-                </button>
+    <!-- ═══════════════════════════════════════ MODALS ═══════════════════════════════════════ -->
+    <!-- Modal Login -->
+    <div id="loginModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button id="closeLoginModal" class="modal-close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <img src="assets/img/dtowin.png" alt="Dtowin" class="modal-logo">
+                <h2 class="modal-title">Iniciar Sesión</h2>
+                <p class="modal-subtitle">Bienvenido de vuelta a Dtowin</p>
             </div>
-            <div class="mt-4 text-center text-gray-500 text-sm">
-                ¿No tienes cuenta? <button id="openRegisterModalBtn"
-                    class="text-blue-600 font-semibold hover:underline">Regístrate</button>
+            <div class="modal-body">
+                <button id="googleLoginBtn" class="btn-google">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
+                    Continuar con Google
+                </button>
+                <p class="modal-footer-text">¿No tienes cuenta?
+                    <button id="openRegisterModalBtn" class="link-btn">Regístrate</button>
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Registro -->
-    <div id="registerModal"
-        class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 relative">
-            <button id="closeRegisterModal" type="button"
-                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-            <h2 class="text-2xl font-bold mb-4">Registro</h2>
-            <!-- Solo botón de Google -->
-            <div class="mt-4">
-                <button id="googleRegisterBtn"
-                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-bold hover:from-blue-700 hover:to-purple-700 flex items-center justify-center gap-2 shadow-lg">
-                    <i class="fab fa-google"></i>Registrarse con Google
-                </button>
+    <!-- Modal Registro -->
+    <div id="registerModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <button id="closeRegisterModal" class="modal-close"><i class="fas fa-times"></i></button>
+            <div class="modal-header">
+                <img src="assets/img/dtowin.png" alt="Dtowin" class="modal-logo">
+                <h2 class="modal-title">Crear Cuenta</h2>
+                <p class="modal-subtitle">Únete a la comunidad Dtowin</p>
             </div>
-            <div class="mt-4 text-center text-gray-500 text-sm">
-                ¿Ya tienes cuenta? <button id="openLoginModalBtn"
-                    class="text-blue-600 font-semibold hover:underline">Inicia Sesión</button>
+            <div class="modal-body">
+                <button id="googleRegisterBtn" class="btn-google">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
+                    Registrarse con Google
+                </button>
+                <p class="modal-footer-text">¿Ya tienes cuenta?
+                    <button id="openLoginModalBtn" class="link-btn">Inicia Sesión</button>
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Inscripción -->
-    <div id="inscriptionModal"
-        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl max-w-md w-full mx-auto shadow-2xl">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">Inscripción a Torneo</h3>
-                    <button id="closeInscriptionModal" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+    <!-- Modal Inscripción -->
+    <div id="inscriptionModal" class="modal-overlay hidden">
+        <div class="modal-card modal-card-lg">
+            <div class="modal-header">
+                <h3 class="modal-title">Inscripción a Torneo</h3>
+                <button id="closeInscriptionModal" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="info-banner">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Te estás inscribiendo a: <strong id="modalTournamentName">Torneo</strong></span>
                 </div>
-
-                <div class="mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                    <p class="text-sm text-blue-700">
-                        <i class="fas fa-info-circle mr-2"></i>
-                        Te estás inscribiendo a: <strong id="modalTournamentName">Torneo</strong>
-                    </p>
-                </div>
-
-                <form id="inscriptionForm" class="space-y-4">
-                    <div>
-                        <label for="gameUsername" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-gamepad mr-2 text-blue-500"></i><span id="gameUsernameLabel">Nombre de Juego *</span>
+                <form id="inscriptionForm" class="inscription-form">
+                    <div class="form-group">
+                        <label for="gameUsername" class="form-label">
+                            <i class="fas fa-gamepad"></i>
+                            <span id="gameUsernameLabel">Nombre de Juego *</span>
                         </label>
                         <input type="text" id="gameUsername" name="gameUsername"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            class="form-input"
                             placeholder="Tu nombre en el juego" required maxlength="50">
-                        <p id="gameUsernameHelp" class="text-xs text-gray-500 mt-1">Este será tu nombre visible en el torneo</p>
+                        <p id="gameUsernameHelp" class="form-help">Este será tu nombre visible en el torneo</p>
                     </div>
-
-                    <div>
-                        <label for="discordUsername" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fab fa-discord mr-2 text-purple-500"></i>Discord *
+                    <div class="form-group">
+                        <label for="discordUsername" class="form-label">
+                            <i class="fab fa-discord"></i>
+                            Discord *
                         </label>
                         <input type="text" id="discordUsername" name="discordUsername"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            class="form-input"
                             placeholder="usuario#1234 o @usuario" required maxlength="50">
-                        <p class="text-xs text-gray-500 mt-1">Para comunicación durante el torneo</p>
+                        <p class="form-help">Para comunicación durante el torneo</p>
                     </div>
-
-                    <div class="bg-gray-50 rounded-lg p-4 mt-4">
-                        <h4 class="font-semibold text-gray-800 mb-2">
-                            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
-                            Importante
-                        </h4>
-                        <ul class="text-sm text-gray-600 space-y-1">
-                            <li>• Asegúrate de que tu Discord esté activo</li>
-                            <li>• El nombre de juego debe ser tu nick real</li>
-                            <li>• Revisa las reglas del torneo antes de inscribirte</li>
+                    <div class="important-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Importante</h4>
+                        <ul>
+                            <li>Asegúrate de que tu Discord esté activo</li>
+                            <li>El nombre de juego debe ser tu nick real</li>
+                            <li>Revisa las reglas del torneo antes de inscribirte</li>
                         </ul>
                     </div>
-
-                    <div class="flex gap-3 pt-4">
-                        <button type="button" id="cancelInscriptionBtn"
-                            class="flex-1 px-4 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-400 transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit"
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg">
-                            <i class="fas fa-trophy mr-2"></i>Inscribirse
+                    <div class="form-actions">
+                        <button type="button" id="cancelInscriptionBtn" class="btn-cancel">Cancelar</button>
+                        <button type="submit" class="btn-primary-hero">
+                            <i class="fas fa-trophy"></i>Inscribirse
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    
 
     <!-- Notificaciones -->
-    <div id="notifications" class="fixed top-4 right-4 z-50"></div>
+    <div id="notifications" class="notifications-container"></div>
 
     <!-- Script principal -->
     <script type="module" src="assets/js/index-torneos.js"></script>
-</body>
 
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuToggle')?.addEventListener('click', () => {
+            document.getElementById('mobileNav')?.classList.toggle('hidden');
+        });
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('mainHeader');
+            if (window.scrollY > 20) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
 </html>

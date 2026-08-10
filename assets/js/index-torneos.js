@@ -1,6 +1,6 @@
 // index-torneos.js - Versión refactorizada con subcolecciones
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc, addDoc, setDoc, where, deleteDoc, updateDoc, arrayUnion, onSnapshot, serverTimestamp, getCountFromServer } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
 // Funciones de utilidad para zonas horarias (inline para evitar problemas de imports)
@@ -628,7 +628,7 @@ async function renderTorneosPorEstado(torneosPorEstado, containers) {
                     </div>
                     <div class="p-4">
                         <h4 class="font-bold text-gray-800 mb-2 text-lg">${torneo.nombre || "Torneo sin nombre"}</h4>
-                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">${torneo.descripcion || "Sin descripción disponible"}</p>
+                        <p class="text-gray-400 text-sm mb-3 whitespace-pre-wrap">${torneo.descripcion || "Sin descripción disponible"}</p>
                         ${horaFormateada ? `
                             <div class="flex items-center text-xs text-gray-500 mb-3">
                                 <i class="fas fa-globe-americas mr-1"></i>
@@ -1231,109 +1231,148 @@ async function handleUnsubscribe(torneoId, torneoNombre) {
 async function updateAuthUI(user) {
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
-    const heroSection = document.querySelector('section.text-center');
+    const heroSection = document.querySelector('.hero-section') || document.querySelector('section.text-center');
 
-    if (user) {
-        currentUser = user;
-        const isAdmin = await checkIfUserIsAdmin(user);
-        const userName = user.displayName || user.email.split('@')[0] || 'Usuario';
+    // Always clear ALL previous handlers before setting new ones
+    if (loginBtn) {
+        loginBtn.onclick = null;
+        // Recreate the element as a div if user is logged in to avoid invalid HTML (a tag inside button)
+        const newLoginBtn = document.createElement(user ? 'div' : 'button');
+        newLoginBtn.id = 'loginBtn';
+        newLoginBtn.className = loginBtn.className;
+        loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+        
+        // Re-grab reference after replacement
+        const freshLoginBtn = document.getElementById('loginBtn');
 
-        loginBtn.innerHTML = `
-            <div class="flex items-center gap-2 cursor-pointer" id="userProfile">
-                <img src="${user.photoURL || 'dtowin.png'}" alt="Perfil" class="w-8 h-8 rounded-full object-cover border-2 border-white">
-                <span class="font-semibold">${userName}</span>
-                ${isAdmin ? '<i class="fas fa-crown text-yellow-300 text-xs"></i>' : ''}
-                <i class="fas fa-chevron-down text-sm"></i>
-            </div>
-        `;
+        if (user) {
+            currentUser = user;
+            const isAdmin = await checkIfUserIsAdmin(user);
+            const userName = user.displayName || user.email.split('@')[0] || 'Usuario';
 
-        const heroTitle = heroSection.querySelector('h1');
-        const heroText = heroSection.querySelector('p');
-        heroTitle.textContent = `¡Bienvenido/a de vuelta, ${userName}!${isAdmin ? ' 👑' : ''}`;
-        heroText.textContent = isAdmin ?
-            'Administra la plataforma y gestiona todos los torneos desde tu panel de control.' :
-            'Continúa participando en emocionantes torneos y escalando en el ranking global.';
+            freshLoginBtn.innerHTML = `
+                <div class="flex items-center gap-2 cursor-pointer" id="userProfile">
+                    <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="Perfil" class="w-8 h-8 rounded-full object-cover border-2 border-white">
+                    <span class="font-semibold">${userName}</span>
+                    ${isAdmin ? '<i class="fas fa-crown text-yellow-300 text-xs"></i>' : ''}
+                    <i class="fas fa-chevron-down text-sm opacity-80"></i>
+                </div>
+            `;
+            // freshLoginBtn click opens dropdown - NOT login modal
+            freshLoginBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleUserDropdown(user, isAdmin);
+            });
 
-        registerBtn.innerHTML = isAdmin ?
-            `<i class="fas fa-cog mr-2"></i>Panel de Admin` :
-            `<i class="fas fa-gamepad mr-2"></i>Ver Mis Torneos`;
-        registerBtn.onclick = () => window.open(isAdmin ? 'admin/admin-panel.html' : 'perfil.html', '_blank');
+            if (heroSection) {
+                const heroTitle = heroSection.querySelector('h1');
+                const heroText = heroSection.querySelector('p');
+                if (heroTitle) heroTitle.textContent = `¡Bienvenido/a de vuelta, ${userName}!${isAdmin ? ' 👑' : ''}`;
+                if (heroText) heroText.textContent = isAdmin ?
+                    'Administra la plataforma y gestiona todos los torneos desde tu panel de control.' :
+                    'Continúa participando en emocionantes torneos y escalando en el ranking global.';
+            }
 
-        createUserDropdown();
+            if (registerBtn) {
+                registerBtn.innerHTML = isAdmin ?
+                    `<i class="fas fa-cog mr-2"></i>Panel de Admin` :
+                    `<i class="fas fa-gamepad mr-2"></i>Ver Mis Torneos`;
+                registerBtn.onclick = () => {
+                    window.location.href = isAdmin ? 'admin/admin-panel.html' : 'perfil.html';
+                };
+            }
 
-    } else {
-        currentUser = null;
+        } else {
+            currentUser = null;
+            freshLoginBtn.innerHTML = 'Iniciar Sesión';
+            freshLoginBtn.addEventListener('click', () => {
+                document.getElementById('loginModal')?.classList.remove('hidden');
+            });
 
-        loginBtn.innerHTML = 'Iniciar Sesión';
-        loginBtn.onclick = () => document.getElementById('loginModal').classList.remove('hidden');
+            if (registerBtn) {
+                registerBtn.innerHTML = '¡Regístrate Ahora!';
+                registerBtn.onclick = () => document.getElementById('registerModal')?.classList.remove('hidden');
+            }
 
-        registerBtn.innerHTML = '¡Regístrate Ahora!';
-        registerBtn.onclick = () => document.getElementById('registerModal').classList.remove('hidden');
+            if (heroSection) {
+                const heroTitle = heroSection.querySelector('h1');
+                const heroText = heroSection.querySelector('p');
+                if (heroTitle) heroTitle.textContent = 'Bienvenido a la Plataforma de Torneos Dtowin';
+                if (heroText) heroText.textContent = 'Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.';
+            }
 
-        const heroTitle = heroSection.querySelector('h1');
-        const heroText = heroSection.querySelector('p');
-        heroTitle.textContent = 'Bienvenido a la Plataforma de Torneos Dtowin';
-        heroText.textContent = 'Participa en emocionantes torneos, gana puntos, consigue badges y escala en el ranking global.';
-
-        removeUserDropdown();
+            removeUserDropdown();
+        }
     }
 }
 
-async function createUserDropdown() {
-    removeUserDropdown();
-
-    const userProfile = document.getElementById('userProfile');
-    if (userProfile) {
-        userProfile.addEventListener('click', async () => {
-            const isAdmin = await checkIfUserIsAdmin(currentUser);
-
-            const dropdown = document.createElement('div');
-            dropdown.id = 'userDropdown';
-            dropdown.className = 'absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50';
-            dropdown.innerHTML = `
-                <div class="py-2">
-                    <a href="perfil.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-user mr-2"></i>Mi Perfil
-                    </a>
-                    <a href="index-torneos.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-trophy mr-2"></i>Mis Torneos
-                    </a>
-                    ${isAdmin ? `
-                        <hr class="my-1">
-                        <a href="admin/admin-panel.html" class="block px-4 py-2 text-purple-600 hover:bg-purple-50 transition-colors font-semibold">
-                            <i class="fas fa-cog mr-2"></i>Panel de Admin
-                        </a>
-                    ` : ''}
-                    <hr class="my-1">
-                    <button id="logoutBtn" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-                    </button>
-                </div>
-            `;
-
-            userProfile.style.position = 'relative';
-            userProfile.appendChild(dropdown);
-
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                    showNotification('¡Sesión cerrada correctamente!', 'success');
-                    removeUserDropdown();
-                } catch (error) {
-                    showNotification('Error al cerrar sesión: ' + error.message, 'error');
-                }
-            });
-
-            setTimeout(() => {
-                document.addEventListener('click', function closeDropdown(e) {
-                    if (!userProfile.contains(e.target)) {
-                        removeUserDropdown();
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                });
-            }, 100);
-        });
+function toggleUserDropdown(user, isAdmin) {
+    // If dropdown already open, close it
+    const existing = document.getElementById('userDropdown');
+    if (existing) {
+        existing.remove();
+        return;
     }
+
+    const loginBtn = document.getElementById('loginBtn');
+    if (!loginBtn) return;
+
+    const dropdown = document.createElement('div');
+    dropdown.id = 'userDropdown';
+    dropdown.className = 'user-dropdown';
+    dropdown.innerHTML = `
+        <div class="dropdown-header">
+            <img src="${user.photoURL || 'assets/img/dtowin.png'}" alt="Avatar" class="dropdown-avatar">
+            <div>
+                <div class="dropdown-name">${user.displayName || 'Usuario'}</div>
+                <div class="dropdown-email">${user.email}</div>
+            </div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a href="perfil.html" class="dropdown-item">
+            <i class="fas fa-user"></i>Mi Perfil
+        </a>
+        <a href="index-torneos.html" class="dropdown-item">
+            <i class="fas fa-trophy"></i>Mis Torneos
+        </a>
+        ${isAdmin ? `
+            <div class="dropdown-divider"></div>
+            <a href="admin/admin-panel.html" class="dropdown-item dropdown-item-admin">
+                <i class="fas fa-cog"></i>Panel de Admin
+            </a>
+        ` : ''}
+        <div class="dropdown-divider"></div>
+        <button id="logoutBtn" class="dropdown-item dropdown-item-logout">
+            <i class="fas fa-sign-out-alt"></i>Cerrar Sesión
+        </button>
+    `;
+
+    loginBtn.style.position = 'relative';
+    loginBtn.appendChild(dropdown);
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+            await signOut(auth);
+            showNotification('¡Sesión cerrada correctamente!', 'success');
+        } catch (error) {
+            showNotification('Error al cerrar sesión: ' + error.message, 'error');
+        }
+    });
+
+    // Close when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!loginBtn.contains(e.target)) {
+                removeUserDropdown();
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }, 10);
+}
+
+function createUserDropdown() {
+    // No-op: dropdown is now created on click via toggleUserDropdown
 }
 
 function removeUserDropdown() {
@@ -1472,7 +1511,7 @@ async function loadTournaments() {
                         </div>
                         <div class="p-4">
                             <h4 class="font-bold text-gray-800 mb-2 text-lg">${torneo.nombre || "Torneo sin nombre"}</h4>
-                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">${torneo.descripcion || "Sin descripción disponible"}</p>
+                            <p class="text-gray-400 text-sm mb-3 whitespace-pre-wrap">${torneo.descripcion || "Sin descripción disponible"}</p>
                             <div class="flex items-center justify-between mb-3 p-2 bg-gray-50 rounded-lg">
                                 <div class="flex items-center gap-2">
                                     <i class="fas fa-users text-blue-500"></i>
@@ -2035,6 +2074,34 @@ function setupEventListeners() {
     }
 }
 
+// Cargar estadísticas de la plataforma (Hero Section)
+async function loadPlatformStats() {
+    const statTorneosEl = document.getElementById('statTorneos');
+    const statJugadoresEl = document.getElementById('statJugadores');
+    
+    try {
+        // Contar torneos activos (que no sean 'Finalizado')
+        if (statTorneosEl) {
+            const torneosRef = collection(db, "torneos");
+            const qTorneos = query(torneosRef, where("estado", "!=", "Finalizado"));
+            const torneosSnapshot = await getCountFromServer(qTorneos);
+            statTorneosEl.textContent = torneosSnapshot.data().count + "+";
+        }
+
+        // Contar jugadores (total de documentos en la colección 'usuarios')
+        if (statJugadoresEl) {
+            const usuariosRef = collection(db, "usuarios");
+            const usuariosSnapshot = await getCountFromServer(usuariosRef);
+            statJugadoresEl.textContent = usuariosSnapshot.data().count + "+";
+        }
+    } catch (error) {
+        console.error("Error cargando estadísticas de la plataforma:", error);
+        // Fallback a los valores estáticos si hay un problema
+        if (statTorneosEl) statTorneosEl.textContent = "50+";
+        if (statJugadoresEl) statJugadoresEl.textContent = "1k+";
+    }
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 Inicializando index-torneos...");
@@ -2051,42 +2118,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configurar solo una vez al cargar
     setupRealTimeTournaments();
     loadLeaderboard();
+    loadPlatformStats();
     setupEventListeners();
 
-    // Modales de login/register
+    // Modales de login/register - close buttons
     document.getElementById('closeLoginModal')?.addEventListener('click', () => {
-        document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('loginModal')?.classList.add('hidden');
     });
 
     document.getElementById('closeRegisterModal')?.addEventListener('click', () => {
-        document.getElementById('registerModal').classList.add('hidden');
+        document.getElementById('registerModal')?.classList.add('hidden');
     });
 
     document.getElementById('openRegisterModalBtn')?.addEventListener('click', () => {
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('registerModal').classList.remove('hidden');
+        document.getElementById('loginModal')?.classList.add('hidden');
+        document.getElementById('registerModal')?.classList.remove('hidden');
     });
 
     document.getElementById('openLoginModalBtn')?.addEventListener('click', () => {
-        document.getElementById('registerModal').classList.add('hidden');
-        document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('registerModal')?.classList.add('hidden');
+        document.getElementById('loginModal')?.classList.remove('hidden');
     });
 
-    function isUserLoggedIn() {
-        return !!document.getElementById('userProfile');
-    }
-
-    document.getElementById('loginBtn')?.addEventListener('click', () => {
-        if (!isUserLoggedIn()) {
-            document.getElementById('loginModal').classList.remove('hidden');
-        }
-    });
-
-    document.getElementById('registerBtn')?.addEventListener('click', () => {
-        if (!isUserLoggedIn()) {
-            document.getElementById('registerModal').classList.remove('hidden');
-        }
-    });
+    // NOTE: loginBtn and registerBtn click handlers are managed exclusively in
+    // updateAuthUI() to avoid duplicate handler bugs. Do NOT add them here.
 
     // Google authentication
     document.getElementById('googleLoginBtn')?.addEventListener('click', async () => {

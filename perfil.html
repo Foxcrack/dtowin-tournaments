@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Dtowin</title>
+    <title>Mi Perfil - Dtowin Torneos</title>
+    <meta name="description" content="Gestiona tu perfil de jugador en Dtowin: badges, historial de torneos y cuentas vinculadas.">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="icon" type="image/png" href="assets/img/dtowin.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/perfil.css">
     <style>
         .badge {
@@ -61,38 +63,32 @@
     </style>
 </head>
 <body class="bg-gray-950 min-h-screen">
-    <!-- Navbar -->
-    <nav class="gradient-background text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <a href="index.html" class="flex items-center">
-                    <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="w-10 h-10 rounded-full mr-2">
-                    <h1 class="text-2xl font-bold">Dtowin Torneos</h1>
-                </a>
-            </div>
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
-                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
-                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
-                <button id="loginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">Iniciar Sesión</button>
-            </div>
-            <button class="md:hidden text-xl" id="mobileMenuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <!-- Mobile Menu -->
-        <div id="mobileMenu" class="md:hidden hidden">
-            <div class="flex flex-col mt-4 space-y-3 px-4 pb-4">
-                <a href="index.html#inicio" class="hover:text-gray-300 transition">Inicio</a>
-                <a href="index.html#torneos" class="hover:text-gray-300 transition">Torneos</a>
-                <a href="index.html#leaderboard" class="hover:text-gray-300 transition">Leaderboard</a>
-                <a href="perfil.html" class="hover:text-gray-300 transition font-semibold">Mi Perfil</a>
-                <button id="mobileLoginBtn" class="bg-white text-orange-500 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition w-full">Iniciar Sesión</button>
+    <!-- Header / Navbar -->
+    <header id="mainHeader" class="perfil-header">
+        <div class="perfil-header-inner">
+            <a href="index-torneos.html" class="perfil-brand">
+                <img src="assets/img/dtowin.png" alt="Dtowin Logo" class="perfil-brand-logo">
+                <span class="perfil-brand-name">Dtowin <span class="perfil-brand-accent">Torneos</span></span>
+            </a>
+            <nav class="perfil-desktop-nav">
+                <a href="index.html" class="perfil-nav-link">Inicio</a>
+                <a href="index-torneos.html" class="perfil-nav-link">Torneos</a>
+                <a href="leaderboard-completo.html" class="perfil-nav-link">Leaderboard</a>
+                <a href="perfil.html" class="perfil-nav-link active">Mi Perfil</a>
+            </nav>
+            <div class="perfil-header-actions">
+                <button id="loginBtn" class="perfil-btn-login">Iniciar Sesi&#243;n</button>
+                <button class="perfil-mobile-btn" id="mobileMenuBtn" aria-label="Menu"><i class="fas fa-bars"></i></button>
             </div>
         </div>
-    </nav>
+        <div id="mobileMenu" class="perfil-mobile-menu hidden">
+            <a href="index.html" class="perfil-mobile-link">Inicio</a>
+            <a href="index-torneos.html" class="perfil-mobile-link">Torneos</a>
+            <a href="leaderboard-completo.html" class="perfil-mobile-link">Leaderboard</a>
+            <a href="perfil.html" class="perfil-mobile-link active">Mi Perfil</a>
+            <button id="mobileLoginBtn" class="perfil-mobile-login-btn">Iniciar Sesi&#243;n</button>
+        </div>
+    </header>
 
     <!-- Profile Section -->
     <section class="py-16 px-4">
