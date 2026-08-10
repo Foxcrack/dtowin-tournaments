@@ -284,17 +284,30 @@ function displayParticipants(participants) {
         // Contar badges
         const badgesCount = participant.badges ? Object.keys(participant.badges).length : 0;
         
+        let avatar = participant.photoURL;
+        if (!avatar || avatar === "undefined" || avatar === "null") avatar = '../assets/img/dtowin.png';
+
+        let nombre = participant.nombre;
+        if (!nombre || nombre === "undefined" || nombre === "null") nombre = participant.displayName;
+        if (!nombre || nombre === "undefined" || nombre === "null") nombre = "Sin nombre";
+
+        let email = participant.email;
+        if (!email || email === "undefined" || email === "null") email = "Sin email";
+
         // Agregar fila
         html += `
             <tr data-participant-id="${participant.id}">
                 <td class="flex items-center">
-                    <img src="${participant.photoURL || 'https://via.placeholder.com/32'}" alt="${participant.nombre || participant.email}" class="w-8 h-8 rounded-full mr-3 border border-gray-600">
+                    <img src="${avatar}" alt="${nombre}" class="w-8 h-8 rounded-full mr-3 border border-gray-600 object-cover">
                     <div>
-                        <p class="font-medium text-white">${participant.nombre || 'Sin nombre'}</p>
+                        <p class="font-medium text-white">${nombre}</p>
                         <p class="text-xs text-gray-400">${participant.isHost ? '<span class="text-blue-400 font-semibold">Admin</span>' : 'Participante'}</p>
                     </div>
                 </td>
-                <td class="text-gray-300">${participant.email || 'Sin email'}</td>
+                <td class="text-gray-300">
+                    <div>${email}</div>
+                    <div class="text-[10px] text-gray-500 font-mono mt-1" title="User UID">${participant.id}</div>
+                </td>
                 <td class="text-gray-300 text-center">${torneosCount}</td>
                 <td class="font-medium text-white text-center">${participant.puntos || 0}</td>
                 <td>
@@ -304,8 +317,11 @@ function displayParticipants(participants) {
                 </td>
                 <td class="text-gray-400">${lastLogin}</td>
                 <td class="text-right">
-                    <button class="text-blue-400 hover:text-blue-300 transition view-participant-btn" title="Ver detalles">
+                    <button class="text-blue-400 hover:text-blue-300 transition view-participant-btn mr-2" title="Ver detalles">
                         <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="text-red-400 hover:text-red-300 transition delete-participant-btn" title="Eliminar participante">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>
@@ -327,6 +343,44 @@ function displayParticipants(participants) {
             openParticipantDetails(participantId);
         });
     });
+
+    document.querySelectorAll('.delete-participant-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const participantId = this.closest('tr').dataset.participantId;
+            deleteParticipant(participantId);
+        });
+    });
+}
+
+// Eliminar participante de la base de datos
+async function deleteParticipant(participantId) {
+    if (!confirm("¿Estás seguro de que deseas eliminar permanentemente a este participante? Esta acción no se puede deshacer y borrará al usuario de la plataforma.")) {
+        return;
+    }
+    
+    try {
+        const participantRef = firebase.firestore().collection('usuarios').doc(participantId);
+        await participantRef.delete();
+        
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion("Participante eliminado exitosamente", "success");
+        } else {
+            alert("Participante eliminado exitosamente");
+        }
+        
+        // Remove from UI array
+        allParticipants = allParticipants.filter(p => p.id !== participantId);
+        handleSearch(); // re-render table
+        
+    } catch (error) {
+        console.error("Error eliminando participante:", error);
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion("Error al eliminar el participante", "error");
+        } else {
+            alert("Error al eliminar el participante");
+        }
+    }
 }
 
 // Manejar búsqueda de participante

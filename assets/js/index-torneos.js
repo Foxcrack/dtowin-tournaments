@@ -2003,7 +2003,14 @@ async function loadLeaderboard() {
         const leaderboardHTML = topUsuarios.map((usuario, index) => {
             const position = index + 1;
             const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '';
-            const nombre = usuario.nombre || usuario.displayName || usuario.email;
+            let nombre = usuario.nombre;
+            if (!nombre || nombre === "undefined" || nombre === "null") nombre = usuario.displayName;
+            if (!nombre || nombre === "undefined" || nombre === "null") nombre = usuario.email;
+            if (!nombre || nombre === "undefined" || nombre === "null") nombre = "Jugador";
+
+            let avatar = usuario.photoURL;
+            if (!avatar || avatar === "undefined" || avatar === "null") avatar = "assets/img/dtowin.png";
+
             const bannerImage = bannerMap.get(usuario.uid);
 
             let badges = 0;
@@ -2019,7 +2026,7 @@ async function loadLeaderboard() {
                         ${bannerImage ? `<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 200px; opacity: 0.4; background: url('${bannerImage}') center/cover no-repeat; clip-path: polygon(0% 0%, 100% 0%, 70% 100%, 0% 100%); transition: opacity 0.3s ease;"></div>` : ''}
                         <div class="flex items-center gap-3 relative z-10">
                             <span class="font-bold text-lg ${position <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${medal} #${position}</span>
-                            <img src="${usuario.photoURL || 'dtowin.png'}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                            <img src="${avatar}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
                             <div>
                                 <p class="font-semibold text-white group-hover:text-blue-300">${nombre}</p>
                             </div>

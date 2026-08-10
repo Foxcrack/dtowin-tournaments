@@ -113,13 +113,21 @@ onAuthStateChanged(auth, async (user) => {
   for (const userDoc of snapshot.docs) {
     const data = userDoc.data();
     
+    let nombre = data.nombre;
+    if (!nombre || nombre === "undefined" || nombre === "null") nombre = data.displayName;
+    if (!nombre || nombre === "undefined" || nombre === "null") nombre = data.email;
+    if (!nombre || nombre === "undefined" || nombre === "null") nombre = "Jugador";
+
+    let avatar = data.photoURL;
+    if (!avatar || avatar === "undefined" || avatar === "null") avatar = "assets/img/dtowin.png";
+
     users.push({
       uid: data.uid || userDoc.id,
-      nombre: data.nombre || data.displayName || data.email || "Jugador",
+      nombre: nombre,
       puntos: data.puntos || 0,
       creado: data.createdAt?.seconds || 0,
       bannerId: data.bannerId || null,
-      photoURL: data.photoURL || null,
+      photoURL: avatar,
       badges: data.badges || 0
     });
   }
